@@ -1,0 +1,10 @@
+## Interface: 120000,120001, 110207
+## Title: Massive Venus Pulsating Frames
+## Notes: Custom frames for almost everything.
+
+MVPF_Common.lua
+Core.lua
+Party.lua
+Player.lua
+Target.lua
+Arena.lua

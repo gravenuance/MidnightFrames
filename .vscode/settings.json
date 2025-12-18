@@ -1,0 +1,9 @@
+{
+    "Lua.diagnostics.globals": [
+        "SlashCmdList",
+        "RAID_CLASS_COLORS",
+        "RegisterUnitWatch",
+        "UnregisterUnitWatch",
+        "CompactArenaFrame_UpdateMember"
+    ]
+}
