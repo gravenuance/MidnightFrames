@@ -4,6 +4,8 @@ local frameName = "MVPF_TargetFrame"
 
 MVPF_TargetTestMode = false
 
+local IsDriverRegistered = false
+
 -- ============================
 -- Core secure target unit frame
 -- ============================
@@ -21,15 +23,12 @@ RegisterUnitWatch(f)
 
 local function UpdateVisibility()
     if MVPF_TargetTestMode then
-        -- In test mode, force shown (safe out of combat; you can keep this if you only toggle test out of combat)
+        UnregisterUnitWatch(f)
         f:Show()
-        return
-    end
-
-    -- In normal mode, do NOT touch visibility; RegisterUnitWatch controls it.
-    -- You can still early-return if no target to skip work:
-    if not UnitExists("target") then
-        return
+        IsDriverRegistered = false
+    elseif not IsDriverRegistered then
+        RegisterUnitWatch(f)
+        IsDriverRegistered = true
     end
 end
 --UpdateVisibility()
@@ -41,7 +40,7 @@ local function UpdateHealth()
     MVPF_Common.UpdateHealthBar(health, "target")
 end
 
-local function ApplyClassColor()
+local function SetClassColor()
     local r, g, b = MVPF_Common.GetClassColor("target", 0, 0.8, 0)
     if not health then return end
     health:SetStatusBarColor(r, g, b, 0.7)
@@ -68,26 +67,33 @@ function f:UpdateAuras() UpdateAuras() end
 
 function f:UpdateVisibility() UpdateVisibility() end
 
+function f:SetClassColor() SetClassColor() end
+
 -- ===================
 -- Event-driven wiring
 -- ===================
 
-local ef = CreateFrame("Frame", frameName .. "Events", f)
-ef:RegisterEvent("PLAYER_TARGET_CHANGED")
-ef:RegisterEvent("UNIT_HEALTH")
-ef:RegisterEvent("UNIT_MAXHEALTH")
-ef:RegisterEvent("UNIT_AURA")
-ef:RegisterEvent("UNIT_NAME_UPDATE")
+f:RegisterEvent("PLAYER_TARGET_CHANGED")
+f:RegisterEvent("UNIT_HEALTH")
+f:RegisterEvent("UNIT_MAXHEALTH")
+f:RegisterEvent("UNIT_AURA")
+f:RegisterEvent("UNIT_NAME_UPDATE")
+f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+f:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-ef:SetScript("OnEvent", function(self, event, arg1)
+f:SetScript("OnEvent", function(self, event, arg1)
+    if (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
+        MVPF_TargetTestMode = false
+    end
     if MVPF_TargetTestMode then return end
 
     if event == "PLAYER_TARGET_CHANGED"
         or (event == "UNIT_NAME_UPDATE" and arg1 == "target") then
+        UpdateVisibility()
         if not UnitExists("target") then
             return
         end
-        ApplyClassColor()
+        SetClassColor()
         UpdateHealth()
         UpdateAuras()
     elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") and arg1 == "target" then

@@ -41,10 +41,6 @@ local function UpdateAuras()
     )
 end
 
-function f:UpdateHealthBar() UpdateHealthBar() end
-
-function f:UpdateAuras() UpdateAuras() end
-
 -- ===================
 -- Event-driven wiring
 -- ===================

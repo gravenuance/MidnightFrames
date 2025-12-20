@@ -45,6 +45,8 @@ function MVPF_Common.CreateUnitFrame(params)
     health:SetStatusBarTexture("Interface\\Buttons\\WHITE8x8")
     health:SetOrientation("VERTICAL")
     health:SetRotatesTexture(true)
+    health:SetFrameStrata("MEDIUM")
+    health:SetFrameLevel(f:GetFrameLevel() + 1)
     f.health = health
     if kind == "arena" then
         return f, health
@@ -187,7 +189,7 @@ end
 -- Update Health
 function MVPF_Common.UpdateHealthBar(healthBar, unit)
     local maxHealth = UnitHealthMax(unit) or 1
-    local curHealth = UnitHealth(unit) or 0
+    local curHealth = UnitHealth(unit) or 1
     healthBar:SetMinMaxValues(0, maxHealth)
     healthBar:SetValue(curHealth)
 end
@@ -198,71 +200,30 @@ function MVPF_Common.ToggleTestMode(kind, on)
     if kind == "target" then
         MVPF_TargetTestMode = on
         local f             = _G["MVPF_TargetFrame"]
-        local ac            = _G["MVPF_TargetFrameAuras"]
-        if not f or not f.health or not ac or not ac.icons then return end
+        if not f then return end
 
         if on then
-            UnregisterUnitWatch(f)
-            f:Show()
-            f.health:SetMinMaxValues(0, 100)
-            f.health:SetValue(65)
-            f.health:SetStatusBarColor(0.4, 0.7, 0.9, 0.7)
-            for i = 1, ac.maxAuras do
-                local btn = ac.icons[i]
-                if btn then
-                    btn.icon:SetTexture("Interface\\Buttons\\WHITE8x8")
-                    btn.icon:SetVertexColor(0.9 - 0.1 * i, 0.2 + 0.1 * i, 0.4)
-                    btn.count:SetText("")
-                    if btn.cooldown then btn.cooldown:Hide() end
-                    btn:Show()
-                end
-            end
-        else
-            RegisterUnitWatch(f)
             if f.UpdateVisibility then f:UpdateVisibility() end
-            -- clear fake auras
-            for i = 1, ac.maxAuras do
-                local btn = ac.icons[i]
-                if btn then
-                    btn:Hide()
-                    if btn.cooldown then btn.cooldown:Hide() end
-                end
-            end
-            -- rerun normal logic
+        else
+            if f.UpdateVisibility then f:UpdateVisibility() end
             if f.UpdateHealth then f:UpdateHealth() end
             if f.UpdateAuras then f:UpdateAuras() end
+            if f.SetClassColor then f:SetClassColor() end
         end
     elseif kind == "party" then
         MVPF_PartyTestMode = on
         for i = 1, 4 do
             local f = _G["MVPF_PartyFrame" .. i]
-            if f and f.health then
+            if f then
                 if on then
-                    f:Show()
-                    f.health:SetMinMaxValues(0, 100)
-                    f.health:SetValue(80 - (i - 1) * 15)
-                    f.health:SetStatusBarColor(0.1 * i, 0.8 - 0.1 * i, 0.3 + 0.1 * i)
-                    if f.border then
-                        f.border:SetBackdropBorderColor(1, 1, 1, 1)
-                    end
-                    if f.outerBorder then
-                        -- fake “targeted by arena” highlight
-                        if i == 1 then
-                            f.outerBorder:SetBackdropBorderColor(1, 0.5, 0, 1) -- orange
-                        elseif i == 2 then
-                            f.outerBorder:SetBackdropBorderColor(1, 0, 0, 1)   -- red
-                        else
-                            f.outerBorder:SetBackdropBorderColor(0, 0, 0, 0)
-                        end
-                    end
+                    if f.UpdateVisibility then f:UpdateVisibility() end
                 else
-                    -- let visibility rules + normal updates re-apply
                     if f.UpdateVisibility then f:UpdateVisibility() end
                     if f.UpdateHealth then f:UpdateHealth() end
                     if f.UpdateAuras then f:UpdateAuras() end
-                    if f.outerBorder then
-                        f.outerBorder:SetBackdropBorderColor(0, 0, 0, 0)
-                    end
+                    if f.UpdateArenaTargets then f:UpdateArenaTargets() end
+                    if f.UpdateTargetHighlight then f:UpdateTargetHighlight() end
+                    if f.SetClassColor then f:SetClassColor() end
                 end
             end
         end
@@ -270,32 +231,11 @@ function MVPF_Common.ToggleTestMode(kind, on)
         MVPF_ArenaTestMode = on
         for i = 1, 3 do
             local f = _G["MVPF_ArenaFrame" .. i]
-            if f and f.health then
+            if f then
                 if on then
-                    f:Show()
-                    f.health:SetMinMaxValues(0, 100)
-                    f.health:SetValue(75 - (i - 1) * 20)
-                    f.health:SetStatusBarColor(0.1 * i, 0.8 - 0.1 * i, 0.3 + 0.1 * i)
-                    if f.border then
-                        f.border:SetBackdropBorderColor(1, 1, 1, 1)
-                    end
-                    if f.outerBorder then
-                        -- fake “focused” by 1–2 party members
-                        if i == 1 then
-                            f.outerBorder:SetBackdropBorderColor(1, 0.5, 0, 1) -- orange
-                        elseif i == 2 then
-                            f.outerBorder:SetBackdropBorderColor(1, 0, 0, 1)   -- red
-                        else
-                            f.outerBorder:SetBackdropBorderColor(0, 0, 0, 0)
-                        end
-                    end
+                    if f.UpdateVisibility then f:UpdateVisibility() end
                 else
                     if f.UpdateVisibility then f:UpdateVisibility() end
-                    if f.UpdateHealth then f:UpdateHealth() end
-                    --if f.UpdateAuras      then f:UpdateAuras()      end
-                    if f.outerBorder then
-                        f.outerBorder:SetBackdropBorderColor(0, 0, 0, 0)
-                    end
                 end
             end
         end
