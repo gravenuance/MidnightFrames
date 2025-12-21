@@ -102,6 +102,10 @@ local function CreatePartyFrame(index)
 
     local function UpdateAuras()
         if MVPF_PartyTestMode then return end
+        if not UnitExists(unit) then
+            MVPF_Common.UpdateAuras(auraContainer, unit, {}, 0)
+            return
+        end
         MVPF_Common.UpdateAuras(
             auraContainer,
             unit,

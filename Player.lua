@@ -33,6 +33,10 @@ end
 -- =================
 
 local function UpdateAuras()
+    if not UnitExists("player") then
+        MVPF_Common.UpdateAuras(auraContainer, "player", {}, 0)
+        return
+    end
     MVPF_Common.UpdateAuras(
         auraContainer,
         "player",

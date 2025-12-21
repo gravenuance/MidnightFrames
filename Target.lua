@@ -53,6 +53,10 @@ end
 
 local function UpdateAuras()
     if MVPF_TargetTestMode then return end
+    if not UnitExists("target") then
+        MVPF_Common.UpdateAuras(auraContainer, "player", {}, 0)
+        return
+    end
     MVPF_Common.UpdateAuras(
         auraContainer,
         "target",

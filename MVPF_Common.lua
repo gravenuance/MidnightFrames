@@ -1,13 +1,131 @@
 local MVPF_Common = {}
 
--- Creates a basic vertical unit frame with background, border, health, and auraContainer.
--- params:
---   name       = global frame name
---   unit       = unit id ("player", "target", "party1", "arena1")
---   point      = {anchor, relFrame, relPoint, x, y}
---   size       = {w, h}
---   maxAuras   = number of aura buttons
---   iconSize   = aura icon size
+local GetTime = GetTime
+local CUnitAuras = C_UnitAuras
+
+local MVPF_DISPEL_ALPHA = 0.85
+local MVPF_DISPEL_NAME_TO_ID = {
+    Magic   = 1,
+    Curse   = 2,
+    Disease = 3,
+    Poison  = 4,
+}
+
+local function MVPF_ApplyAuraDispelBorderColor(btn, auraData)
+    local border = btn and btn.border
+    if not border then return end
+
+    border:SetVertexColor(0, 0, 0, 1)
+
+    if not CUnitAuras or not CUnitAuras.GetAuraDispelTypeColor then
+        return
+    end
+    if not auraData then
+        return
+    end
+
+    local dispelTypeID
+    do
+        local ok, id = pcall(function()
+            local id2 = auraData.dispelTypeID or auraData.dispelType
+            if type(id2) == "number" then
+                return id2
+            end
+            local name = auraData.dispelName or auraData.debuffType
+            if type(name) == "string" then
+                local enum = Enum and Enum.DispelType
+                local fromEnum = enum and enum[name]
+                if type(fromEnum) == "number" then
+                    return fromEnum
+                end
+                return MVPF_DISPEL_NAME_TO_ID[name]
+            end
+            return nil
+        end)
+        if ok then
+            dispelTypeID = id
+        end
+    end
+
+    if type(dispelTypeID) ~= "number" then
+        return
+    end
+
+    local r, g, b, a
+    do
+        local ok, c1, c2, c3, c4 = pcall(CUnitAuras.GetAuraDispelTypeColor, dispelTypeID)
+        if ok then
+            if type(c1) == "table" then
+                if c1.GetRGBA then
+                    local ok2, rr, gg, bb, aa = pcall(c1.GetRGBA, c1)
+                    if ok2 then
+                        r, g, b, a = rr, gg, bb, aa
+                    end
+                elseif c1.r and c1.g and c1.b then
+                    r, g, b, a = c1.r, c1.g, c1.b, c1.a
+                end
+            else
+                r, g, b, a = c1, c2, c3, c4
+            end
+        end
+    end
+
+    if type(r) == "number" and type(g) == "number" and type(b) == "number" then
+        pcall(border.SetVertexColor, border, r, g, b, type(a) == "number" and a or 1)
+        border:SetAlpha(MVPF_DISPEL_ALPHA)
+    end
+end
+
+local function MVPF_ApplyAuraCooldown(btn, unit, aura)
+    local cd = btn and btn.cooldown
+    if not cd then return end
+    cd:Hide()
+
+    if not aura then return end
+
+    -- 1) Beta 4: Duration Object
+    if CUnitAuras and CUnitAuras.GetUnitAuraDuration and cd.SetCooldownFromDurationObject and aura.auraInstanceID then
+        local ok, durationObj = pcall(CUnitAuras.GetUnitAuraDuration, unit, aura.auraInstanceID)
+        if ok and durationObj then
+            local ok2 = pcall(cd.SetCooldownFromDurationObject, cd, durationObj, true)
+            if ok2 then
+                cd:Show()
+                return
+            end
+        end
+    end
+
+    -- 2) Beta 3-style helper (if your client exposes SetCooldownFromExpirationTime)
+    if cd.SetCooldownFromExpirationTime then
+        local ok, didSet = pcall(function()
+            local duration = aura.duration
+            local expirationTime = aura.expirationTime
+            if duration and expirationTime then
+                cd:SetCooldownFromExpirationTime(expirationTime, duration)
+                return true
+            end
+        end)
+        if ok and didSet then
+            cd:Show()
+            return
+        end
+    end
+
+    -- 3) Legacy math fallback
+    local ok, didSet = pcall(function()
+        local duration = aura.duration
+        local expirationTime = aura.expirationTime
+        if duration and expirationTime then
+            local start = expirationTime - duration
+            cd:SetCooldown(start, duration)
+            return true
+        end
+    end)
+    if ok and didSet then
+        cd:Show()
+    end
+end
+
 function MVPF_Common.CreateUnitFrame(params)
     local name     = params.name
     local unit     = params.unit
@@ -121,6 +239,17 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
         return
     end
 
+    if not UnitExists(unit) then
+        for i = 1, container.maxAuras do
+            local btn = container.icons[i]
+            if btn then
+                btn:Hide()
+                if btn.cooldown then btn.cooldown:Hide() end
+            end
+        end
+        return
+    end
+
     local shown = 0
     local now = GetTime()
     maxRemaining = maxRemaining or 20
@@ -131,20 +260,23 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
             local aura = C_UnitAuras.GetAuraDataByIndex(unit, index, filter)
             if not aura then break end
 
-            if aura.icon and aura.duration and aura.duration > 0
-                and aura.expirationTime and aura.expirationTime > 0 then
-                local remaining = aura.expirationTime - now
-                if remaining > 0 and remaining <= maxRemaining then
+            if aura.icon and aura.duration and aura.expirationTime then
+                local ok, remaining = pcall(function()
+                    return aura.expirationTime - now
+                end)
+                if ok and remaining and remaining > 0 and remaining <= maxRemaining then
                     shown = shown + 1
                     local btn = container.icons[shown]
 
                     btn.icon:SetTexture(aura.icon)
+
                     local count = aura.applications or aura.charges or 0
                     btn.count:SetText(count > 1 and count or "")
 
-                    local start = aura.expirationTime - aura.duration
-                    btn.cooldown:SetCooldown(start, aura.duration)
-                    btn.cooldown:Show()
+                    MVPF_ApplyAuraCooldown(btn, unit, aura)
+
+                    MVPF_ApplyAuraDispelBorderColor(btn, aura)
+
                     btn:Show()
                 end
             end
@@ -166,6 +298,37 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
     end
 end
 
+local function MVPF_GetNPCReactionColor(unit)
+    local r, g, b = 0, 0.8, 0
+
+    if not UnitExists(unit) then
+        return r, g, b
+    end
+
+    if UnitIsDeadOrGhost and UnitIsDeadOrGhost(unit) then
+        return 0.4, 0.4, 0.4 -- dead/ghost gray (like MSUF)
+    end
+
+    if UnitReaction then
+        -- reaction relative to player: 1-3 hostile, 4 neutral, 5-8 friendly
+        local reaction = UnitReaction("player", unit)
+        if reaction then
+            if reaction >= 5 then
+                -- friendly
+                return 0, 0.9, 0.2
+            elseif reaction == 4 then
+                -- neutral
+                return 1.0, 0.85, 0.1
+            else
+                -- hostile
+                return 0.85, 0.10, 0.10
+            end
+        end
+    end
+
+    return r, g, b
+end
+
 -- Set Raid Color
 function MVPF_Common.GetClassColor(unit, fr, fg, fb)
     local _, class = UnitClass(unit)
@@ -173,6 +336,13 @@ function MVPF_Common.GetClassColor(unit, fr, fg, fb)
     if c then
         return c.r, c.g, c.b
     end
+    -- 2) For non-player units, fall back to reaction-based NPC colors
+    if unit and UnitExists(unit) and not UnitIsPlayer(unit) then
+        local nr, ng, nb = MVPF_GetNPCReactionColor(unit)
+        return nr, ng, nb
+    end
+
+    -- 3) Final fallback
     return fr or 0, fg or 0.8, fb or 0
 end
 
