@@ -1,6 +1,8 @@
 This is the UI I have had since BfA as a WeakAura.
 With the death of WeakAuras, I have had to convert it into an addon.
 
+![UI](/att.PiV3SwO2WsOf_3svgYxQzismTz2elCY7f6u3yWud5Lo.jpg)
+
 The philosophy is simple:
 The interface is built on a horizontal axis.
 This means that default UI frames have to 'fight' for space with other frames in order to be visible.
