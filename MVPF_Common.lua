@@ -83,8 +83,12 @@ local function MVPF_ApplyAuraCooldown(btn, unit, aura)
 
     if not aura then return end
 
-    -- 1) Beta 4: Duration Object
-    if CUnitAuras and CUnitAuras.GetUnitAuraDuration and cd.SetCooldownFromDurationObject and aura.auraInstanceID then
+    -- Duration Object
+    if CUnitAuras
+        and type(CUnitAuras.GetUnitAuraDuration) == "function"
+        and type(cd.SetCooldownFromDurationObject) == "function"
+        and aura.auraInstanceID
+    then
         local ok, durationObj = pcall(CUnitAuras.GetUnitAuraDuration, unit, aura.auraInstanceID)
         if ok and durationObj then
             local ok2 = pcall(cd.SetCooldownFromDurationObject, cd, durationObj, true)
@@ -95,8 +99,8 @@ local function MVPF_ApplyAuraCooldown(btn, unit, aura)
         end
     end
 
-    -- 2) Beta 3-style helper (if your client exposes SetCooldownFromExpirationTime)
-    if cd.SetCooldownFromExpirationTime then
+    -- SetCooldownFromExpirationTime
+    if type(cd.SetCooldownFromExpirationTime) == "function" then
         local ok, didSet = pcall(function()
             local duration = aura.duration
             local expirationTime = aura.expirationTime
@@ -111,7 +115,7 @@ local function MVPF_ApplyAuraCooldown(btn, unit, aura)
         end
     end
 
-    -- 3) Legacy math fallback
+    -- Legacy math fallback
     local ok, didSet = pcall(function()
         local duration = aura.duration
         local expirationTime = aura.expirationTime
