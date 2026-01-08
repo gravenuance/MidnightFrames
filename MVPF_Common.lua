@@ -11,6 +11,13 @@ local MVPF_DISPEL_NAME_TO_ID = {
     Poison  = 4,
 }
 
+MVPF_DEBUG_AURAS = false -- turn off later when done
+
+local function MVPF_Debug(...)
+    if not MVPF_DEBUG_AURAS then return end
+    print("|cffff8800MVPF Auras:|r", ...)
+end
+
 local function MVPF_ApplyAuraDispelBorderColor(btn, auraData)
     local border = btn and btn.border
     if not border then return end
@@ -79,11 +86,14 @@ end
 local function MVPF_ApplyAuraCooldown(btn, unit, aura)
     local cd = btn and btn.cooldown
     if not cd then return end
+
     cd:Hide()
 
-    if not aura then return end
+    if not aura then
+        return
+    end
 
-    -- Duration Object
+    -- 1) Duration Object (preferred, Midnight-safe)
     if CUnitAuras
         and type(CUnitAuras.GetUnitAuraDuration) == "function"
         and type(cd.SetCooldownFromDurationObject) == "function"
@@ -99,15 +109,13 @@ local function MVPF_ApplyAuraCooldown(btn, unit, aura)
         end
     end
 
-    -- SetCooldownFromExpirationTime
-    if type(cd.SetCooldownFromExpirationTime) == "function" then
+    -- 2) SetCooldownFromExpirationTime without doing math ourselves.
+    if type(cd.SetCooldownFromExpirationTime) == "function"
+        and aura.duration and aura.expirationTime
+    then
         local ok, didSet = pcall(function()
-            local duration = aura.duration
-            local expirationTime = aura.expirationTime
-            if duration and expirationTime then
-                cd:SetCooldownFromExpirationTime(expirationTime, duration)
-                return true
-            end
+            cd:SetCooldownFromExpirationTime(aura.expirationTime, aura.duration)
+            return true
         end)
         if ok and didSet then
             cd:Show()
@@ -115,18 +123,17 @@ local function MVPF_ApplyAuraCooldown(btn, unit, aura)
         end
     end
 
-    -- Legacy math fallback
-    local ok, didSet = pcall(function()
-        local duration = aura.duration
-        local expirationTime = aura.expirationTime
-        if duration and expirationTime then
-            local start = expirationTime - duration
-            cd:SetCooldown(start, duration)
+    -- 3) Legacy math fallback only when both are plain numbers (non-secret).
+    if type(aura.duration) == "number" and type(aura.expirationTime) == "number" then
+        local ok, didSet = pcall(function()
+            local start = aura.expirationTime - aura.duration
+            cd:SetCooldown(start, aura.duration)
             return true
+        end)
+        if ok and didSet then
+            cd:Show()
+            return
         end
-    end)
-    if ok and didSet then
-        cd:Show()
     end
 end
 
@@ -255,37 +262,77 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
     end
 
     local shown = 0
-    local now = GetTime()
     maxRemaining = maxRemaining or 20
 
     local function AddAuras(filter)
-        local index = 1
-        while shown < container.maxAuras do
-            local aura = C_UnitAuras.GetAuraDataByIndex(unit, index, filter)
-            if not aura then break end
+        -- Prefer list API when available (Midnight-style, secure)
+        local auraList, totalAuras
 
-            if aura.icon and aura.duration and aura.expirationTime then
-                local ok, remaining = pcall(function()
-                    return aura.expirationTime - now
-                end)
-                if ok and remaining and remaining > 0 and remaining <= maxRemaining then
-                    shown = shown + 1
-                    local btn = container.icons[shown]
+        if C_UnitAuras and C_UnitAuras.GetUnitAuras then
+            local ok, result = pcall(C_UnitAuras.GetUnitAuras, unit, filter, nil, nil)
 
-                    btn.icon:SetTexture(aura.icon)
+            if ok and type(result) == "table" then
+                local count = #result
 
-                    local count = aura.applications or aura.charges or 0
-                    btn.count:SetText(count > 1 and count or "")
+                auraList = result
+                totalAuras = count
+            end
+        end
 
-                    MVPF_ApplyAuraCooldown(btn, unit, aura)
+        -- Fallback to GetAuraDataByIndex for non-Midnight / older clients
+        if not auraList then
+            auraList = {}
+            totalAuras = 0
+            local index = 1
+            while shown + totalAuras < container.maxAuras do
+                local aura = C_UnitAuras.GetAuraDataByIndex(unit, index, filter)
+                if not aura then break end
+                auraList[#auraList + 1] = aura
+                totalAuras = totalAuras + 1
+                index = index + 1
+            end
+        end
 
-                    MVPF_ApplyAuraDispelBorderColor(btn, aura)
+        if not auraList or totalAuras == 0 then
+            return
+        end
 
-                    btn:Show()
-                end
+        for listIndex = 1, totalAuras do
+            if shown >= container.maxAuras then
+                break
             end
 
-            index = index + 1
+            local auraData = auraList[listIndex]
+            if not auraData then
+                break
+            end
+
+            if auraData.icon then
+                shown = shown + 1
+                local btn = container.icons[shown]
+
+                btn.icon:SetTexture(auraData.icon)
+
+                local count = auraData.applications or auraData.charges
+                local countText = ""
+
+                -- Never compare; only show if it is a plain number
+                if type(count) == "number" then
+                    countText = tostring(count)
+                end
+
+                btn.count:SetText(countText)
+
+                btn.unit = unit
+                btn.auraFilter = filter
+                btn.auraInstanceID = auraData.auraInstanceID
+                btn.auraIndex = auraData.auraIndex or auraData.index or listIndex
+
+                MVPF_ApplyAuraCooldown(btn, unit, auraData)
+                MVPF_ApplyAuraDispelBorderColor(btn, auraData)
+
+                btn:Show()
+            end
         end
     end
 
@@ -296,6 +343,7 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
     for i = shown + 1, container.maxAuras do
         local btn = container.icons[i]
         if btn then
+            --MVPF_Debug("314: Hiding leftover slot", i, "for unit", unit)
             btn:Hide()
             if btn.cooldown then btn.cooldown:Hide() end
         end

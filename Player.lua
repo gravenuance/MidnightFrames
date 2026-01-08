@@ -40,7 +40,7 @@ local function UpdateAuras()
     MVPF_Common.UpdateAuras(
         auraContainer,
         "player",
-        { "HELPFUL PLAYER", "HARMFUL RAID" },
+        { "HELPFUL RAID", "HARMFUL RAID" },
         20
     )
 end
