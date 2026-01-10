@@ -23,6 +23,7 @@ local function CreatePartyFrame(index)
         maxAuras = 3,
         iconSize = 26,
     })
+    f:SetAttribute("type2", "togglemenu")
     -- Outer border for "arena targeting this party" highlight
     local outerBorder = CreateFrame("Frame", nil, f, "BackdropTemplate")
     outerBorder:SetAllPoints(f)

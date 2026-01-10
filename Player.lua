@@ -12,6 +12,7 @@ local f, auraContainer, health = MVPF_Common.CreateUnitFrame({
     maxAuras = 4,
     iconSize = 26,
 })
+f:SetAttribute("type2", "togglemenu")
 RegisterUnitWatch(f)
 
 local function UpdateHealthBar()

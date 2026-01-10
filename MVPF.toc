@@ -1,6 +1,7 @@
 ## Interface: 120000,120001, 110207
 ## Title: Massive Venus Pulsating Frames
 ## Notes: Custom frames for almost everything.
+## IconTexture: Interface\AddOns\MVPF\icon
 
 MVPF_Common.lua
 Core.lua
