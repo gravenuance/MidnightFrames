@@ -238,7 +238,7 @@ local function SetArenaFrame(index)
             f:Show()
             return
         end
-        if not IsInArena() then
+        if not IsInArena() and not InCombatLockdown() then
             f:Hide()
             return
         end

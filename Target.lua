@@ -18,10 +18,11 @@ local f, auraContainer, health = MVPF_Common.CreateUnitFrame({
     maxAuras = 4,
     iconSize = 26,
 })
-RegisterUnitWatch(f)
+--RegisterUnitWatch(f)
 
 
 local function UpdateVisibility()
+    if InCombatLockdown() then return end
     if MVPF_TargetTestMode then
         UnregisterUnitWatch(f)
         f:Show()
@@ -88,6 +89,7 @@ f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:SetScript("OnEvent", function(self, event, arg1)
     if (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
         MVPF_TargetTestMode = false
+        UpdateVisibility()
     end
     if MVPF_TargetTestMode then return end
 

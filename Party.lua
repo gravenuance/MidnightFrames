@@ -1,11 +1,11 @@
-local addonName          = ...
+local addonName     = ...
 
-local baseName           = "MVPF_PartyFrame"
-local SOLID_TEXTURE      = "Interface\\Buttons\\WHITE8x8"
+local baseName      = "MVPF_PartyFrame"
+local SOLID_TEXTURE = "Interface\\Buttons\\WHITE8x8"
 
-MVPF_PartyTestMode       = false
+MVPF_PartyTestMode  = false
 
-local IsDriverRegistered = false
+
 
 -- ===========================
 -- Create one party unit frame
@@ -32,6 +32,8 @@ local function CreatePartyFrame(index)
     })
     outerBorder:SetBackdropBorderColor(0, 0, 0, 0) -- start hidden
     f.outerBorder = outerBorder
+
+    f.IsDriverRegistered = false
 
     local function UpdateArenaTargets()
         if MVPF_PartyTestMode then return end
@@ -80,15 +82,15 @@ local function CreatePartyFrame(index)
         local numGroup = GetNumGroupMembers() or 0
         if MVPF_PartyTestMode then
             UnregisterUnitWatch(f)
-            IsDriverRegistered = false
+            f.IsDriverRegistered = false
             f:Show()
         elseif (numGroup > 5 or numGroup == 0) and not InCombatLockdown() then
             UnregisterUnitWatch(f)
-            IsDriverRegistered = false
+            f.IsDriverRegistered = false
             f:Hide()
-        elseif not IsDriverRegistered and not InCombatLockdown() then
+        elseif not f.IsDriverRegistered and not InCombatLockdown() then
             RegisterUnitWatch(f)
-            IsDriverRegistered = true
+            f.IsDriverRegistered = true
         end
     end
 
