@@ -144,9 +144,22 @@ local function SetArenaFrame(index)
     outerBorder:SetFrameLevel(f:GetFrameLevel())
     f.outerBorder = outerBorder
 
-
+    local function IsDeadOrGhost()
+        return UnitExists(unit) and UnitIsDeadOrGhost(unit) and not MVPF_ArenaTestMode
+    end
     local function IsLegalUnit()
-        return UnitIsConnected(unit) and not UnitIsDeadOrGhost(unit) and UnitExists(unit) and not MVPF_ArenaTestMode
+        return UnitIsConnected(unit) and UnitExists(unit) and not MVPF_ArenaTestMode
+    end
+
+    local function HidePostGameFrames()
+        if not C_PvP.IsMatchComplete() then return end
+        for i = 1, 5 do -- Up to 5 arena opponents
+            local member = _G[blizzFrame .. "Member" .. i]
+            if member then
+                if member.CcRemoverFrame then member.CcRemoverFrame:Hide() end
+                if member.DebuffFrame then member.DebuffFrame:Hide() end
+            end
+        end
     end
 
     local function UpdatePartyTargets()
@@ -177,7 +190,17 @@ local function SetArenaFrame(index)
     end
 
     local function UpdateHealth()
-        if not IsLegalUnit() then return end
+        local max = UnitHealthMax(unit) or 1
+
+        if IsDeadOrGhost() then
+            health:SetMinMaxValues(0, max)
+            health:SetValue(0)
+            return
+        elseif not IsLegalUnit() then
+            health:SetMinMaxValues(0, 1)
+            health:SetValue(1)
+            return
+        end
         MVPF_Common.UpdateHealthBar(health, unit)
     end
 
@@ -355,6 +378,10 @@ local function SetArenaFrame(index)
                             end
                         end
                     end
+                    if MVPF_Arena_SetIconFrame then
+                        MVPF_Arena_SetIconFrame("CcRemoverFrame", "trinketAnchor")
+                        MVPF_Arena_SetIconFrame("DebuffFrame", "debuffAnchor")
+                    end
                 end
             end
             if IsInPrep() then
@@ -377,28 +404,45 @@ local function SetArenaFrame(index)
                 local member = _G[blizzFrame .. "Member" .. i]
                 local d = member and member[childKey]
                 local anchor = b[anchorKey]
+
                 if d and anchor then
                     d:ClearAllPoints()
                     d:SetSize(36, 36)
                     d:SetPoint("CENTER", anchor, "CENTER", 0, 0)
+
                     UpdateBorder(d)
+
                     local h = b.health or b.HealthBar
                     local baseLevel = h and h:GetFrameLevel() or b:GetFrameLevel()
                     d:SetFrameStrata("HIGH")
                     d:SetFrameLevel(baseLevel + 10)
 
-
                     local icon = d.Icon or d.Texture or (d.GetNormalTexture and d:GetNormalTexture())
                     local hasIcon = icon and icon:GetTexture()
-                    if hasIcon ~= nil then
+
+                    if hasIcon then
                         icon:SetDrawLayer("OVERLAY", 7)
-                    end
-                    anchor:SetShown(hasIcon ~= nil)
-                    if d.Border then
-                        d.Border:SetShown(hasIcon ~= nil)
+                        anchor:Show()
+                        if d.Border then
+                            d.Border:Show()
+                        end
+                    else
+                        if icon then
+                            icon:SetTexture(nil)
+                            icon:SetAlpha(0)
+                        end
+                        anchor:Hide()
+                        if d.Border then
+                            d.Border:Hide()
+                        end
+                        d:SetAlpha(0)
                     end
                 elseif anchor then
                     anchor:Hide()
+                    if anchor.Border then
+                        anchor.Border:Hide()
+                        anchor.Border:SetAlpha(0)
+                    end
                 end
             end
         end
@@ -437,6 +481,7 @@ local function SetArenaFrame(index)
             or event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS"
         then
             SetFrames()
+            HidePostGameFrames()
         end
     end)
 
@@ -455,8 +500,14 @@ local function MVPF_HookArenaMembers()
         if stealth then
             if not stealth.MVPF_Hooked then
                 stealth.MVPF_Hooked = true
+                stealth:Hide()
+                stealth:SetAlpha(0)
+                stealth.Show = stealth.Hide
+
                 hooksecurefunc(stealth, "UpdateShownState", function(self)
-                    --print("MVPF: StealthedUnitFrame:UpdateShownState", i)
+                    self:Hide()
+                    self:SetAlpha(0)
+
                     if MVPF_Arena_SetFrames then
                         MVPF_Arena_SetFrames()
                     end
