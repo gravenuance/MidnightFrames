@@ -1,19 +1,29 @@
-local addonName                = ...
+local addonName = ...
 
 -- ==============================
 -- Core secure player unit frame
 -- ==============================
 
 local f, auraContainer, health = MVPF_Common.CreateUnitFrame({
-    name     = "MVPF_PlayerFrame",
-    unit     = "player",
-    point    = { "CENTER", UIParent, "CENTER", -225, 0 },
-    size     = { 50, 220 },
+    name = "MVPF_PlayerFrame",
+    unit = "player",
+    point = { "CENTER", UIParent, "CENTER", -225, 0 },
+    size = { 50, 220 },
     maxAuras = 4,
     iconSize = 26,
 })
+
 f:SetAttribute("type2", "togglemenu")
+
 RegisterUnitWatch(f)
+
+-- Center power label on health bar
+local powerLabel = health:CreateFontString(nil, "OVERLAY")
+powerLabel:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
+powerLabel:SetPoint("CENTER", health, "CENTER", 0, 0)
+powerLabel:SetJustifyH("CENTER")
+powerLabel:SetJustifyV("MIDDLE")
+powerLabel:SetAlpha(1)
 
 local function UpdateHealthBar()
     MVPF_Common.UpdateHealthBar(health, "player")
@@ -22,7 +32,15 @@ end
 local function ApplyClassColor()
     local r, g, b = MVPF_Common.GetClassColor("player", 0, 0.8, 0)
     if not health then return end
+
+    -- Bar color
     health:SetStatusBarColor(r, g, b, 0.7)
+
+    -- Slightly darker text color
+    if powerLabel then
+        local dr, dg, db = r * 0.7, g * 0.7, b * 0.7
+        powerLabel:SetTextColor(dr, dg, db, 1)
+    end
 end
 
 local function UpdateTargetHighlight()
@@ -38,6 +56,7 @@ local function UpdateAuras()
         MVPF_Common.UpdateAuras(auraContainer, "player", {}, 0)
         return
     end
+
     MVPF_Common.UpdateAuras(
         auraContainer,
         "player",
@@ -46,11 +65,30 @@ local function UpdateAuras()
     )
 end
 
+-- ======================
+-- Power label update
+-- ======================
+
+local function UpdatePowerLabel()
+    if not powerLabel or not UnitExists("player") then return end
+
+    local power    = UnitPower("player")
+    local maxPower = UnitPowerMax("player")
+
+    if maxPower and maxPower > 0 then
+        local pct = (power / maxPower) * 100
+        powerLabel:SetText(string.format("%d", pct + 0.5))
+    else
+        powerLabel:SetText("")
+    end
+end
+
 -- ===================
 -- Event-driven wiring
 -- ===================
 
 local eventFrame = CreateFrame("Frame")
+
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("PLAYER_ALIVE")
@@ -59,6 +97,8 @@ eventFrame:RegisterEvent("UNIT_MAXHEALTH")
 eventFrame:RegisterEvent("UNIT_AURA")
 eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 eventFrame:RegisterEvent("UNIT_TARGET")
+eventFrame:RegisterEvent("UNIT_POWER_UPDATE")
+eventFrame:RegisterEvent("UNIT_MAXPOWER")
 
 eventFrame:SetScript("OnEvent", function(self, event, arg1)
     if event == "PLAYER_LOGIN"
@@ -68,8 +108,11 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         UpdateHealthBar()
         UpdateAuras()
         UpdateTargetHighlight()
+        UpdatePowerLabel()
     elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") and arg1 == "player" then
         UpdateHealthBar()
+    elseif (event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER") and arg1 == "player" then
+        UpdatePowerLabel()
     elseif event == "UNIT_AURA" and arg1 == "player" then
         UpdateAuras()
     elseif event == "PLAYER_TARGET_CHANGED" or (event == "UNIT_TARGET" and arg1 == "player") then
