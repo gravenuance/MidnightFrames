@@ -14,6 +14,7 @@ local stealthIcon = 132320
 local arenaKeepList = {
     DebuffFrame = true,
     CcRemoverFrame = true,
+    SpellDiminishStatusTray = true,
 }
 
 local function GetOpponentSpecAndClass(index)
@@ -132,6 +133,7 @@ local function SetArenaFrame(index)
     f.trinketAnchor = SetAnchor("Trinket", "TOP", "BOTTOM", 0, -30)
     f.debuffAnchor = SetAnchor("Debuff", "BOTTOM", "BOTTOM", 0, 30)
     f.statusIconAnchor = SetAnchor("StatusIcon", "CENTER", "CENTER", 0, 0, 36, 36)
+    f.diminishAnchor = SetAnchor("Diminish", "BOTTOM", "BOTTOM", 0, 40, 36, 120)
     f.statusIconAnchor:SetFrameLevel(f:GetFrameLevel() + 5)
 
     local outerBorder = CreateFrame("Frame", nil, f, "BackdropTemplate")
@@ -315,6 +317,66 @@ local function SetArenaFrame(index)
     end
     function f:UpdateVisibility() UpdateVisibility() end
 
+    local function LayoutSpellDiminishTray()
+        for i = 1, GetArenaSize() do
+            local b = _G[baseName .. i]
+            if b then
+                local member = _G[blizzFrame .. "Member" .. i]
+                local tray = member and member.SpellDiminishStatusTray
+                local anchor = b.diminishAnchor
+
+                if tray and anchor then
+                    tray:ClearAllPoints()
+                    tray:SetParent(b)
+                    tray:SetPoint("CENTER", anchor, "CENTER", 0, 0)
+                    tray:SetFrameStrata("HIGH")
+
+                    local function DoLayout()
+                        local last
+                        local iconIndex = 0
+                        for _, child in ipairs({ tray:GetChildren() }) do
+                            if child:IsObjectType("Frame") or child:IsObjectType("Button") then
+                                iconIndex = iconIndex + 1
+
+                                child:ClearAllPoints()
+                                child:SetSize(36, 36)
+
+                                if iconIndex == 1 then
+                                    child:SetPoint("BOTTOM", tray, "BOTTOM", 0, 0)
+                                else
+                                    child:SetPoint("BOTTOM", last, "TOP", 0, 2)
+                                end
+
+                                last = child
+                            end
+                        end
+                    end
+
+                    DoLayout()
+
+                    if not tray.MVPF_VerticalHooked then
+                        tray.MVPF_VerticalHooked = true
+
+                        tray:HookScript("OnShow", DoLayout)
+
+                        if tray.SetLayout then
+                            hooksecurefunc(tray, "SetLayout", DoLayout)
+                        end
+
+                        if tray.UpdateLayout then
+                            hooksecurefunc(tray, "UpdateLayout", DoLayout)
+                        end
+                    end
+                elseif anchor then
+                    anchor:Hide()
+                    if anchor.Border then
+                        anchor.Border:Hide()
+                        anchor.Border:SetAlpha(0)
+                    end
+                end
+            end
+        end
+    end
     local function SetFrames()
         local frame = _G["CompactArenaFrame"]
 
@@ -430,6 +492,7 @@ local function SetArenaFrame(index)
                         MVPF_Arena_SetIconFrame("CcRemoverFrame", "trinketAnchor")
                         MVPF_Arena_SetIconFrame("DebuffFrame", "debuffAnchor")
                     end
+                    LayoutSpellDiminishTray()
                 end
             end
 
@@ -458,7 +521,7 @@ local function SetArenaFrame(index)
                     d:SetSize(36, 36)
                     d:SetPoint("CENTER", anchor, "CENTER", 0, 0)
 
-                    UpdateBorder(d)
+                    --UpdateBorder(d)
 
                     local h = b.health or b.HealthBar
                     local baseLevel = h and h:GetFrameLevel() or b:GetFrameLevel()
@@ -504,6 +567,7 @@ local function SetArenaFrame(index)
     f:RegisterEvent("ARENA_OPPONENT_UPDATE")
     f:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
     f:RegisterEvent("PVP_MATCH_STATE_CHANGED")
+    f:RegisterEvent("UNIT_AURA")
 
     f:SetScript("OnEvent", function(self, event, arg1)
         if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
@@ -530,12 +594,18 @@ local function SetArenaFrame(index)
         then
             SetFrames()
             HidePostGameFrames()
+        elseif event == "UNIT_AURA" then
+            if arg1 == unit then
+                -- Aura changes on this arena unit; re-layout diminish tray
+                SetFrames()
+            end
         end
     end)
 
     if not MVPF_Arena_SetFrames then
         MVPF_Arena_SetIconFrame = SetIconFrame
         MVPF_Arena_SetFrames = SetFrames
+        MVPF_Arena_LayoutDimisnish = LayoutSpellDiminishTray
     end
 end
 
@@ -579,6 +649,16 @@ local function MVPF_HookArenaMembers()
                     --print("MVPF: DebuffFrame:UpdateShownState", i)
                     if MVPF_Arena_SetIconFrame then
                         MVPF_Arena_SetIconFrame("DebuffFrame", "debuffAnchor")
+                    end
+                end)
+            end
+
+            if member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MVPF_Hooked then
+                member.SpellDiminishStatusTray.MVPF_Hooked = true
+                hooksecurefunc(member.SpellDiminishStatusTray, "UpdateShownState", function(self)
+                    --print("MVPF: CcRemoverFrame:UpdateShownState", i)
+                    if MVPF_Arena_LayoutDimisnish then
+                        MVPF_Arena_LayoutDimisnish()
                     end
                 end)
             end
