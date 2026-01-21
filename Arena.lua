@@ -169,10 +169,44 @@ local function SetArenaFrame(index)
         end
 
         local count = 0
-        if UnitExists("party1") and UnitExists("party1target") and UnitIsUnit("party1target", unit) then
+
+        -- party1
+        local party1Exists = false
+        pcall(function()
+            if UnitExists("party1") then party1Exists = true end
+        end)
+
+        local party1TargetExists = false
+        pcall(function()
+            if UnitExists("party1target") then party1TargetExists = true end
+        end)
+
+        local party1IsUnit = false
+        pcall(function()
+            if UnitIsUnit("party1target", unit) then party1IsUnit = true end
+        end)
+
+        if party1Exists and party1TargetExists and party1IsUnit then
             count = count + 1
         end
-        if UnitExists("party2") and UnitExists("party2target") and UnitIsUnit("party2target", unit) then
+
+        -- party2
+        local party2Exists = false
+        pcall(function()
+            if UnitExists("party2") then party2Exists = true end
+        end)
+
+        local party2TargetExists = false
+        pcall(function()
+            if UnitExists("party2target") then party2TargetExists = true end
+        end)
+
+        local party2IsUnit = false
+        pcall(function()
+            if UnitIsUnit("party2target", unit) then party2IsUnit = true end
+        end)
+
+        if party2Exists and party2TargetExists and party2IsUnit then
             count = count + 1
         end
 
@@ -184,6 +218,7 @@ local function SetArenaFrame(index)
             outerBorder:SetBackdropBorderColor(1, 0, 0, 1)
         end
     end
+
     local function IsUnit(idx)
         local specID = GetArenaOpponentSpec(idx)
         return specID and specID > 0
@@ -282,112 +317,125 @@ local function SetArenaFrame(index)
 
     local function SetFrames()
         local frame = _G["CompactArenaFrame"]
+
+        -- Read match state once, up front
+        local matchState = C_PvP.GetActiveMatchState()
+        local isEngaged = (matchState == Enum.PvPMatchState.Engaged)
+        local isComplete = C_PvP.IsMatchComplete() == true
+        local isArena = C_PvP.IsMatchConsideredArena() == true
+
         for i = 1, GetArenaSize() do
             local mv = _G[baseName .. i]
             if mv then
                 mv:UpdateVisibility()
             end
-            if IsArenaInProgress() then
+
+            -- Use only plain booleans from above
+            local inProgress = isArena and isEngaged and not isComplete
+            local inPrep = isArena and not isEngaged and not isComplete and not MVPF_ArenaTestMode
+
+            if inProgress then
                 if IsInStealth(i) then
                     local stealth = frame and frame["StealthedUnitFrame" .. i]
                     if stealth and stealth:IsShown() then
                         stealth:Hide()
                     end
                 end
+
                 local member = _G[blizzFrame .. "Member" .. i]
                 if member then
                     if member.CastingBarFrame then
                         local cb = member.CastingBarFrame
-
-                        -- Stop future updates
                         cb:UnregisterAllEvents()
-
-                        -- Make it a no-op
                         cb.Show = cb.Hide
                         cb:Hide()
                     end
+
                     local children = { member:GetChildren() }
                     for _, child in ipairs(children) do
                         local field
-                        -- map child object back to its field name
                         for k, v in pairs(member) do
                             if v == child then
                                 field = k
                                 break
                             end
                         end
+
                         if field and not arenaKeepList[field] then
-                            local obj = child
-                            --print("Hiding")
-                            if obj.GetAlpha and obj:GetAlpha() ~= 0 then
-                                obj:SetAlpha(0)
-                            end
+                            pcall(function()
+                                local obj = child
 
-                            -- Visibility
-                            if obj.IsShown and obj:IsShown() then
-                                obj:Hide()
-                                hooksecurefunc(obj, "Show", obj.Hide)
-                            end
-
-                            -- Text region
-                            if obj.Text then
-                                obj.Text:SetAlpha(0)
-                            end
-
-                            -- Normal texture (buttons, statusbars)
-                            if obj.GetNormalTexture then
-                                local tex = obj:GetNormalTexture()
-                                if tex then
-                                    tex:SetTexture(nil)
-                                    tex:SetAlpha(0)
+                                if obj.GetAlpha then
+                                    local alpha = obj:GetAlpha()
+                                    if alpha and alpha ~= 0 then
+                                        obj:SetAlpha(0)
+                                    end
                                 end
-                            end
 
-                            -- Generic Icon field
-                            if obj.Icon and obj.Icon.GetTexture then
-                                obj.Icon:SetTexture(nil)
-                                obj.Icon:SetAlpha(0)
-                            end
+                                if obj.IsShown then
+                                    if obj:IsShown() then
+                                        obj:Hide()
+                                        hooksecurefunc(obj, "Show", obj.Hide)
+                                    end
+                                end
+
+                                if obj.Text then
+                                    obj.Text:SetAlpha(0)
+                                end
+
+                                if obj.GetNormalTexture then
+                                    local tex = obj:GetNormalTexture()
+                                    if tex then
+                                        tex:SetTexture(nil)
+                                        tex:SetAlpha(0)
+                                    end
+                                end
+
+                                if obj.Icon and obj.Icon.GetTexture then
+                                    obj.Icon:SetTexture(nil)
+                                    obj.Icon:SetAlpha(0)
+                                end
+                            end)
                         end
                     end
-                    -- Regions: textures/fontstrings parented directly to member or its
-                    -- non‑kept children
+
                     local regions = { member:GetRegions() }
                     for _, region in ipairs(regions) do
-                        if region:IsObjectType("Texture") or region:IsObjectType("FontString") then
-                            local parent = region:GetParent()
-                            local keep = false
+                        pcall(function()
+                            if region:IsObjectType("Texture") or region:IsObjectType("FontString") then
+                                local parent = region:GetParent()
+                                local keep = false
 
-                            -- If region belongs to a kept child, do not touch it
-                            if parent and parent ~= member then
-                                for k, v in pairs(member) do
-                                    if v == parent and arenaKeepList[k] then
-                                        keep = true
-                                        break
+                                if parent and parent ~= member then
+                                    for k, v in pairs(member) do
+                                        if v == parent and arenaKeepList[k] then
+                                            keep = true
+                                            break
+                                        end
+                                    end
+                                end
+
+                                if not keep then
+                                    region:SetAlpha(0)
+                                    region:Hide()
+                                    if region:IsObjectType("Texture") then
+                                        region:SetTexture(nil)
                                     end
                                 end
                             end
-
-                            if not keep then
-                                region:SetAlpha(0)
-                                region:Hide()
-                                -- Optional: strip texture
-                                if region:IsObjectType("Texture") then
-                                    region:SetTexture(nil)
-                                end
-                            end
-                        end
+                        end)
                     end
+
                     if MVPF_Arena_SetIconFrame then
                         MVPF_Arena_SetIconFrame("CcRemoverFrame", "trinketAnchor")
                         MVPF_Arena_SetIconFrame("DebuffFrame", "debuffAnchor")
                     end
                 end
             end
-            if IsInPrep() then
+
+            if inPrep then
                 local prematch = frame and frame.PreMatchFramesContainer
                 if prematch then
-                    --print("Hiding Pre")
                     local pf = prematch["PreMatchFrame" .. i]
                     if pf and pf:IsShown() then
                         pf:Hide()

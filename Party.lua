@@ -38,6 +38,7 @@ local function CreatePartyFrame(index)
 
     local function UpdateArenaTargets()
         if MVPF_PartyTestMode then return end
+
         if not UnitExists(unit) then
             outerBorder:SetBackdropBorderColor(0, 0, 0, 0)
             return
@@ -45,16 +46,63 @@ local function CreatePartyFrame(index)
 
         local count = 0
 
-        if UnitExists("arena1") and UnitExists("arena1target")
-            and UnitIsUnit("arena1target", unit) then
+        -- arena1
+        local a1Exists = false
+        pcall(function()
+            if UnitExists("arena1") then a1Exists = true end
+        end)
+
+        local a1TargetExists = false
+        pcall(function()
+            if UnitExists("arena1target") then a1TargetExists = true end
+        end)
+
+        local a1IsUnit = false
+        pcall(function()
+            if UnitIsUnit("arena1target", unit) then a1IsUnit = true end
+        end)
+
+        if a1Exists and a1TargetExists and a1IsUnit then
             count = count + 1
         end
-        if UnitExists("arena2") and UnitExists("arena2target")
-            and UnitIsUnit("arena2target", unit) then
+
+        -- arena2
+        local a2Exists = false
+        pcall(function()
+            if UnitExists("arena2") then a2Exists = true end
+        end)
+
+        local a2TargetExists = false
+        pcall(function()
+            if UnitExists("arena2target") then a2TargetExists = true end
+        end)
+
+        local a2IsUnit = false
+        pcall(function()
+            if UnitIsUnit("arena2target", unit) then a2IsUnit = true end
+        end)
+
+        if a2Exists and a2TargetExists and a2IsUnit then
             count = count + 1
         end
-        if UnitExists("arena3") and UnitExists("arena3target")
-            and UnitIsUnit("arena3target", unit) then
+
+        -- arena3
+        local a3Exists = false
+        pcall(function()
+            if UnitExists("arena3") then a3Exists = true end
+        end)
+
+        local a3TargetExists = false
+        pcall(function()
+            if UnitExists("arena3target") then a3TargetExists = true end
+        end)
+
+        local a3IsUnit = false
+        pcall(function()
+            if UnitIsUnit("arena3target", unit) then a3IsUnit = true end
+        end)
+
+        if a3Exists and a3TargetExists and a3IsUnit then
             count = count + 1
         end
 
@@ -66,6 +114,7 @@ local function CreatePartyFrame(index)
             outerBorder:SetBackdropBorderColor(1, 0, 0, 1)
         end
     end
+
 
 
     local function UpdateHealth()

@@ -72,15 +72,15 @@ end
 local function UpdatePowerLabel()
     if not powerLabel or not UnitExists("player") then return end
 
-    local power    = UnitPower("player")
-    local maxPower = UnitPowerMax("player")
-
-    if maxPower and maxPower > 0 then
-        local pct = (power / maxPower) * 100
-        powerLabel:SetText(string.format("%d", pct + 0.5))
-    else
+    -- Fetch secret or normal power; do not touch it arithmetically
+    local power = UnitPower("player")
+    if power == nil then
         powerLabel:SetText("")
+        return
     end
+
+    -- Convert to string without doing math; concatenation is allowed
+    powerLabel:SetText(tostring(power))
 end
 
 -- ===================
