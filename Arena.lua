@@ -155,7 +155,7 @@ local function SetArenaFrame(index)
 
     local function HidePostGameFrames()
         if not C_PvP.IsMatchComplete() then return end
-        for i = 1, 5 do -- Up to 5 arena opponents
+        for i = 1, 3 do
             local member = _G[blizzFrame .. "Member" .. i]
             if member then
                 if member.CcRemoverFrame then member.CcRemoverFrame:Hide() end
@@ -377,10 +377,10 @@ local function SetArenaFrame(index)
             end
         end
     end
+
     local function SetFrames()
         local frame = _G["CompactArenaFrame"]
 
-        -- Read match state once, up front
         local matchState = C_PvP.GetActiveMatchState()
         local isEngaged = (matchState == Enum.PvPMatchState.Engaged)
         local isComplete = C_PvP.IsMatchComplete() == true
@@ -392,7 +392,6 @@ local function SetArenaFrame(index)
                 mv:UpdateVisibility()
             end
 
-            -- Use only plain booleans from above
             local inProgress = isArena and isEngaged and not isComplete
             local inPrep = isArena and not isEngaged and not isComplete and not MVPF_ArenaTestMode
 
@@ -521,8 +520,6 @@ local function SetArenaFrame(index)
                     d:SetSize(36, 36)
                     d:SetPoint("CENTER", anchor, "CENTER", 0, 0)
 
-                    --UpdateBorder(d)
-
                     local h = b.health or b.HealthBar
                     local baseLevel = h and h:GetFrameLevel() or b:GetFrameLevel()
                     d:SetFrameStrata("HIGH")
@@ -596,7 +593,6 @@ local function SetArenaFrame(index)
             HidePostGameFrames()
         elseif event == "UNIT_AURA" then
             if arg1 == unit then
-                -- Aura changes on this arena unit; re-layout diminish tray
                 SetFrames()
             end
         end
@@ -636,7 +632,6 @@ local function MVPF_HookArenaMembers()
             if member.CcRemoverFrame and not member.CcRemoverFrame.MVPF_Hooked then
                 member.CcRemoverFrame.MVPF_Hooked = true
                 hooksecurefunc(member.CcRemoverFrame, "UpdateShownState", function(self)
-                    --print("MVPF: CcRemoverFrame:UpdateShownState", i)
                     if MVPF_Arena_SetIconFrame then
                         MVPF_Arena_SetIconFrame("CcRemoverFrame", "trinketAnchor")
                     end
@@ -646,7 +641,6 @@ local function MVPF_HookArenaMembers()
             if member.DebuffFrame and not member.DebuffFrame.MVPF_Hooked then
                 member.DebuffFrame.MVPF_Hooked = true
                 hooksecurefunc(member.DebuffFrame, "UpdateShownState", function(self)
-                    --print("MVPF: DebuffFrame:UpdateShownState", i)
                     if MVPF_Arena_SetIconFrame then
                         MVPF_Arena_SetIconFrame("DebuffFrame", "debuffAnchor")
                     end
@@ -656,7 +650,6 @@ local function MVPF_HookArenaMembers()
             if member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MVPF_Hooked then
                 member.SpellDiminishStatusTray.MVPF_Hooked = true
                 hooksecurefunc(member.SpellDiminishStatusTray, "UpdateShownState", function(self)
-                    --print("MVPF: CcRemoverFrame:UpdateShownState", i)
                     if MVPF_Arena_LayoutDimisnish then
                         MVPF_Arena_LayoutDimisnish()
                     end
@@ -666,7 +659,6 @@ local function MVPF_HookArenaMembers()
             if member and member.CastingBarFrame and not member.CastingBarFrame.MVPF_Hooked then
                 local cb = member.CastingBarFrame
                 cb.MVPF_Hooked = true
-
                 hooksecurefunc(cb, "Show", cb.Hide) -- any future Show becomes Hide
             end
         end
@@ -684,8 +676,6 @@ local function MVPF_SetupArenaHooks()
         end)
     end
 end
-
-
 
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("PLAYER_LOGIN")

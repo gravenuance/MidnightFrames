@@ -1,6 +1,5 @@
 local MVPF_Common = {}
 
-local GetTime = GetTime
 local CUnitAuras = C_UnitAuras
 
 local MVPF_DISPEL_ALPHA = 0.85
@@ -10,13 +9,6 @@ local MVPF_DISPEL_NAME_TO_ID = {
     Disease = 3,
     Poison  = 4,
 }
-
-MVPF_DEBUG_AURAS = false -- turn off later when done
-
-local function MVPF_Debug(...)
-    if not MVPF_DEBUG_AURAS then return end
-    print("|cffff8800MVPF Auras:|r", ...)
-end
 
 local function MVPF_ApplyAuraDispelBorderColor(btn, auraData)
     local border = btn and btn.border

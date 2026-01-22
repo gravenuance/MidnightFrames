@@ -1,5 +1,3 @@
-local addonName     = ...
-
 local baseName      = "MVPF_PartyFrame"
 local SOLID_TEXTURE = "Interface\\Buttons\\WHITE8x8"
 

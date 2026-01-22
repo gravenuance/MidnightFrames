@@ -18,7 +18,7 @@ f:SetAttribute("type2", "togglemenu")
 RegisterUnitWatch(f)
 
 -- Center power label on health bar
-local powerLabel = health:CreateFontString(nil, "OVERLAY")
+local powerLabel = f:CreateFontString(nil, "OVERLAY")
 powerLabel:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
 powerLabel:SetPoint("CENTER", health, "CENTER", 0, 0)
 powerLabel:SetJustifyH("CENTER")

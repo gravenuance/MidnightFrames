@@ -1,7 +1,3 @@
-local addonName = ...
-
-local frameName = "MVPF_TargetFrame"
-
 MVPF_TargetTestMode = false
 
 local IsDriverRegistered = false
@@ -19,8 +15,6 @@ local f, auraContainer, health = MVPF_Common.CreateUnitFrame({
     iconSize = 26,
 })
 f:SetAttribute("type2", "togglemenu")
---RegisterUnitWatch(f)
-
 
 local function UpdateVisibility()
     if InCombatLockdown() then return end
@@ -33,8 +27,6 @@ local function UpdateVisibility()
         IsDriverRegistered = true
     end
 end
---UpdateVisibility()
-
 
 
 local function UpdateHealth()
