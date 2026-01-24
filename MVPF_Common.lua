@@ -1,10 +1,8 @@
-local MVPF_Common                   = {}
+local MVPF_Common               = {}
 
-local C_UnitAuras                   = C_UnitAuras
+local C_UnitAuras               = C_UnitAuras
 
-local ONLY_SHOW_CROWD_CONTROL_AURAS = false
-
-Enum.DispelType                     = {
+Enum.DispelType                 = {
   None    = 0,
   Magic   = 1,
   Curse   = 2,
@@ -14,14 +12,14 @@ Enum.DispelType                     = {
   Bleed   = 11,
 }
 
-local dispel                        = {}
-dispel[Enum.DispelType.None]        = _G.DEBUFF_TYPE_NONE_COLOR
-dispel[Enum.DispelType.Magic]       = _G.DEBUFF_TYPE_MAGIC_COLOR
-dispel[Enum.DispelType.Curse]       = _G.DEBUFF_TYPE_CURSE_COLOR
-dispel[Enum.DispelType.Disease]     = _G.DEBUFF_TYPE_DISEASE_COLOR
-dispel[Enum.DispelType.Poison]      = _G.DEBUFF_TYPE_POISON_COLOR
-dispel[Enum.DispelType.Bleed]       = _G.DEBUFF_TYPE_BLEED_COLOR
-dispel[Enum.DispelType.Enrage]      = CreateColor(243 / 255, 95 / 255, 245 / 255, 1)
+local dispel                    = {}
+dispel[Enum.DispelType.None]    = _G.DEBUFF_TYPE_NONE_COLOR
+dispel[Enum.DispelType.Magic]   = _G.DEBUFF_TYPE_MAGIC_COLOR
+dispel[Enum.DispelType.Curse]   = _G.DEBUFF_TYPE_CURSE_COLOR
+dispel[Enum.DispelType.Disease] = _G.DEBUFF_TYPE_DISEASE_COLOR
+dispel[Enum.DispelType.Poison]  = _G.DEBUFF_TYPE_POISON_COLOR
+dispel[Enum.DispelType.Bleed]   = _G.DEBUFF_TYPE_BLEED_COLOR
+dispel[Enum.DispelType.Enrage]  = CreateColor(243 / 255, 95 / 255, 245 / 255, 1)
 
 local dispelTypeCurve
 
