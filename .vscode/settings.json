@@ -21,7 +21,11 @@
       "UnregisterUnitWatch",
       "RAID_CLASS_COLORS",
       "CompactArenaFrame",
-      "SlashCmdList"
+      "SlashCmdList",
+      "TALENT_BUILD_CHAT_LINK_TEXT",
+      "ENABLE",
+      "CLOSE",
+      "MP"
     ],
     "Lua.type.weakUnionCheck": true
 }

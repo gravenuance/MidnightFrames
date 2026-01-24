@@ -1,4 +1,4 @@
-local addonName = ...
+local addonName, MVPF = ...
 
 -- ==============================
 -- Core secure player unit frame
@@ -80,10 +80,18 @@ local function UpdateAuras()
     return
   end
 
+  local filters = {}
+  local cfg = MVPF.GetUnitFilters("player")
+
+  for filter, enabled in pairs(cfg) do
+    if enabled then
+      table.insert(filters, filter)
+    end
+  end
   MVPF_Common.UpdateAuras(
     auraContainer,
     "player",
-    { "HELPFUL RAID", "HARMFUL RAID" },
+    filters,
     20
   )
 end
