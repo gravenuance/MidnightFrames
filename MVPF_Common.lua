@@ -1,8 +1,10 @@
-local MVPF_Common               = {}
+local MVPF_Common                   = {}
 
-local C_UnitAuras               = C_UnitAuras
+local C_UnitAuras                   = C_UnitAuras
 
-Enum.DispelType                 = {
+local ONLY_SHOW_CROWD_CONTROL_AURAS = false
+
+Enum.DispelType                     = {
   None    = 0,
   Magic   = 1,
   Curse   = 2,
@@ -12,14 +14,14 @@ Enum.DispelType                 = {
   Bleed   = 11,
 }
 
-local dispel                    = {}
-dispel[Enum.DispelType.None]    = _G.DEBUFF_TYPE_NONE_COLOR
-dispel[Enum.DispelType.Magic]   = _G.DEBUFF_TYPE_MAGIC_COLOR
-dispel[Enum.DispelType.Curse]   = _G.DEBUFF_TYPE_CURSE_COLOR
-dispel[Enum.DispelType.Disease] = _G.DEBUFF_TYPE_DISEASE_COLOR
-dispel[Enum.DispelType.Poison]  = _G.DEBUFF_TYPE_POISON_COLOR
-dispel[Enum.DispelType.Bleed]   = _G.DEBUFF_TYPE_BLEED_COLOR
-dispel[Enum.DispelType.Enrage]  = CreateColor(243 / 255, 95 / 255, 245 / 255, 1)
+local dispel                        = {}
+dispel[Enum.DispelType.None]        = _G.DEBUFF_TYPE_NONE_COLOR
+dispel[Enum.DispelType.Magic]       = _G.DEBUFF_TYPE_MAGIC_COLOR
+dispel[Enum.DispelType.Curse]       = _G.DEBUFF_TYPE_CURSE_COLOR
+dispel[Enum.DispelType.Disease]     = _G.DEBUFF_TYPE_DISEASE_COLOR
+dispel[Enum.DispelType.Poison]      = _G.DEBUFF_TYPE_POISON_COLOR
+dispel[Enum.DispelType.Bleed]       = _G.DEBUFF_TYPE_BLEED_COLOR
+dispel[Enum.DispelType.Enrage]      = CreateColor(243 / 255, 95 / 255, 245 / 255, 1)
 
 local dispelTypeCurve
 
@@ -191,6 +193,20 @@ function MVPF_Common.CreateAuraButton(parent, index)
   btn.cooldown:SetAllPoints(btn)
   btn.cooldown:Hide()
 
+  -- Tooltip handlers
+  btn:SetScript("OnEnter", function(self)
+    if not self.unit or not self.auraInstanceID or GameTooltip:IsForbidden() then
+      return
+    end
+    GameTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT")
+    GameTooltip:SetUnitAuraByAuraInstanceID(self.unit, self.auraInstanceID)
+  end)
+
+  btn:SetScript("OnLeave", function()
+    if GameTooltip:IsForbidden() then return end
+    GameTooltip:Hide()
+  end)
+
   return btn
 end
 
@@ -233,8 +249,23 @@ function MVPF_SetAuraTexture(btn, auraData)
   return true
 end
 
+local function IsCrowdControl(aura)
+  if not C_Spell or not C_Spell.IsSpellCrowdControl then
+    return false
+  end
+
+  local ok, isCC = pcall(C_Spell.IsSpellCrowdControl, aura.spellId)
+  if ok and isCC then
+    return true
+  end
+
+  return false
+end
+
 function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
-  if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then
+  if not C_UnitAuras
+      or not C_UnitAuras.GetAuraDataByIndex
+      or not UnitExists(unit) then
     for i = 1, container.maxAuras do
       local btn = container.icons[i]
       if btn then
@@ -245,7 +276,7 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
     return
   end
 
-  if not UnitExists(unit) then
+  --[[ if not UnitExists(unit) then
     for i = 1, container.maxAuras do
       local btn = container.icons[i]
       if btn then
@@ -254,10 +285,11 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
       end
     end
     return
-  end
+  end ]]
 
-  local shown = 0
-  maxRemaining = maxRemaining or 20
+  local shown = 1
+  maxRemaining = maxRemaining or 8
+  local seen = {}
 
   local function AddAuras(filter)
     local auraList, totalAuras
@@ -279,7 +311,7 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
     end
 
     for listIndex = 1, totalAuras do
-      if shown >= container.maxAuras then
+      if shown > container.maxAuras then
         break
       end
 
@@ -288,12 +320,20 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
         break
       end
 
+      --if MVPF_DB and MVPF_DB.onlyShowCrowdControlAuras and not IsCrowdControl(auraData) then
+      --  break
+      --end
+
+      if seen[auraData.auraInstanceID] then
+        break
+      else
+        seen[auraData.auraInstanceID] = true
+      end
+
       if auraData.icon then
-        shown = shown + 1
         local btn = container.icons[shown]
 
         if not MVPF_SetAuraTexture(btn, auraData) then
-          shown = shown - 1
           break
         end
 
@@ -309,7 +349,7 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
 
         MVPF_ApplyAuraCooldown(btn, unit, auraData)
         MVPF_ApplyAuraDispelBorderColor(btn, unit, auraData)
-
+        shown = shown + 1
         btn:Show()
       end
     end
@@ -319,7 +359,7 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
     AddAuras(filter)
   end
 
-  for i = shown + 1, container.maxAuras do
+  for i = shown, container.maxAuras do
     local btn = container.icons[i]
     if btn then
       btn:Hide()

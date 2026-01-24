@@ -1,10 +1,11 @@
-local addonName, MVPF = ...
+local _, MVPF       = ...
 
-local baseName        = "MVPF_PartyFrame"
-local SOLID_TEXTURE   = "Interface\\Buttons\\WHITE8x8"
+local baseName      = "MVPF_PartyFrame"
+local SOLID_TEXTURE = "Interface\\Buttons\\WHITE8x8"
 
-MVPF_PartyTestMode    = false
+MVPF_PartyTestMode  = false
 
+local MAX_AURAS     = 3
 
 
 -- ===========================
@@ -20,7 +21,7 @@ local function CreatePartyFrame(index)
     unit     = unit,
     point    = { "CENTER", UIParent, "CENTER", -280 - (index - 1) * 55, 0 },
     size     = { 50, 210 },
-    maxAuras = 3,
+    maxAuras = MAX_AURAS,
     iconSize = 26,
   })
   f:SetAttribute("type2", "togglemenu")
@@ -170,7 +171,7 @@ local function CreatePartyFrame(index)
       auraContainer,
       unit,
       filters,
-      20
+      MAX_AURAS
     )
   end
 

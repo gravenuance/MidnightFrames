@@ -1,9 +1,10 @@
-local addonName, MVPF = ...
+local _, MVPF = ...
 
 MVPF_TargetTestMode = false
 
 local IsDriverRegistered = false
 
+local MAX_AURAS = 4
 -- ============================
 -- Core secure target unit frame
 -- ============================
@@ -13,7 +14,7 @@ local f, auraContainer, health = MVPF_Common.CreateUnitFrame({
   unit     = "target",
   point    = { "CENTER", UIParent, "CENTER", 225, 0 },
   size     = { 50, 220 },
-  maxAuras = 4,
+  maxAuras = MAX_AURAS,
   iconSize = 26,
 })
 f:SetAttribute("type2", "togglemenu")
@@ -65,7 +66,7 @@ local function UpdateAuras()
     auraContainer,
     "target",
     filters,
-    20
+    MAX_AURAS
   )
 end
 

@@ -1,5 +1,6 @@
-local addonName, MVPF = ...
+local _, MVPF = ...
 
+local MAX_AURAS = 4
 -- ==============================
 -- Core secure player unit frame
 -- ==============================
@@ -9,7 +10,7 @@ local f, auraContainer, health = MVPF_Common.CreateUnitFrame({
   unit = "player",
   point = { "CENTER", UIParent, "CENTER", -225, 0 },
   size = { 50, 220 },
-  maxAuras = 4,
+  maxAuras = MAX_AURAS,
   iconSize = 26,
 })
 
@@ -92,7 +93,7 @@ local function UpdateAuras()
     auraContainer,
     "player",
     filters,
-    20
+    MAX_AURAS
   )
 end
 

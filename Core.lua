@@ -1,4 +1,4 @@
-local addonName, MVPF   = ...
+local _, MVPF           = ...
 
 local baseName          = "MVPF_Core"
 
@@ -62,52 +62,49 @@ end)
 local DEFAULT_FILTERS = {
   player = {
     -- Helpful
-    ["HELPFUL CANCELABLE"]        = false,
-    ["HELPFUL PLAYER CANCELABLE"] = false,
-    ["HELPFUL RAID CANCELABLE"]   = true,
+    ["HELPFUL|INCLUDE_NAME_PLATE_ONLY"]        = false,
+    ["HELPFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = false,
+    ["HELPFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = true,
 
     -- Harmful
-    ["HARMFUL"]                   = false,
-    ["HARMFUL PLAYER"]            = false,
-    ["HARMFUL RAID"]              = true,
+    ["HARMFUL|INCLUDE_NAME_PLATE_ONLY"]        = false,
+    ["HARMFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = false,
+    ["HARMFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = true,
   },
 
   target = {
     -- Helpful
-    ["HELPFUL"]                   = false,
-    ["HELPFUL PLAYER CANCELABLE"] = true,
-    ["HELPFUL RAID CANCELABLE"]   = true,
+    ["HELPFUL|INCLUDE_NAME_PLATE_ONLY"]        = false,
+    ["HELPFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = true,
+    ["HELPFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = true,
 
     -- Harmful
-    ["HARMFUL"]                   = false,
-    ["HARMFUL PLAYER"]            = true,
-    ["HARMFUL RAID"]              = true,
+    ["HARMFUL|INCLUDE_NAME_PLATE_ONLY"]        = false,
+    ["HARMFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = true,
+    ["HARMFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = true,
   },
 
   party = {
     -- Helpful
-    ["HELPFUL CANCELABLE"]        = false,
-    ["HELPFUL PLAYER CANCELABLE"] = true,
-    ["HELPFUL RAID CANCELABLE"]   = false,
+    ["HELPFUL|INCLUDE_NAME_PLATE_ONLY"]        = false,
+    ["HELPFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = true,
+    ["HELPFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = false,
 
     -- Harmful
-    ["HARMFUL"]                   = false,
-    ["HARMFUL PLAYER"]            = false,
-    ["HARMFUL RAID"]              = true,
+    ["HARMFUL|INCLUDE_NAME_PLATE_ONLY"]        = false,
+    ["HARMFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = false,
+    ["HARMFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = true,
   },
 }
 
 local FILTER_LABELS = {
-  ["HELPFUL"]                   = "Helpful (Any)",
-  ["HELPFUL CANCELABLE"]        = "Helpful (Any, Cancelable)",
-  ["HELPFUL PLAYER"]            = "Helpful (Player)",
-  ["HELPFUL PLAYER CANCELABLE"] = "Helpful (Player, Cancelable)",
-  ["HELPFUL RAID"]              = "Helpful (Raid)",
-  ["HELPFUL RAID CANCELABLE"]   = "Helpful (Raid, Cancelable)",
+  ["HELPFUL|INCLUDE_NAME_PLATE_ONLY"]        = "Helpful (Any)",
+  ["HELPFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = "Helpful (Player)",
+  ["HELPFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = "Helpful (Raid)",
 
-  ["HARMFUL"]                   = "Harmful (Any)",
-  ["HARMFUL PLAYER"]            = "Harmful (Player)",
-  ["HARMFUL RAID"]              = "Harmful (Raid)",
+  ["HARMFUL|INCLUDE_NAME_PLATE_ONLY"]        = "Harmful (Any)",
+  ["HARMFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = "Harmful (Player)",
+  ["HARMFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = "Harmful (Raid)",
 }
 
 local UNIT_LABELS = {
@@ -135,9 +132,54 @@ local function BuildOptionsTable()
       order = 0,
       name  = "Select which aura filters to track per frame.\n",
     },
+    onlyShowCC = {
+      type  = "toggle",
+      name  = "Only show crowd control auras",
+      desc  = "When enabled, aura lists only show spells flagged as crowd control.",
+      order = 5,
+      get   = function()
+        return MVPF_DB.onlyShowCrowdControlAuras
+      end,
+      set   = function(_, val)
+        MVPF_DB.onlyShowCrowdControlAuras = val
+      end,
+    }
   }
 
-  local order = 10
+  args.testingHeader = {
+    type  = "header",
+    name  = "Testing",
+    order = 7,
+  }
+
+  args.testTarget = {
+    type  = "execute",
+    name  = "Toggle Target Test Mode",
+    order = 8,
+    func  = function()
+      MVPF_Common.ToggleTestMode("target", not MVPF_TargetTestMode)
+    end,
+  }
+
+  args.testParty = {
+    type  = "execute",
+    name  = "Toggle Party Test Mode",
+    order = 9,
+    func  = function()
+      MVPF_Common.ToggleTestMode("party", not MVPF_PartyTestMode)
+    end,
+  }
+
+  args.testArena = {
+    type  = "execute",
+    name  = "Toggle Arena Test Mode",
+    order = 10,
+    func  = function()
+      MVPF_Common.ToggleTestMode("arena", not MVPF_ArenaTestMode)
+    end,
+  }
+
+  local order = 11
 
   for unitKey, unitDefaults in pairs(DEFAULT_FILTERS) do
     -- Header per unit (Player, Target, Party)
@@ -194,6 +236,7 @@ function MVPF.InitConfigAndOptions()
     target = {},
     party  = {},
   }
+  MVPF_DB.onlyShowCrowdControlAuras = MVPF_DB.onlyShowCrowdControlAuras or false
 
   -- Apply defaults for any missing filter on each unit
   for unit, defaults in pairs(DEFAULT_FILTERS) do
