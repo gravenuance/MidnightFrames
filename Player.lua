@@ -23,7 +23,7 @@ local powerLabel
 if health then
   powerLabel = health:CreateFontString(nil, "OVERLAY")
   powerLabel:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
-  powerLabel:SetPoint("CENTER", health, "CENTER", 0, 0)
+  powerLabel:SetPoint("BOTTOM", health, "TOP", 0, -20)
   powerLabel:SetJustifyH("CENTER")
   powerLabel:SetJustifyV("MIDDLE")
   powerLabel:SetAlpha(1)
