@@ -95,7 +95,7 @@ local function IsArenaInProgress()
 end
 
 local function IsInStealth(index)
-    local unit   = "arena" .. index
+    --local unit   = "arena" .. index
     local specID = GetArenaOpponentSpec(index)
 
     -- Must be a real opponent slot
@@ -103,8 +103,11 @@ local function IsInStealth(index)
         return false
     end
 
+    local frame = _G["CompactArenaFrame"]
+    local stealth = frame and frame["StealthedUnitFrame" .. index]
+
     -- In an active match, “no unit yet” for a real slot means stealthed
-    if IsArenaInProgress() and not UnitExists(unit) then
+    if IsArenaInProgress() and stealth and stealth:IsShown() then
         return true
     end
 
@@ -574,7 +577,7 @@ local function SetArenaFrame(index)
             UpdatePartyTargets()
             UpdateTargetHighlight()
         end
-        if not IsInArena then return end
+        if not IsInArena() then return end
         if (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
             if arg1 == unit then
                 UpdateHealth()
