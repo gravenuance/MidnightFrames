@@ -1,6 +1,11 @@
 local _, MVPF = ...
 
 local MAX_AURAS = 4
+
+local C_CurveUtil = C_CurveUtil
+local UnitPowerPercent = UnitPowerPercent
+
+local DEFAULT_SIZE = 36
 -- ==============================
 -- Core secure player unit frame
 -- ==============================
@@ -11,7 +16,7 @@ local f, auraContainer, health = MVPF_Common.CreateUnitFrame({
   point = { "CENTER", UIParent, "CENTER", -225, 0 },
   size = { 50, 220 },
   maxAuras = MAX_AURAS,
-  iconSize = 26,
+  iconSize = DEFAULT_SIZE,
 })
 
 f:SetAttribute("type2", "togglemenu")
@@ -133,11 +138,14 @@ eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 eventFrame:RegisterEvent("UNIT_TARGET")
 eventFrame:RegisterEvent("UNIT_POWER_UPDATE")
 eventFrame:RegisterEvent("UNIT_MAXPOWER")
+eventFrame:RegisterEvent("ZONE_CHANGED")
+eventFrame:RegisterEvent("UNIT_PET")
 
-eventFrame:SetScript("OnEvent", function(self, event, arg1)
+eventFrame:SetScript("OnEvent", function(_, event, arg1)
   if event == "PLAYER_LOGIN"
       or event == "PLAYER_ENTERING_WORLD"
-      or event == "PLAYER_ALIVE" then
+      or event == "PLAYER_ALIVE"
+      or event == "ZONE_CHANGED" then
     ApplyClassColor()
     UpdateHealthBar()
     UpdatePetHealthBar()
@@ -150,6 +158,8 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
     elseif arg1 == "pet" then
       UpdatePetHealthBar()
     end
+  elseif event == "UNIT_PET" and arg1 == "player" then
+    UpdatePetHealthBar()
   elseif (event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER") and arg1 == "player" then
     UpdatePowerLabel()
   elseif event == "UNIT_AURA" and arg1 == "player" then

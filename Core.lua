@@ -179,7 +179,7 @@ local function BuildOptionsTable()
     end,
   }
 
-  local order = 11
+  local order = 15
 
   for unitKey, unitDefaults in pairs(DEFAULT_FILTERS) do
     -- Header per unit (Player, Target, Party)

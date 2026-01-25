@@ -1,6 +1,7 @@
 local MVPF_Common               = {}
 
 local C_UnitAuras               = C_UnitAuras
+local C_CurveUtil               = C_CurveUtil
 
 Enum.DispelType                 = {
   None    = 0,
@@ -147,7 +148,7 @@ function MVPF_Common.CreateUnitFrame(params)
   health:SetFrameStrata("MEDIUM")
   health:SetFrameLevel(f:GetFrameLevel() + 1)
   f.health = health
-  if kind == "arena" then
+  if kind == "arena" or kind == "boss" then
     return f, health
   end
   -- Aura container
@@ -227,10 +228,8 @@ function MVPF_SetAuraTexture(btn, auraData)
     print("MVPF_SetAuraTexture: invalid button")
     return false
   end
-  -- Clear previous texture state explicitly
   btn.icon:SetTexture(nil)
 
-  -- No aura or no icon: use fallback and bail
   if not auraData or not auraData.icon then
     print("MVPF_SetAuraTexture: no aura data or icon")
     return false
@@ -238,26 +237,12 @@ function MVPF_SetAuraTexture(btn, auraData)
 
   local tex = auraData.icon
 
-  -- Normalize common cases: numeric file IDs or string paths
   if type(tex) ~= "number" and type(tex) ~= "string" then
     print("MVPF_SetAuraTexture: invalid icon type: " .. tostring(tex))
     return false
   end
   btn.icon:SetTexture(tex)
   return true
-end
-
-local function IsCrowdControl(aura)
-  if not C_Spell or not C_Spell.IsSpellCrowdControl then
-    return false
-  end
-
-  local ok, isCC = pcall(C_Spell.IsSpellCrowdControl, aura.spellId)
-  if ok and isCC then
-    return true
-  end
-
-  return false
 end
 
 function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
@@ -273,17 +258,6 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
     end
     return
   end
-
-  --[[ if not UnitExists(unit) then
-    for i = 1, container.maxAuras do
-      local btn = container.icons[i]
-      if btn then
-        btn:Hide()
-        if btn.cooldown then btn.cooldown:Hide() end
-      end
-    end
-    return
-  end ]]
 
   local shown = 1
   maxRemaining = maxRemaining or 8
@@ -317,10 +291,6 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
       if not auraData then
         break
       end
-
-      --if MVPF_DB and MVPF_DB.onlyShowCrowdControlAuras and not IsCrowdControl(auraData) then
-      --  break
-      --end
 
       if seen[auraData.auraInstanceID] then
         break
@@ -401,16 +371,15 @@ function MVPF_Common.GetClassColor(unit, fr, fg, fb)
   local _, class = UnitClass(unit)
   local c = class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
   if c then
-    return c.r, c.g, c.b
-  end
-  -- 2) For non-player units, fall back to reaction-based NPC colors
-  if unit and UnitExists(unit) and not UnitIsPlayer(unit) then
-    local nr, ng, nb = MVPF_GetNPCReactionColor(unit)
-    return nr, ng, nb
+    return c.r, c.g, c.b, true
   end
 
-  -- 3) Final fallback
-  return fr or 0, fg or 0.8, fb or 0
+  if unit and UnitExists(unit) and not UnitIsPlayer(unit) then
+    local nr, ng, nb = MVPF_GetNPCReactionColor(unit)
+    return nr, ng, nb, true
+  end
+
+  return fr or 0, fg or 0.8, fb or 0, false
 end
 
 -- Highlight
@@ -423,9 +392,25 @@ function MVPF_Common.UpdateTargetHighlight(frame, unit, testFlag)
   end
 end
 
+local function IsDeadOrGhost(unit)
+  return UnitExists(unit) and UnitIsDeadOrGhost(unit) and not MVPF_ArenaTestMode
+end
+local function IsLegalUnit(unit)
+  return UnitIsConnected(unit) and UnitExists(unit) and not MVPF_ArenaTestMode
+end
+
 -- Update Health
 function MVPF_Common.UpdateHealthBar(healthBar, unit)
   local maxHealth = UnitHealthMax(unit) or 1
+  if IsDeadOrGhost(unit) then
+    healthBar:SetMinMaxValues(0, maxHealth)
+    healthBar:SetValue(0)
+    return
+  elseif not IsLegalUnit(unit) then
+    healthBar:SetMinMaxValues(0, 1)
+    healthBar:SetValue(1)
+    return
+  end
   local curHealth = UnitHealth(unit) or 1
   healthBar:SetMinMaxValues(0, maxHealth)
   healthBar:SetValue(curHealth)

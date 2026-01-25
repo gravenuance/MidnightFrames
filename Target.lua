@@ -5,6 +5,8 @@ MVPF_TargetTestMode = false
 local IsDriverRegistered = false
 
 local MAX_AURAS = 4
+
+local DEFAULT_SIZE = 36
 -- ============================
 -- Core secure target unit frame
 -- ============================
@@ -15,7 +17,7 @@ local f, auraContainer, health = MVPF_Common.CreateUnitFrame({
   point    = { "CENTER", UIParent, "CENTER", 225, 0 },
   size     = { 50, 220 },
   maxAuras = MAX_AURAS,
-  iconSize = 26,
+  iconSize = DEFAULT_SIZE,
 })
 f:SetAttribute("type2", "togglemenu")
 
@@ -90,7 +92,7 @@ f:RegisterEvent("UNIT_NAME_UPDATE")
 f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-f:SetScript("OnEvent", function(self, event, arg1)
+f:SetScript("OnEvent", function(_, event, arg1)
   if (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
     MVPF_TargetTestMode = false
     UpdateVisibility()

@@ -12,3 +12,4 @@ Party.lua
 Player.lua
 Target.lua
 Arena.lua
+Boss.lua
