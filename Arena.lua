@@ -153,8 +153,9 @@ local function SetArenaFrame(index)
   f.statusIconAnchor:SetFrameLevel(f:GetFrameLevel() + 5)
 
   local function SetClassColor(alpha)
-    local r, g, b, exists = MVPF_Common.GetClassColor(unit)
-    if exists then
+    local _, c = GetOpponentSpecAndClass(index)
+    if c then
+      local r, g, b = GetClassColors(c)
       health:SetStatusBarColor(r, g, b, alpha or regAlpha)
       return true
     end

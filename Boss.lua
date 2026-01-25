@@ -5,7 +5,7 @@ local MAX_BOSS_FRAMES = 5
 local blizzContainerName = "BossTargetFrameContainer"
 local blizzFrameBase = "Boss" -- Boss1TargetFrame, Boss2TargetFrame, ...
 
-function IsInInstance()
+function InInstance()
   local _, instanceType = IsInInstance()
   return instanceType == "party" or instanceType == "raid"
 end
@@ -39,18 +39,22 @@ local function SetBossFrame(index)
 
   local HAS_REGISTERED_WATCH = false
   local function UpdateVisibility()
-    if not IsInInstance() and HAS_REGISTERED_WATCH then
-      if not InCombatLockdown() then
-        f:Hide()
+    local hasUnit = UnitExists(unit)
+
+    if not InInstance() or not hasUnit then
+      if HAS_REGISTERED_WATCH and not InCombatLockdown() then
         UnregisterUnitWatch(f)
         HAS_REGISTERED_WATCH = false
       end
-      return
-    elseif IsInInstance() and not HAS_REGISTERED_WATCH then
       if not InCombatLockdown() then
-        RegisterUnitWatch(f)
-        HAS_REGISTERED_WATCH = true
+        f:Hide()
       end
+      return
+    end
+
+    if not HAS_REGISTERED_WATCH and not InCombatLockdown() then
+      RegisterUnitWatch(f)
+      HAS_REGISTERED_WATCH = true
     end
   end
 
