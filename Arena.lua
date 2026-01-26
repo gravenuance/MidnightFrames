@@ -149,7 +149,7 @@ local function SetArenaFrame(index)
   f.trinketAnchor = SetAnchor("Trinket", "TOP", "BOTTOM", 0, -30)
   f.debuffAnchor = SetAnchor("Debuff", "BOTTOM", "BOTTOM", 0, 30)
   f.statusIconAnchor = SetAnchor("StatusIcon", "CENTER", "CENTER", 0, 0, 36, 36)
-  f.diminishAnchor = SetAnchor("Diminish", "BOTTOM", "BOTTOM", 0, 40, 36, 120)
+  f.diminishAnchor = SetAnchor("Diminish", "BOTTOM", "BOTTOM", 0, 45)
   f.statusIconAnchor:SetFrameLevel(f:GetFrameLevel() + 5)
 
   local function SetClassColor(alpha)
@@ -249,7 +249,14 @@ local function SetArenaFrame(index)
           local function DoLayout()
             local last
             local iconIndex = 0
-            for _, child in ipairs({ tray:GetChildren() }) do
+            local ok, children = pcall(function()
+              return { tray:GetChildren() }
+            end)
+            if not ok then
+              print("MVPF Arena: failed to get children for arena diminish tray ", i, ":", children)
+              return
+            end
+            for _, child in ipairs(children) do
               if child:IsObjectType("Frame") or child:IsObjectType("Button") then
                 iconIndex = iconIndex + 1
 
