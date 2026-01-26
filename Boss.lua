@@ -29,6 +29,11 @@ local function SetBossFrame(index)
   f:SetFrameLevel(10)
 
 
+  local function UpdateColor()
+    local r, g, b = MVPF_Common.GetClassColor(unit)
+    health:SetStatusBarColor(r, g, b, 0.7)
+  end
+
   local function UpdateHealth()
     MVPF_Common.UpdateHealthBar(health, unit)
   end
@@ -66,6 +71,7 @@ local function SetBossFrame(index)
   f:RegisterEvent("UNIT_MAXHEALTH")
   f:RegisterEvent("UNIT_TARGET")
   f:RegisterEvent("PLAYER_TARGET_CHANGED")
+  f:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
 
   f:SetScript("OnEvent", function(self, event, arg1)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
@@ -81,6 +87,8 @@ local function SetBossFrame(index)
     elseif event == "PLAYER_TARGET_CHANGED"
         or (event == "UNIT_TARGET" and arg1 == "player") then
       UpdateTargetHighlight()
+    elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" then
+      UpdateColor()
     end
   end)
 end
@@ -88,68 +96,54 @@ end
 ------------------------------------------------------------------------
 -- Hide Blizzard boss frames & container
 ------------------------------------------------------------------------
+local function ForceHide(frame)
+  frame:SetAlpha(0)
+end
+
+local function PrintFuncs(obj, prefix)
+  prefix = prefix or ""
+  for k, v in pairs(obj) do
+    if type(v) == "function" then
+      print(prefix .. tostring(k))
+    end
+  end
+end
 
 local function HideBossFrameAndSpellBar(index)
   local frame = _G[blizzFrameBase .. index .. "TargetFrame"]
   if not frame then return end
-
-  -- Hide spellbar
+  if frame.MVPF_Hooked then return end
   local spellBar = frame.spellBar or _G[frame:GetName() .. "SpellBar"] or
       _G[blizzFrameBase .. index .. "TargetFrameSpellBar"]
-  if spellBar and not spellBar.MVPF_Hooked then
-    spellBar.MVPF_Hooked = true
-    spellBar:Hide()
-    spellBar:SetAlpha(0)
-    spellBar.Show = spellBar.Hide
-    hooksecurefunc(spellBar, "Show", spellBar.Hide)
-  end
-
-  -- Hide the boss unit frame itself
-  if not frame.MVPF_Hooked then
-    frame.MVPF_Hooked = true
-
-    frame:Hide()
-    frame:SetAlpha(0)
-
-    local function ForceHide(self)
-      self:Hide()
-      self:SetAlpha(0)
-    end
-
-    hooksecurefunc(frame, "Show", ForceHide)
-
-    if frame.UpdateShownState then
-      hooksecurefunc(frame, "UpdateShownState", ForceHide)
+  if spellBar then
+    --spellBar:SetAlpha(0)
+    --spellBar.Show = spellBar.Hide
+    --hooksecurefunc(spellBar, "Show", spellBar.Hide)
+    if spellBar.UpdateShownState then
+      hooksecurefunc(spellBar, "UpdateShownState", ForceHide)
     end
   end
+  if frame.UpdateShownState then
+    hooksecurefunc(frame, "UpdateShownState", ForceHide)
+  end
+  if frame.OnShow then
+    hooksecurefunc(frame, "OnShow", ForceHide)
+  end
+  frame.MVPF_Hooked = true
 end
 
 local function HideBossContainer()
   local container = _G[blizzContainerName]
   if not container then return end
-
-  if not container.MVPF_Hooked then
-    container.MVPF_Hooked = true
-
-    container:Hide()
-    container:SetAlpha(0)
-
-    local function ForceHide(self)
-      self:Hide()
-      self:SetAlpha(0)
-    end
-
-    hooksecurefunc(container, "Show", ForceHide)
-
-    if container.UpdateShownState then
-      hooksecurefunc(container, "UpdateShownState", ForceHide)
-    end
+  if container.MVPF_Hooked then return end
+  if container.UpdateShownState then
+    hooksecurefunc(container, "UpdateShownState", ForceHide)
   end
-
-  -- Hide all children boss frames/spellbars
+  --hooksecurefunc(container, "Show", ForceHide)
   for i = 1, MAX_BOSS_FRAMES do
     HideBossFrameAndSpellBar(i)
   end
+  container.MVPF_Hooked = true
 end
 
 ------------------------------------------------------------------------
@@ -158,13 +152,13 @@ end
 
 local function MVPF_SetupBossHooks()
   HideBossContainer()
-  local container = _G[blizzContainerName]
+  --[[ local container = _G[blizzContainerName]
   if container and not container.MVPF_OnShowHooked then
     container.MVPF_OnShowHooked = true
     hooksecurefunc(container, "Show", function(self)
       HideBossContainer()
     end)
-  end
+  end ]]
 end
 
 local loader = CreateFrame("Frame")

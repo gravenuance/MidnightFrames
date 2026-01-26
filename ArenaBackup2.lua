@@ -149,7 +149,7 @@ local function SetArenaFrame(index)
   f.trinketAnchor = SetAnchor("Trinket", "TOP", "BOTTOM", 0, -30)
   f.debuffAnchor = SetAnchor("Debuff", "BOTTOM", "BOTTOM", 0, 30)
   f.statusIconAnchor = SetAnchor("StatusIcon", "CENTER", "CENTER", 0, 0, 36, 36)
-  f.diminishAnchor = SetAnchor("Diminish", "BOTTOM", "BOTTOM", 0, 70)
+  f.diminishAnchor = SetAnchor("Diminish", "BOTTOM", "BOTTOM", 0, 40, 36, 120)
   f.statusIconAnchor:SetFrameLevel(f:GetFrameLevel() + 5)
 
   local function SetClassColor(alpha)
@@ -232,30 +232,24 @@ local function SetArenaFrame(index)
   end
   function f:UpdateVisibility() UpdateVisibility() end
 
-  local function LayoutMember(i)
-    local b = _G[baseName .. i]
-    if b then
-      local member = _G[blizzFrame .. "Member" .. i]
-      local tray = member and member.SpellDiminishStatusTray
-      local anchor = b.diminishAnchor
+  local function LayoutSpellDiminishTray()
+    for i = 1, GetArenaSize() do
+      local b = _G[baseName .. i]
+      if b then
+        local member = _G[blizzFrame .. "Member" .. i]
+        local tray = member and member.SpellDiminishStatusTray
+        local anchor = b.diminishAnchor
 
-      if tray and anchor then
-        tray:ClearAllPoints()
-        tray:SetParent(b)
-        tray:SetPoint("CENTER", anchor, "CENTER", 0, 0)
-        tray:SetFrameStrata("HIGH")
+        if tray and anchor then
+          tray:ClearAllPoints()
+          tray:SetParent(b)
+          tray:SetPoint("CENTER", anchor, "CENTER", 0, 0)
+          tray:SetFrameStrata("HIGH")
 
-        local function DoLayout()
-          local last
-          local iconIndex = 0
-          local ok, children = pcall(function()
-            return { tray:GetChildren() }
-          end)
-          if not ok then
-            return
-          end
-          pcall(function()
-            for _, child in ipairs(children) do
+          local function DoLayout()
+            local last
+            local iconIndex = 0
+            for _, child in ipairs({ tray:GetChildren() }) do
               if child:IsObjectType("Frame") or child:IsObjectType("Button") then
                 iconIndex = iconIndex + 1
 
@@ -271,185 +265,152 @@ local function SetArenaFrame(index)
                 last = child
               end
             end
-          end)
-        end
-        DoLayout()
-      elseif anchor then
-        anchor:Hide()
-      end
-    end
-  end
-
-  --[[ local function LayoutSpellDiminishTray()
-    for i = 1, GetArenaSize() do
-      LayoutMember(i)
-    end
-  end ]]
-
-  local function SetIconForMember(childKey, anchorKey, i)
-    local b = _G[baseName .. i]
-    if b then
-      local member = _G[blizzFrame .. "Member" .. i]
-      local d = member and member[childKey]
-      local anchor = b[anchorKey]
-
-      if d and anchor then
-        d:ClearAllPoints()
-        d:SetSize(DEFAULT_SIZE, DEFAULT_SIZE)
-        d:SetPoint("CENTER", anchor, "CENTER", 0, 0)
-
-        local h = b.health or b.HealthBar
-        local baseLevel = h and h:GetFrameLevel() or b:GetFrameLevel()
-        d:SetFrameStrata("HIGH")
-        d:SetFrameLevel(baseLevel + 10)
-
-        local icon = d.Icon or d.Texture or (d.GetNormalTexture and d:GetNormalTexture())
-        local hasIcon = icon and icon:GetTexture()
-
-        if hasIcon then
-          icon:SetDrawLayer("OVERLAY", 7)
-          anchor:Show()
-        else
-          if icon then
-            icon:SetTexture(nil)
-            icon:SetAlpha(0)
           end
+
+          DoLayout()
+
+          if not tray.MVPF_VerticalHooked then
+            tray.MVPF_VerticalHooked = true
+
+            tray:HookScript("OnShow", DoLayout)
+
+            if tray.SetLayout then
+              print("Hooking SetLayout for arena diminish tray")
+              hooksecurefunc(tray, "SetLayout", DoLayout)
+            end
+
+            if tray.UpdateLayout then
+              hooksecurefunc(tray, "UpdateLayout", DoLayout)
+            end
+          end
+        elseif anchor then
           anchor:Hide()
-          d:SetAlpha(0)
-        end
-      elseif anchor then
-        anchor:Hide()
-      end
-    end
-  end
-
-  local function HideMemberFrames(member, i)
-    if member then
-      if member.CastingBarFrame then
-        local cb = member.CastingBarFrame
-        cb:UnregisterAllEvents()
-        cb.Show = cb.Hide
-        cb:Hide()
-      end
-
-      local _, children = pcall(function() return { member:GetChildren() } end)
-      for _, child in ipairs(children) do
-        local field
-        for k, v in pairs(member) do
-          if v == child then
-            field = k
-            break
-          end
-        end
-
-        if field and not arenaKeepList[field] then
-          pcall(function()
-            local obj = child
-
-            if obj.GetAlpha then
-              local alpha = obj:GetAlpha()
-              if alpha and alpha ~= 0 then
-                obj:SetAlpha(0)
-              end
-            end
-
-            if obj.IsShown then
-              if obj:IsShown() then
-                obj:Hide()
-                hooksecurefunc(obj, "Show", obj.Hide)
-              end
-            end
-
-            if obj.Text then
-              obj.Text:SetAlpha(0)
-            end
-
-            if obj.GetNormalTexture then
-              local tex = obj:GetNormalTexture()
-              if tex then
-                tex:SetTexture(nil)
-                tex:SetAlpha(0)
-              end
-            end
-
-            if obj.Icon and obj.Icon.GetTexture then
-              obj.Icon:SetTexture(nil)
-              obj.Icon:SetAlpha(0)
-            end
-          end)
+          --[[           if anchor.Border then
+            anchor.Border:Hide()
+            anchor.Border:SetAlpha(0)
+          end ]]
         end
       end
-
-
-      local _, regions = pcall(function() return { member:GetRegions() } end)
-
-
-      for _, region in ipairs(regions) do
-        pcall(function()
-          if region:IsObjectType("Texture") or region:IsObjectType("FontString") then
-            local parent = region:GetParent()
-            local keep = false
-
-            if parent and parent ~= member then
-              for k, v in pairs(member) do
-                if v == parent and arenaKeepList[k] then
-                  keep = true
-                  break
-                end
-              end
-            end
-
-            if not keep then
-              region:SetAlpha(0)
-              region:Hide()
-              if region:IsObjectType("Texture") then
-                region:SetTexture(nil)
-              end
-            end
-          end
-        end)
-      end
-
-
-      --[[ SetIconForMember("CcRemoverFrame", "trinketAnchor", i)
-      SetIconForMember("DebuffFrame", "debuffAnchor", i)
-
-      LayoutMember(i) ]]
     end
   end
 
   local function SetFrames()
     local frame = _G["CompactArenaFrame"]
+
     local matchState = C_PvP.GetActiveMatchState()
     local isEngaged = (matchState == Enum.PvPMatchState.Engaged)
     local isComplete = C_PvP.IsMatchComplete() == true
     local isArena = C_PvP.IsMatchConsideredArena() == true
-    local inProgress = isArena and isEngaged and not isComplete
-    local inPrep = isArena and not isEngaged and not isComplete and not MVPF_ArenaTestMode
-    local t = _G["CompactArenaFrameTitle"]
-    if t then
-      t:Hide()
-      t:SetAlpha(0)
-      t.Show = t.Hide
-    end
+
     for i = 1, GetArenaSize() do
       local mv = _G[baseName .. i]
       if mv then
         mv:UpdateVisibility()
       end
 
+      local inProgress = isArena and isEngaged and not isComplete
+      local inPrep = isArena and not isEngaged and not isComplete and not MVPF_ArenaTestMode
+
       if inProgress then
         if IsInStealth(i) then
           local stealth = frame and frame["StealthedUnitFrame" .. i]
           if stealth and stealth:IsShown() then
-            stealth:SetAlpha(0)
-            HideMemberFrames(stealth, i)
+            stealth:Hide()
           end
         end
 
         local member = _G[blizzFrame .. "Member" .. i]
-        HideMemberFrames(member, i)
+        if member then
+          if member.CastingBarFrame then
+            local cb = member.CastingBarFrame
+            cb:UnregisterAllEvents()
+            cb.Show = cb.Hide
+            cb:Hide()
+          end
+
+          local children = { member:GetChildren() }
+          for _, child in ipairs(children) do
+            local field
+            for k, v in pairs(member) do
+              if v == child then
+                field = k
+                break
+              end
+            end
+
+            if field and not arenaKeepList[field] then
+              pcall(function()
+                local obj = child
+
+                if obj.GetAlpha then
+                  local alpha = obj:GetAlpha()
+                  if alpha and alpha ~= 0 then
+                    obj:SetAlpha(0)
+                  end
+                end
+
+                if obj.IsShown then
+                  if obj:IsShown() then
+                    obj:Hide()
+                    hooksecurefunc(obj, "Show", obj.Hide)
+                  end
+                end
+
+                if obj.Text then
+                  obj.Text:SetAlpha(0)
+                end
+
+                if obj.GetNormalTexture then
+                  local tex = obj:GetNormalTexture()
+                  if tex then
+                    tex:SetTexture(nil)
+                    tex:SetAlpha(0)
+                  end
+                end
+
+                if obj.Icon and obj.Icon.GetTexture then
+                  obj.Icon:SetTexture(nil)
+                  obj.Icon:SetAlpha(0)
+                end
+              end)
+            end
+          end
+
+          local regions = { member:GetRegions() }
+          for _, region in ipairs(regions) do
+            pcall(function()
+              if region:IsObjectType("Texture") or region:IsObjectType("FontString") then
+                local parent = region:GetParent()
+                local keep = false
+
+                if parent and parent ~= member then
+                  for k, v in pairs(member) do
+                    if v == parent and arenaKeepList[k] then
+                      keep = true
+                      break
+                    end
+                  end
+                end
+
+                if not keep then
+                  region:SetAlpha(0)
+                  region:Hide()
+                  if region:IsObjectType("Texture") then
+                    region:SetTexture(nil)
+                  end
+                end
+              end
+            end)
+          end
+
+          if MVPF_Arena_SetIconFrame then
+            MVPF_Arena_SetIconFrame("CcRemoverFrame", "trinketAnchor")
+            MVPF_Arena_SetIconFrame("DebuffFrame", "debuffAnchor")
+          end
+          LayoutSpellDiminishTray()
+        end
       end
+
       if inPrep then
         local prematch = frame and frame.PreMatchFramesContainer
         if prematch then
@@ -462,11 +423,54 @@ local function SetArenaFrame(index)
     end
   end
 
-  --[[ local function SetIconFrame(childKey, anchorKey)
+  local function SetIconFrame(childKey, anchorKey)
     for i = 1, GetArenaSize() do
-      SetIconForMember(childKey, anchorKey, i)
+      local b = _G[baseName .. i]
+      if b then
+        local member = _G[blizzFrame .. "Member" .. i]
+        local d = member and member[childKey]
+        local anchor = b[anchorKey]
+
+        if d and anchor then
+          d:ClearAllPoints()
+          d:SetSize(DEFAULT_SIZE, DEFAULT_SIZE)
+          d:SetPoint("CENTER", anchor, "CENTER", 0, 0)
+
+          local h = b.health or b.HealthBar
+          local baseLevel = h and h:GetFrameLevel() or b:GetFrameLevel()
+          d:SetFrameStrata("HIGH")
+          d:SetFrameLevel(baseLevel + 10)
+
+          local icon = d.Icon or d.Texture or (d.GetNormalTexture and d:GetNormalTexture())
+          local hasIcon = icon and icon:GetTexture()
+
+          if hasIcon then
+            icon:SetDrawLayer("OVERLAY", 7)
+            anchor:Show()
+            --[[ if d.Border then
+              d.Border:Show()
+            end ]]
+          else
+            if icon then
+              icon:SetTexture(nil)
+              icon:SetAlpha(0)
+            end
+            anchor:Hide()
+            --[[ if d.Border then
+              d.Border:Hide()
+            end ]]
+            d:SetAlpha(0)
+          end
+        elseif anchor then
+          anchor:Hide()
+          --[[ if anchor.Border then
+            anchor.Border:Hide()
+            anchor.Border:SetAlpha(0)
+          end ]]
+        end
+      end
     end
-  end ]]
+  end
 
   f:RegisterEvent("PLAYER_ENTERING_WORLD")
   f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
@@ -476,6 +480,7 @@ local function SetArenaFrame(index)
   f:RegisterEvent("ARENA_OPPONENT_UPDATE")
   f:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
   f:RegisterEvent("PVP_MATCH_STATE_CHANGED")
+  f:RegisterEvent("UNIT_AURA")
   f:RegisterEvent("PLAYER_TARGET_CHANGED")
 
   f:SetScript("OnEvent", function(_, event, arg1)
@@ -499,122 +504,75 @@ local function SetArenaFrame(index)
     then
       SetFrames()
       HidePostGameFrames()
+    elseif event == "UNIT_AURA" then
+      if arg1 == unit then
+        SetFrames()
+      end
     end
   end)
 
   if not MVPF_Arena_SetFrames then
+    MVPF_Arena_SetIconFrame = SetIconFrame
     MVPF_Arena_SetFrames = SetFrames
-    MVPF_Arena_SetIconFrame = SetIconForMember
-    MVPF_Arena_LayoutDiminish = LayoutMember
-  end
-end
-
-local function PrintFuncs(obj, prefix)
-  prefix = prefix or ""
-  for k, v in pairs(obj) do
-    if type(v) == "function" then
-      print(prefix .. tostring(k))
-    end
+    MVPF_Arena_LayoutDimisnish = LayoutSpellDiminishTray
   end
 end
 
 local function MVPF_HookArenaMembers()
   for i = 1, 3 do
     local member = _G["CompactArenaFrameMember" .. i]
-    local caf = _G["CompactArenaFrame"]
-    local stealth = caf and caf["StealthedUnitFrame" .. i]
-    PrintFuncs(member, "MVPF Arena Member " .. i .. " Func: ")
+    local stealth = _G["CompactArenaFrame"]
+    stealth = stealth["StealthedUnitFrame" .. i]
+
     if stealth then
       if not stealth.MVPF_Hooked then
         stealth.MVPF_Hooked = true
+        stealth:Hide()
+        stealth:SetAlpha(0)
+        stealth.Show = stealth.Hide
+
         hooksecurefunc(stealth, "UpdateShownState", function(self)
+          self:Hide()
           self:SetAlpha(0)
+
+          if MVPF_Arena_SetFrames then
+            MVPF_Arena_SetFrames()
+          end
         end)
       end
     end
     if member then
       if member.CcRemoverFrame and not member.CcRemoverFrame.MVPF_Hooked then
         member.CcRemoverFrame.MVPF_Hooked = true
-        --[[ hooksecurefunc(member.CcRemoverFrame, "UpdateShownState", function(self)
+        hooksecurefunc(member.CcRemoverFrame, "UpdateShownState", function(self)
           if MVPF_Arena_SetIconFrame then
-            print("MVPF: Arena CcRemoverFrame Update hook called for member " .. i)
-            MVPF_Arena_SetIconFrame("CcRemoverFrame", "trinketAnchor", i)
-          end
-        end) ]]
-        --[[ hooksecurefunc(member.CcRemoverFrame, "SetUnit", function(self)
-          if MVPF_Arena_SetIconFrame then
-            print("MVPF: Arena CcRemoverFrame SetUnit hook called for member " .. i)
-            MVPF_Arena_SetIconFrame("CcRemoverFrame", "trinketAnchor", i)
-          end
-        end) ]]
-        hooksecurefunc(member.CcRemoverFrame, "UpdateCooldown", function(self)
-          if MVPF_Arena_SetIconFrame then
-            print("MVPF: Arena CcRemoverFrame Cooldown hook called for member " .. i)
-            MVPF_Arena_SetIconFrame("CcRemoverFrame", "trinketAnchor", i)
+            MVPF_Arena_SetIconFrame("CcRemoverFrame", "trinketAnchor")
           end
         end)
       end
 
       if member.DebuffFrame and not member.DebuffFrame.MVPF_Hooked then
         member.DebuffFrame.MVPF_Hooked = true
-        --[[         hooksecurefunc(member.DebuffFrame, "UpdateShownState", function(self)
-          print("MVPF: Arena DebuffFrame Update hook called for member " .. i)
+        hooksecurefunc(member.DebuffFrame, "UpdateShownState", function(self)
           if MVPF_Arena_SetIconFrame then
-            MVPF_Arena_SetIconFrame("DebuffFrame", "debuffAnchor", i)
-          end
-        end) ]]
-        --[[ hooksecurefunc(member.DebuffFrame, "SetUnit", function(self)
-          print("MVPF: Arena DebuffFrame SetUnit hook called for member " .. i)
-          if MVPF_Arena_SetIconFrame then
-            MVPF_Arena_SetIconFrame("DebuffFrame", "debuffAnchor", i)
-          end
-        end) ]]
-        hooksecurefunc(member.DebuffFrame, "UpdateTooltip", function(self)
-          print("MVPF: Arena DebuffFrame UpdateTooltip hook called for member " .. i)
-          if MVPF_Arena_SetIconFrame then
-            MVPF_Arena_SetIconFrame("DebuffFrame", "debuffAnchor", i)
+            MVPF_Arena_SetIconFrame("DebuffFrame", "debuffAnchor")
           end
         end)
       end
 
       if member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MVPF_Hooked then
         member.SpellDiminishStatusTray.MVPF_Hooked = true
-        hooksecurefunc(member.SpellDiminishStatusTray, "Layout", function(self)
-          print("MVPF: Arena Spell Diminish Layout hook called for member " .. i)
-          if MVPF_Arena_LayoutDiminish then
-            MVPF_Arena_LayoutDiminish(i)
+        hooksecurefunc(member.SpellDiminishStatusTray, "UpdateShownState", function(self)
+          if MVPF_Arena_LayoutDimisnish then
+            MVPF_Arena_LayoutDimisnish()
           end
         end)
-        --[[ hooksecurefunc(member.SpellDiminishStatusTray, "AddLayoutChildren", function(self)
-          print("MVPF: Arena Spell Diminish AddLayoutChildren hook called for member " .. i)
-          if MVPF_Arena_LayoutDiminish then
-            MVPF_Arena_LayoutDiminish(i)
-          end
-        end) ]]
-        --[[ hooksecurefunc(member.SpellDiminishStatusTray, "UpdateTrayItemAnchoring", function(self)
-          print("MVPF: Arena Spell Diminish UpdateTrayItemAnchoring hook called for member " .. i)
-          if MVPF_Arena_LayoutDiminish then
-            MVPF_Arena_LayoutDiminish(i)
-          end
-        end) ]]
-        --[[         hooksecurefunc(member.SpellDiminishStatusTray, "RefreshTrayLayout", function(self)
-          print("MVPF: Arena Spell Diminish RefreshTrayLayout hook called for member " .. i)
-          if MVPF_Arena_LayoutDiminish then
-            MVPF_Arena_LayoutDiminish(i)
-          end
-        end) ]]
-        --[[ hooksecurefunc(member.SpellDiminishStatusTray, "TryUpdateOrAddTrayItem", function(self)
-          print("MVPF: Arena Spell Diminish TryUpdateOrAddTrayItem hook called for member " .. i)
-          if MVPF_Arena_LayoutDiminish then
-            MVPF_Arena_LayoutDiminish(i)
-          end
-        end) ]]
-        --[[         hooksecurefunc(member.SpellDiminishStatusTray, "GetActiveTrayItemForCategory", function(self)
-          print("MVPF: Arena Spell Diminish GetActiveTrayItemForCategory hook called for member " .. i)
-          if MVPF_Arena_LayoutDiminish then
-            MVPF_Arena_LayoutDiminish(i)
-          end
-        end) ]]
+      end
+
+      if member and member.CastingBarFrame and not member.CastingBarFrame.MVPF_Hooked then
+        local cb = member.CastingBarFrame
+        cb.MVPF_Hooked = true
+        hooksecurefunc(cb, "Show", cb.Hide) -- any future Show becomes Hide
       end
     end
   end
@@ -624,14 +582,13 @@ local function MVPF_SetupArenaHooks()
   if CompactArenaFrame and not CompactArenaFrame.MVPF_Hooked then
     CompactArenaFrame.MVPF_Hooked = true
     hooksecurefunc(CompactArenaFrame, "UpdateVisibility", function(self)
+      MVPF_SetupArenaHooks()
       if MVPF_Arena_SetFrames then
-        MVPF_Arena_SetFrames() -- main update
+        MVPF_Arena_SetFrames()
       end
     end)
   end
 end
-
-
 
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("PLAYER_LOGIN")
