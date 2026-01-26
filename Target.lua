@@ -6,7 +6,7 @@ local IsDriverRegistered = false
 
 local MAX_AURAS = 4
 
-local DEFAULT_SIZE = 36
+local DEFAULT_SIZE = 32
 -- ============================
 -- Core secure target unit frame
 -- ============================

@@ -5,7 +5,7 @@ local MAX_AURAS = 4
 local C_CurveUtil = C_CurveUtil
 local UnitPowerPercent = UnitPowerPercent
 
-local DEFAULT_SIZE = 36
+local DEFAULT_SIZE = 32
 -- ==============================
 -- Core secure player unit frame
 -- ==============================
@@ -140,6 +140,9 @@ eventFrame:RegisterEvent("UNIT_POWER_UPDATE")
 eventFrame:RegisterEvent("UNIT_MAXPOWER")
 eventFrame:RegisterEvent("ZONE_CHANGED")
 eventFrame:RegisterEvent("UNIT_PET")
+eventFrame:RegisterEvent("PLAYER_DEAD")
+eventFrame:RegisterEvent("PLAYER_UNGHOST")
+
 
 eventFrame:SetScript("OnEvent", function(_, event, arg1)
   if event == "PLAYER_LOGIN"
@@ -160,6 +163,8 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
     end
   elseif event == "UNIT_PET" and arg1 == "player" then
     UpdatePetHealthBar()
+  elseif event == "PLAYER_DEAD" or event == "PLAYER_UNGHOST" then
+    UpdateHealthBar()
   elseif (event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER") and arg1 == "player" then
     UpdatePowerLabel()
   elseif event == "UNIT_AURA" and arg1 == "player" then

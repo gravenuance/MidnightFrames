@@ -5,7 +5,7 @@ local baseName     = "MVPF_PartyFrame"
 MVPF_PartyTestMode = false
 
 local MAX_AURAS    = 3
-local DEFAULT_SIZE = 36
+local DEFAULT_SIZE = 32
 
 
 -- ===========================
@@ -108,11 +108,13 @@ local function CreatePartyFrame(index)
   f:RegisterEvent("PLAYER_TARGET_CHANGED")
   f:RegisterEvent("UNIT_TARGET")
   f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+  f:RegisterEvent("UNIT_OTHER_PARTY_CHANGED")
 
   f:SetScript("OnEvent", function(_, event, arg1)
     if event == "GROUP_ROSTER_UPDATE"
         or event == "PLAYER_ENTERING_WORLD"
         or event == "ZONE_CHANGED_NEW_AREA"
+        or event == "UNIT_OTHER_PARTY_CHANGED"
     then
       MVPF_PartyTestMode = false
       UpdateVisibility()

@@ -25,7 +25,9 @@
       "TALENT_BUILD_CHAT_LINK_TEXT",
       "ENABLE",
       "CLOSE",
-      "MP"
+      "MP",
+      "YES",
+      "NO"
     ],
     "Lua.type.weakUnionCheck": true
 }
