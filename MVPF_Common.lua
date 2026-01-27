@@ -138,6 +138,16 @@ function MVPF_Common.CreateUnitFrame(params)
   })
   f.border:SetBackdropBorderColor(0, 0, 0, 1)
 
+  f.mouseoverBorder = CreateFrame("Frame", nil, f, "BackdropTemplate")
+  f.mouseoverBorder:SetAllPoints(f)
+  f.mouseoverBorder:SetBackdrop({
+    edgeFile = "Interface\\Buttons\\WHITE8x8",
+    edgeSize = 2,
+  })
+  f.mouseoverBorder:SetBackdropBorderColor(0.39, 0.72, 0.72, 1)
+  f.mouseoverBorder:SetFrameLevel(f.border:GetFrameLevel() + 1)
+  f.mouseoverBorder:Hide()
+
   -- Health bar
   local health = CreateFrame("StatusBar", name .. "Health", f)
   health:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 4, 4)
@@ -151,6 +161,14 @@ function MVPF_Common.CreateUnitFrame(params)
   if kind == "arena" or kind == "boss" then
     return f, health
   end
+
+  f:SetScript("OnEnter", function(self)
+    f.mouseoverBorder:Show()
+  end)
+
+  f:SetScript("OnLeave", function(self)
+    f.mouseoverBorder:Hide()
+  end)
   -- Aura container
   local auraContainer = CreateFrame("Frame", name .. "Auras", f)
   auraContainer.maxAuras = maxAuras

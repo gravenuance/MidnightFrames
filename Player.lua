@@ -56,7 +56,7 @@ local function UpdatePetHealthBar()
 end
 
 local function ApplyClassColor()
-  local r, g, b = MVPF_Common.GetClassColor("player", 0, 0.8, 0)
+  local r, g, b = MVPF_Common.GetClassColor("player")
   if not health then return end
 
   -- Bar color

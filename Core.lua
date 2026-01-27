@@ -62,49 +62,49 @@ end)
 local DEFAULT_FILTERS = {
   player = {
     -- Helpful
-    ["HELPFUL|INCLUDE_NAME_PLATE_ONLY"]        = false,
-    ["HELPFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = false,
-    ["HELPFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = true,
+    ["HELPFUL"]        = false,
+    ["HELPFUL|PLAYER"] = false,
+    ["HELPFUL|RAID"]   = true,
 
     -- Harmful
-    ["HARMFUL|INCLUDE_NAME_PLATE_ONLY"]        = false,
-    ["HARMFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = false,
-    ["HARMFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = true,
+    ["HARMFUL"]        = false,
+    ["HARMFUL|PLAYER"] = false,
+    ["HARMFUL|RAID"]   = true,
   },
 
   target = {
     -- Helpful
-    ["HELPFUL|INCLUDE_NAME_PLATE_ONLY"]        = false,
-    ["HELPFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = true,
-    ["HELPFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = true,
+    ["HELPFUL"]        = false,
+    ["HELPFUL|PLAYER"] = true,
+    ["HELPFUL|RAID"]   = true,
 
     -- Harmful
-    ["HARMFUL|INCLUDE_NAME_PLATE_ONLY"]        = false,
-    ["HARMFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = true,
-    ["HARMFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = true,
+    ["HARMFUL"]        = false,
+    ["HARMFUL|PLAYER"] = true,
+    ["HARMFUL|RAID"]   = true,
   },
 
   party = {
     -- Helpful
-    ["HELPFUL|INCLUDE_NAME_PLATE_ONLY"]        = false,
-    ["HELPFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = true,
-    ["HELPFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = false,
+    ["HELPFUL"]        = false,
+    ["HELPFUL|PLAYER"] = true,
+    ["HELPFUL|RAID"]   = false,
 
     -- Harmful
-    ["HARMFUL|INCLUDE_NAME_PLATE_ONLY"]        = false,
-    ["HARMFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = false,
-    ["HARMFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = true,
+    ["HARMFUL"]        = false,
+    ["HARMFUL|PLAYER"] = false,
+    ["HARMFUL|RAID"]   = true,
   },
 }
 
 local FILTER_LABELS = {
-  ["HELPFUL|INCLUDE_NAME_PLATE_ONLY"]        = "Helpful (Any)",
-  ["HELPFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = "Helpful (Player)",
-  ["HELPFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = "Helpful (Raid)",
+  ["HELPFUL"]        = "Helpful (Any)",
+  ["HELPFUL|PLAYER"] = "Helpful (Player)",
+  ["HELPFUL|RAID"]   = "Helpful (Raid)",
 
-  ["HARMFUL|INCLUDE_NAME_PLATE_ONLY"]        = "Harmful (Any)",
-  ["HARMFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"] = "Harmful (Player)",
-  ["HARMFUL|RAID|INCLUDE_NAME_PLATE_ONLY"]   = "Harmful (Raid)",
+  ["HARMFUL"]        = "Harmful (Any)",
+  ["HARMFUL|PLAYER"] = "Harmful (Player)",
+  ["HARMFUL|RAID"]   = "Harmful (Raid)",
 }
 
 local UNIT_LABELS = {
