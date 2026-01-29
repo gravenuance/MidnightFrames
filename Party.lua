@@ -8,6 +8,8 @@ local MAX_AURAS    = 3
 local DEFAULT_SIZE = 32
 
 
+
+
 -- ===========================
 -- Create one party unit frame
 -- ===========================
@@ -28,15 +30,23 @@ local function CreatePartyFrame(index)
 
   f.IsDriverRegistered = false
 
+  local defaultR, defaultG, defaultB
   local function UpdateHealth()
     if MVPF_PartyTestMode then return end
     MVPF_Common.UpdateHealthBar(health, unit)
+    if not health or not defaultR then return end
+    if MVPF_Common.CheckMultiSpellRange(unit) then
+      health:SetStatusBarColor(defaultR, defaultG, defaultB, MVPF_Common.RegAlpha)
+    else
+      health:SetStatusBarColor(defaultR, defaultG, defaultB, MVPF_Common.OtherAlpha)
+    end
   end
 
   local function SetClassColor()
     local r, g, b = MVPF_Common.GetClassColor(unit)
     if not health then return end
-    health:SetStatusBarColor(r, g, b, 0.7)
+    health:SetStatusBarColor(r, g, b, MVPF_Common.RegAlpha)
+    defaultR, defaultG, defaultB = r, g, b
   end
 
   local function UpdateVisibility()
@@ -106,9 +116,10 @@ local function CreatePartyFrame(index)
   f:RegisterEvent("UNIT_NAME_UPDATE")
   f:RegisterEvent("UNIT_AURA")
   f:RegisterEvent("PLAYER_TARGET_CHANGED")
-  f:RegisterEvent("UNIT_TARGET")
   f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
   f:RegisterEvent("UNIT_OTHER_PARTY_CHANGED")
+  f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
+  f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
   f:SetScript("OnEvent", function(_, event, arg1)
     if event == "GROUP_ROSTER_UPDATE"
@@ -125,11 +136,12 @@ local function CreatePartyFrame(index)
       UpdateAuras()
     end
     if MVPF_PartyTestMode then return end
-    if event == "PLAYER_TARGET_CHANGED"
-        or (event == "UNIT_TARGET" and arg1 == "player") then
+    if event == "PLAYER_TARGET_CHANGED" then
       UpdateTargetHighlight()
     elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH")
         and arg1 == unit then
+      UpdateHealth()
+    elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
       UpdateHealth()
     elseif event == "UNIT_NAME_UPDATE" and arg1 == unit then
       SetClassColor()

@@ -18,6 +18,7 @@ local f, auraContainer, health = MVPF_Common.CreateUnitFrame({
   maxAuras = MAX_AURAS,
   iconSize = DEFAULT_SIZE,
 })
+f.unit = "player"
 
 f:SetAttribute("type2", "togglemenu")
 
@@ -37,32 +38,35 @@ end
 local petFrame, _, petHealth = MVPF_Common.CreateUnitFrame({
   name     = "MVPF_PetFrame",
   unit     = "pet",
-  point    = { "BOTTOMLEFT", f, "BOTTOMRIGHT", 5, 0 },
+  point    = { "TOPLEFT", f, "TOPRIGHT", 5, 0 },
   size     = { 20, 80 },
   maxAuras = 0,
   iconSize = 0,
 })
+
+petFrame.unit = "pet"
 
 petFrame:SetAttribute("type2", "togglemenu")
 
 RegisterUnitWatch(petFrame)
 
 local function UpdateHealthBar()
-  MVPF_Common.UpdateHealthBar(health, "player")
+  MVPF_Common.UpdateHealthBar(health, f.unit)
 end
 
 local function UpdatePetHealthBar()
-  MVPF_Common.UpdateHealthBar(petHealth, "pet")
+  MVPF_Common.UpdateHealthBar(petHealth, petFrame.unit)
 end
 
 local function ApplyClassColor()
-  local r, g, b = MVPF_Common.GetClassColor("player")
+  local r, g, b = MVPF_Common.GetClassColor(f.unit)
+
   if not health then return end
 
   -- Bar color
-  health:SetStatusBarColor(r, g, b, 0.7)
+  health:SetStatusBarColor(r, g, b, MVPF_Common.RegAlpha)
   if petHealth then
-    petHealth:SetStatusBarColor(r, g, b, 0.7)
+    petHealth:SetStatusBarColor(r, g, b, MVPF_Common.RegAlpha)
   end
 
   -- Slightly darker text color
@@ -73,7 +77,7 @@ local function ApplyClassColor()
 end
 
 local function UpdateTargetHighlight()
-  MVPF_Common.UpdateTargetHighlight(f, "player", "MVPF_PlayerTestMode")
+  MVPF_Common.UpdateTargetHighlight(f, f.unit, "MVPF_PlayerTestMode")
 end
 
 -- =================
@@ -81,13 +85,13 @@ end
 -- =================
 
 local function UpdateAuras()
-  if not UnitExists("player") then
-    MVPF_Common.UpdateAuras(auraContainer, "player", {}, 0)
+  if not UnitExists(f.unit) then
+    MVPF_Common.UpdateAuras(auraContainer, f.unit, {}, 0)
     return
   end
 
   local filters = {}
-  local cfg = MVPF.GetUnitFilters("player")
+  local cfg = MVPF.GetUnitFilters(f.unit)
 
   for filter, enabled in pairs(cfg) do
     if enabled then
@@ -96,7 +100,7 @@ local function UpdateAuras()
   end
   MVPF_Common.UpdateAuras(
     auraContainer,
-    "player",
+    f.unit,
     filters,
     MAX_AURAS
   )
@@ -107,13 +111,13 @@ end
 -- ======================
 
 local function UpdatePowerLabel()
-  if not powerLabel or not UnitExists("player") then return end
+  if not powerLabel or not UnitExists(f.unit) then return end
   local curve = C_CurveUtil.CreateCurve()
   curve:SetType(Enum.LuaCurveType.Linear)
   curve:AddPoint(0.0, 0)
   curve:AddPoint(1.0, 100)
   -- Fetch secret or normal power; do not touch it arithmetically
-  local power = UnitPowerPercent("player", nil, true, curve)
+  local power = UnitPowerPercent(f.unit, nil, true, curve)
   if power == nil then
     powerLabel:SetText("")
     return
@@ -126,25 +130,26 @@ end
 -- Event-driven wiring
 -- ===================
 
-local eventFrame = CreateFrame("Frame")
+--local f = CreateFrame("Frame")
 
-eventFrame:RegisterEvent("PLAYER_LOGIN")
-eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-eventFrame:RegisterEvent("PLAYER_ALIVE")
-eventFrame:RegisterEvent("UNIT_HEALTH")
-eventFrame:RegisterEvent("UNIT_MAXHEALTH")
-eventFrame:RegisterEvent("UNIT_AURA")
-eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-eventFrame:RegisterEvent("UNIT_TARGET")
-eventFrame:RegisterEvent("UNIT_POWER_UPDATE")
-eventFrame:RegisterEvent("UNIT_MAXPOWER")
-eventFrame:RegisterEvent("ZONE_CHANGED")
-eventFrame:RegisterEvent("UNIT_PET")
-eventFrame:RegisterEvent("PLAYER_DEAD")
-eventFrame:RegisterEvent("PLAYER_UNGHOST")
+f:RegisterEvent("PLAYER_LOGIN")
+f:RegisterEvent("PLAYER_ENTERING_WORLD")
+f:RegisterEvent("PLAYER_ALIVE")
+f:RegisterEvent("UNIT_HEALTH")
+f:RegisterEvent("UNIT_MAXHEALTH")
+f:RegisterEvent("UNIT_AURA")
+f:RegisterEvent("PLAYER_TARGET_CHANGED")
+f:RegisterEvent("UNIT_TARGET")
+f:RegisterEvent("UNIT_POWER_UPDATE")
+f:RegisterEvent("UNIT_MAXPOWER")
+f:RegisterEvent("ZONE_CHANGED")
+f:RegisterEvent("UNIT_PET")
+f:RegisterEvent("PLAYER_DEAD")
+f:RegisterEvent("PLAYER_UNGHOST")
+f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
 
-eventFrame:SetScript("OnEvent", function(_, event, arg1)
+f:SetScript("OnEvent", function(_, event, arg1)
   if event == "PLAYER_LOGIN"
       or event == "PLAYER_ENTERING_WORLD"
       or event == "PLAYER_ALIVE"
@@ -155,21 +160,24 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
     UpdateAuras()
     UpdateTargetHighlight()
     UpdatePowerLabel()
+    MVPF_Common.PositionLossOfControlFrame()
   elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
-    if arg1 == "player" then
+    if arg1 == f.unit then
       UpdateHealthBar()
-    elseif arg1 == "pet" then
+    elseif arg1 == petFrame.unit then
       UpdatePetHealthBar()
     end
-  elseif event == "UNIT_PET" and arg1 == "player" then
+  elseif event == "UNIT_PET" and arg1 == f.unit then
     UpdatePetHealthBar()
   elseif event == "PLAYER_DEAD" or event == "PLAYER_UNGHOST" then
     UpdateHealthBar()
-  elseif (event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER") and arg1 == "player" then
+  elseif (event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER") and arg1 == f.unit then
     UpdatePowerLabel()
-  elseif event == "UNIT_AURA" and arg1 == "player" then
+  elseif event == "UNIT_AURA" and arg1 == f.unit then
     UpdateAuras()
-  elseif event == "PLAYER_TARGET_CHANGED" or (event == "UNIT_TARGET" and arg1 == "player") then
+  elseif event == "PLAYER_TARGET_CHANGED" or (event == "UNIT_TARGET" and arg1 == f.unit) then
     UpdateTargetHighlight()
+  elseif event == "SPELL_RANGE_CHECK_UPDATE" then
+    MVPF_Common.RegisterRangeSpell(arg1)
   end
 end)

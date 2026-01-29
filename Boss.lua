@@ -27,15 +27,22 @@ local function SetBossFrame(index)
   })
 
   f:SetFrameLevel(10)
-
+  local defaultR, defaultG, defaultB
 
   local function UpdateColor()
     local r, g, b = MVPF_Common.GetClassColor(unit)
-    health:SetStatusBarColor(r, g, b, 0.7)
+    health:SetStatusBarColor(r, g, b, MVPF_Common.RegAlpha)
+    defaultR, defaultG, defaultB = r, g, b
   end
 
   local function UpdateHealth()
     MVPF_Common.UpdateHealthBar(health, unit)
+    if not health or not defaultR then return end
+    if MVPF_Common.CheckMultiSpellRange(unit) then
+      health:SetStatusBarColor(defaultR, defaultG, defaultB, MVPF_Common.RegAlpha)
+    else
+      health:SetStatusBarColor(defaultR, defaultG, defaultB, MVPF_Common.OtherAlpha)
+    end
   end
 
   local function UpdateTargetHighlight()
@@ -69,9 +76,10 @@ local function SetBossFrame(index)
   f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
   f:RegisterEvent("UNIT_HEALTH")
   f:RegisterEvent("UNIT_MAXHEALTH")
-  f:RegisterEvent("UNIT_TARGET")
   f:RegisterEvent("PLAYER_TARGET_CHANGED")
   f:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
+  f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
+  f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
   f:SetScript("OnEvent", function(self, event, arg1)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
@@ -79,13 +87,14 @@ local function SetBossFrame(index)
       UpdateVisibility()
       UpdateTargetHighlight()
     end
-
+    if not InInstance() then return end
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
       if arg1 == unit then
         UpdateHealth()
       end
-    elseif event == "PLAYER_TARGET_CHANGED"
-        or (event == "UNIT_TARGET" and arg1 == "player") then
+    elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
+      UpdateHealth()
+    elseif event == "PLAYER_TARGET_CHANGED" then
       UpdateTargetHighlight()
     elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" then
       UpdateColor()

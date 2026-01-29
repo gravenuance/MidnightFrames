@@ -6,10 +6,9 @@ MVPF_ArenaTestMode = false
 local blizzFrame = "CompactArenaFrame"
 local CompactArenaFrame = _G[blizzFrame]
 local CompactArenaFrameTitle = _G[blizzFrame .. "Title"]
-local PreGameFramesContainer = CompactArenaFrame and CompactArenaFrame.PreMatchFramesContainer
 
-local altAlpha = 0.4
-local regAlpha = 0.7
+local altAlpha = MVPF_Common.OtherAlpha
+local regAlpha = MVPF_Common.RegAlpha
 
 local DEFAULT_SIZE = 32
 
@@ -104,7 +103,7 @@ local function IsUnit(index)
   return specID and specID > 0
 end
 
-local function HidePostGameFrames()
+--[[ local function HidePostGameFrames()
   if not C_PvP.IsMatchComplete() then return end
   for i = 1, 3 do
     local member = _G[blizzFrame .. "Member" .. i]
@@ -113,7 +112,7 @@ local function HidePostGameFrames()
       if member.DebuffFrame then member.DebuffFrame:Hide() end
     end
   end
-end
+end ]]
 
 local function SetArenaFrame(index)
   local unit = "arena" .. index
@@ -128,6 +127,7 @@ local function SetArenaFrame(index)
     kind = "arena",
   })
   f:SetFrameLevel(10) -- base level for MVPF frame
+  local defaultR, defaultG, defaultB
   local function SetAnchor(type, point, relative, x, y, sizeX, sizeY)
     local a = CreateFrame("Frame", baseName .. type, f)
     a:SetSize(sizeX or 1, sizeY or 1)
@@ -141,13 +141,13 @@ local function SetArenaFrame(index)
   f.diminishAnchor = SetAnchor("Diminish", "BOTTOM", "BOTTOM", 0, 90)
   f.statusIconAnchor:SetFrameLevel(f:GetFrameLevel() + 5)
 
-  local function IsInStealth(index)
-    if not IsUnit(index) then
+  local function IsInStealth(idx)
+    if not IsUnit(idx) then
       return false
     end
 
     CompactArenaFrame = CompactArenaFrame or _G["CompactArenaFrame"]
-    unitStealthFrame = CompactArenaFrame and CompactArenaFrame["StealthedUnitFrame" .. index]
+    unitStealthFrame = CompactArenaFrame and CompactArenaFrame["StealthedUnitFrame" .. idx]
 
     if IsArenaInProgress() and unitStealthFrame and unitStealthFrame:IsShown() then
       return true
@@ -161,6 +161,7 @@ local function SetArenaFrame(index)
     if c then
       local r, g, b = GetClassColors(c)
       health:SetStatusBarColor(r, g, b, alpha or regAlpha)
+      defaultR, defaultG, defaultB = r, g, b
       return true
     end
     return false
@@ -168,6 +169,12 @@ local function SetArenaFrame(index)
 
   local function UpdateHealth()
     MVPF_Common.UpdateHealthBar(health, unit)
+    if not health or not defaultR then return end
+    if MVPF_Common.CheckMultiSpellRange(unit) then
+      health:SetStatusBarColor(defaultR, defaultG, defaultB, MVPF_Common.RegAlpha)
+    else
+      health:SetStatusBarColor(defaultR, defaultG, defaultB, MVPF_Common.OtherAlpha)
+    end
   end
 
   local function UpdateTargetHighlight()
@@ -478,7 +485,6 @@ local function SetArenaFrame(index)
   f:RegisterEvent("UNIT_HEALTH")
   f:RegisterEvent("UNIT_MAXHEALTH")
 
-  f:RegisterEvent("UNIT_TARGET")
   f:RegisterEvent("PLAYER_TARGET_CHANGED")
 
   f:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS") -- No payload
@@ -493,7 +499,10 @@ local function SetArenaFrame(index)
   f:RegisterEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED") -- Diminish update
   f:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
   f:RegisterEvent("LOSS_OF_CONTROL_UPDATE")
-  f:RegisterEvent("LOSS_OF_CONTROL_ADDED")
+  --f:RegisterEvent("LOSS_OF_CONTROL_ADDED")
+
+  f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
+  f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
 
   f:SetScript("OnEvent", function(_, event, arg1)
@@ -508,8 +517,9 @@ local function SetArenaFrame(index)
       if arg1 == unit then
         UpdateHealth()
       end
-    elseif event == "PLAYER_TARGET_CHANGED"
-        or (event == "UNIT_TARGET" and arg1 == "player") then
+    elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
+      UpdateHealth()
+    elseif event == "PLAYER_TARGET_CHANGED" then
       UpdateTargetHighlight()
     elseif event == "PVP_MATCH_STATE_CHANGED"
         or event == "GROUP_ROSTER_UPDATE"

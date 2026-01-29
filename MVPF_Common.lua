@@ -13,6 +13,9 @@ Enum.DispelType                 = {
   Bleed   = 11,
 }
 
+MVPF_Common.RegAlpha            = 0.7
+MVPF_Common.OtherAlpha          = 0.4
+
 local dispel                    = {}
 dispel[Enum.DispelType.None]    = _G.DEBUFF_TYPE_NONE_COLOR
 dispel[Enum.DispelType.Magic]   = _G.DEBUFF_TYPE_MAGIC_COLOR
@@ -21,6 +24,52 @@ dispel[Enum.DispelType.Disease] = _G.DEBUFF_TYPE_DISEASE_COLOR
 dispel[Enum.DispelType.Poison]  = _G.DEBUFF_TYPE_POISON_COLOR
 dispel[Enum.DispelType.Bleed]   = _G.DEBUFF_TYPE_BLEED_COLOR
 dispel[Enum.DispelType.Enrage]  = CreateColor(243 / 255, 95 / 255, 245 / 255, 1)
+
+local RangeSpells               = {}
+local RangeSpellsSize           = 0
+local RangeSpellsBound          = 0
+
+function MVPF_Common.RegisterRangeSpell(id)
+  if RangeSpells and RangeSpells[id] then return end
+  RangeSpells[id] = true
+  RangeSpellsSize = RangeSpellsSize + 1
+  RangeSpellsBound = math.floor(RangeSpellsSize * 0.8)
+end
+
+function MVPF_Common.CheckMultiSpellRange(unit)
+  local count = 0
+  if RangeSpellsSize == 0 then return true end
+  for spell in pairs(RangeSpells) do
+    local range = C_Spell.IsSpellInRange(spell, unit)
+    print("Range: ", range)
+    if range == true then
+      count = count + 1
+    end
+  end
+  print("Count: ", count, "RangeL: ", RangeSpellsBound)
+  return count > RangeSpellsBound
+end
+
+function MVPF_Common.PositionLossOfControlFrame()
+  local f = LossOfControlFrame
+  if not f then
+    print("MVPF: LossOfControlFrame not found")
+    return
+  end
+
+  -- Set size: 150 width, maintain current height ratio
+  local _, currentHeight = f:GetSize()
+  if currentHeight and currentHeight > 0 then
+    local scale = 150 / f:GetWidth()
+    f:SetSize(150, currentHeight * scale)
+  else
+    f:SetWidth(150)
+  end
+
+  -- Clear previous anchors and center on UIParent
+  f:ClearAllPoints()
+  f:SetPoint("CENTER", UIParent, "CENTER", 0, currentHeight)
+end
 
 local dispelTypeCurve
 
