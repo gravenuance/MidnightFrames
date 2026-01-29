@@ -41,12 +41,12 @@ function MVPF_Common.CheckMultiSpellRange(unit)
   if RangeSpellsSize == 0 then return true end
   for spell in pairs(RangeSpells) do
     local range = C_Spell.IsSpellInRange(spell, unit)
-    print("Range: ", range)
+    --print("Range: ", range)
     if range == true then
       count = count + 1
     end
   end
-  print("Count: ", count, "RangeL: ", RangeSpellsBound)
+  --print("Count: ", count, "RangeL: ", RangeSpellsBound)
   return count > RangeSpellsBound
 end
 

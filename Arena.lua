@@ -668,7 +668,7 @@ local function MVPF_HookArenaMembers()
   end
 end
 
---[[ local function MVPF_SetupArenaHooks()
+local function MVPF_SetupArenaHooks()
   if CompactArenaFrame and not CompactArenaFrame.MVPF_Hooked then
     CompactArenaFrame.MVPF_Hooked = true
     hooksecurefunc(CompactArenaFrame, "UpdateVisibility", function(self)
@@ -677,14 +677,14 @@ end
       end
     end)
   end
-end ]]
+end
 
 
 
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("PLAYER_LOGIN")
 loader:SetScript("OnEvent", function()
-  --MVPF_SetupArenaHooks()
+  MVPF_SetupArenaHooks()
   MVPF_HookArenaMembers()
 end)
 
