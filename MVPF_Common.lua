@@ -15,6 +15,7 @@ Enum.DispelType                 = {
 
 MVPF_Common.RegAlpha            = 0.7
 MVPF_Common.OtherAlpha          = 0.4
+local errorMargin               = 0.6
 
 local dispel                    = {}
 dispel[Enum.DispelType.None]    = _G.DEBUFF_TYPE_NONE_COLOR
@@ -33,7 +34,7 @@ function MVPF_Common.RegisterRangeSpell(id)
   if RangeSpells and RangeSpells[id] then return end
   RangeSpells[id] = true
   RangeSpellsSize = RangeSpellsSize + 1
-  RangeSpellsBound = math.floor(RangeSpellsSize * 0.8)
+  RangeSpellsBound = math.floor(RangeSpellsSize * errorMargin)
 end
 
 function MVPF_Common.CheckMultiSpellRange(unit)
