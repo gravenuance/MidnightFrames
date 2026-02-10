@@ -79,6 +79,7 @@ local function SetBossFrame(index)
   f:RegisterEvent("PLAYER_TARGET_CHANGED")
   f:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
   f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
+  f:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
   f:SetScript("OnEvent", function(self, event, arg1)
@@ -92,7 +93,7 @@ local function SetBossFrame(index)
       if arg1 == unit then
         UpdateHealth()
       end
-    elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
+    elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" or event == "PLAYER_SOFT_INTERACT_CHANGED" then
       UpdateHealth()
     elseif event == "PLAYER_TARGET_CHANGED" then
       UpdateTargetHighlight()

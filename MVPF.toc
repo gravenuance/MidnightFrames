@@ -4,6 +4,7 @@
 ## IconTexture: Interface\AddOns\MVPF\Media\icon
 ## SavedVariables: MVPF_DB
 ## Dependencies: Ace3
+## Category: Matcha Latte
 
 
 Core.lua

@@ -451,12 +451,17 @@ function MVPF_Common.GetClassColor(unit, fr, fg, fb)
 end
 
 -- Highlight
-function MVPF_Common.UpdateTargetHighlight(frame, unit, testFlag)
+function MVPF_Common.UpdateTargetHighlight(frame, unit, testFlag, optionalFrame)
   if testFlag and _G[testFlag] then return end
   if UnitIsUnit("target", unit) then
     frame.border:SetBackdropBorderColor(1, 1, 1, 1)
+  elseif optionalFrame and UnitIsUnit("target", optionalFrame.unit) then
+    optionalFrame.border:SetBackdropBorderColor(1, 1, 1, 1)
   else
     frame.border:SetBackdropBorderColor(0, 0, 0, 1)
+    if optionalFrame then
+      optionalFrame.border:SetBackdropBorderColor(0, 0, 0, 1)
+    end
   end
 end
 

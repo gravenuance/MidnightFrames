@@ -502,6 +502,7 @@ local function SetArenaFrame(index)
   --f:RegisterEvent("LOSS_OF_CONTROL_ADDED")
 
   f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
+  f:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
 
@@ -519,7 +520,7 @@ local function SetArenaFrame(index)
       end
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
       UpdateHealth()
-    elseif event == "PLAYER_TARGET_CHANGED" then
+    elseif event == "PLAYER_TARGET_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" then
       UpdateTargetHighlight()
     elseif event == "PVP_MATCH_STATE_CHANGED"
         or event == "GROUP_ROSTER_UPDATE"

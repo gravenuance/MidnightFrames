@@ -102,6 +102,7 @@ f:RegisterEvent("UNIT_NAME_UPDATE")
 f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
+f:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
 f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
 f:SetScript("OnEvent", function(_, event, arg1)
@@ -122,7 +123,7 @@ f:SetScript("OnEvent", function(_, event, arg1)
     UpdateAuras()
   elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") and arg1 == f.unit then
     UpdateHealth()
-  elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
+  elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
     UpdateHealth()
   elseif event == "UNIT_AURA" and arg1 == f.unit then
     UpdateAuras()

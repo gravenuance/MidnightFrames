@@ -119,6 +119,7 @@ local function CreatePartyFrame(index)
   f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
   f:RegisterEvent("UNIT_OTHER_PARTY_CHANGED")
   f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
+  f:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
   f:SetScript("OnEvent", function(_, event, arg1)
@@ -141,7 +142,7 @@ local function CreatePartyFrame(index)
     elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH")
         and arg1 == unit then
       UpdateHealth()
-    elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
+    elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
       UpdateHealth()
     elseif event == "UNIT_NAME_UPDATE" and arg1 == unit then
       SetClassColor()

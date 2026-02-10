@@ -77,7 +77,7 @@ local function ApplyClassColor()
 end
 
 local function UpdateTargetHighlight()
-  MVPF_Common.UpdateTargetHighlight(f, f.unit, "MVPF_PlayerTestMode")
+  MVPF_Common.UpdateTargetHighlight(f, f.unit, "MVPF_PlayerTestMode", petFrame)
 end
 
 -- =================
