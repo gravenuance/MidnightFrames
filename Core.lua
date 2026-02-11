@@ -61,50 +61,46 @@ end)
 -- Defaults
 local DEFAULT_FILTERS = {
   player = {
-    -- Helpful
-    ["HELPFUL"]        = false,
-    ["HELPFUL|PLAYER"] = false,
-    ["HELPFUL|RAID"]   = true,
-
-    -- Harmful
-    ["HARMFUL"]        = false,
-    ["HARMFUL|PLAYER"] = false,
-    ["HARMFUL|RAID"]   = true,
+    ["HARMFUL|IMPORTANT"]          = true,
+    ["HELPFUL|IMPORTANT"]          = true,
+    ["HARMFUL|CROWD_CONTROL"]      = true,
+    ["HELPFUL|BIG_DEFENSIVE"]      = true,
+    ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["PLAYER|RAID_IN_COMBAT"]      = true,
   },
 
   target = {
-    -- Helpful
-    ["HELPFUL"]        = false,
-    ["HELPFUL|PLAYER"] = true,
-    ["HELPFUL|RAID"]   = true,
-
-    -- Harmful
-    ["HARMFUL"]        = false,
-    ["HARMFUL|PLAYER"] = true,
-    ["HARMFUL|RAID"]   = true,
+    ["HARMFUL|IMPORTANT"] = true,
+    ["HELPFUL|IMPORTANT"] = true,
+    ["HARMFUL|CROWD_CONTROL"] = true,
+    ["HELPFUL|CROWD_CONTROL"] = true,
+    ["HARMFUL|BIG_DEFENSIVE"] = true,
+    ["HELPFUL|BIG_DEFENSIVE"] = true,
+    ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["PLAYER|RAID_IN_COMBAT"] = true,
   },
 
   party = {
-    -- Helpful
-    ["HELPFUL"]        = false,
-    ["HELPFUL|PLAYER"] = true,
-    ["HELPFUL|RAID"]   = false,
-
-    -- Harmful
-    ["HARMFUL"]        = false,
-    ["HARMFUL|PLAYER"] = false,
-    ["HARMFUL|RAID"]   = true,
+    ["HARMFUL|IMPORTANT"] = true,
+    ["HELPFUL|IMPORTANT"] = true,
+    ["HARMFUL|CROWD_CONTROL"] = true,
+    ["HELPFUL|BIG_DEFENSIVE"] = true,
+    ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["PLAYER|RAID_IN_COMBAT"] = true,
   },
 }
 
 local FILTER_LABELS = {
-  ["HELPFUL"]        = "Helpful (Any)",
-  ["HELPFUL|PLAYER"] = "Helpful (Player)",
-  ["HELPFUL|RAID"]   = "Helpful (Raid)",
-
-  ["HARMFUL"]        = "Harmful (Any)",
-  ["HARMFUL|PLAYER"] = "Harmful (Player)",
-  ["HARMFUL|RAID"]   = "Harmful (Raid)",
+  ["HARMFUL|IMPORTANT"] = "Harmful Important",
+  ["HELPFUL|IMPORTANT"] = "Helpful Important",
+  ["HARMFUL|CROWD_CONTROL"] = "Harmful Crowd Control",
+  ["HELPFUL|CROWD_CONTROL"] = "Helpful Crowd Control",
+  ["HELPFUL|BIG_DEFENSIVE"] = "Helpful Big Defensives",
+  ["HARMFUL|BIG_DEFENSIVE"] = "Harmful Big Defensives",
+  ["HELPFUL|EXTERNAL_DEFENSIVE"] = "Helpful External Defensives",
+  ["HARMFUL|EXTERNAL_DEFENSIVE"] = "Harmful External Defensives",
+  ["PLAYER|RAID_IN_COMBAT"] = "Player In Combat (HoTs)",
 }
 
 local UNIT_LABELS = {
@@ -127,116 +123,83 @@ local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
 local function BuildOptionsTable()
   local args = {
-    desc = {
-      type  = "description",
-      order = 0,
-      name  = "Select which aura filters to track per frame.\n",
-    },
-    onlyShowCC = {
-      type  = "toggle",
-      name  = "Only show crowd control auras",
-      desc  = "When enabled, aura lists only show spells flagged as crowd control.",
-      order = 5,
-      get   = function()
-        return MVPF_DB.onlyShowCrowdControlAuras
-      end,
-      set   = function(_, val)
-        MVPF_DB.onlyShowCrowdControlAuras = val
-      end,
-    }
+    desc = { type = "description", order = 0, name = "Select which aura filters to track per frame." }
   }
 
-  args.testingHeader = {
-    type  = "header",
-    name  = "Testing",
-    order = 7,
-  }
 
-  args.testTarget = {
-    type  = "execute",
-    name  = "Toggle Target Test Mode",
+  args.testingHeader = { type = "header", name = "Testing", order = 7 }
+  args.testing = {
+    type = "group",
+    name = "Testing",
+    inline = true,
     order = 8,
-    func  = function()
-      MVPF_Common.ToggleTestMode("target", not MVPF_TargetTestMode)
-    end,
-  }
-
-  args.testParty = {
-    type  = "execute",
-    name  = "Toggle Party Test Mode",
-    order = 9,
-    func  = function()
-      MVPF_Common.ToggleTestMode("party", not MVPF_PartyTestMode)
-    end,
-  }
-
-  args.testArena = {
-    type  = "execute",
-    name  = "Toggle Arena Test Mode",
-    order = 10,
-    func  = function()
-      MVPF_Common.ToggleTestMode("arena", not MVPF_ArenaTestMode)
-    end,
+    args = {
+      testTarget = {
+        type = "execute",
+        name = "Toggle Target Test Mode",
+        func = function() MVPF_Common.ToggleTestMode("target", not MVPF_TargetTestMode) end
+      },
+      testParty  = {
+        type = "execute",
+        name = "Toggle Party Test Mode",
+        func = function() MVPF_Common.ToggleTestMode("party", not MVPF_PartyTestMode) end
+      },
+      testArena  = {
+        type = "execute",
+        name = "Toggle Arena Test Mode",
+        func = function() MVPF_Common.ToggleTestMode("arena", not MVPF_ArenaTestMode) end
+      }
+    }
   }
 
   local order = 15
-
   for unitKey, unitDefaults in pairs(DEFAULT_FILTERS) do
-    -- Header per unit (Player, Target, Party)
     args[unitKey .. "Header"] = {
-      type  = "header",
-      name  = UNIT_LABELS[unitKey] or unitKey,
-      order = order,
+      type = "header",
+      name = UNIT_LABELS[unitKey] or unitKey,
+      order = order
     }
     order = order + 1
 
-    -- One toggle per filter defined in DEFAULT_FILTERS[unitKey]
-    for filterKey, _ in pairs(unitDefaults) do
-      local label = FILTER_LABELS[filterKey] or filterKey
-
-      args[unitKey .. "_" .. filterKey] = {
-        type  = "toggle",
-        name  = label,
+    for filterKey in pairs(unitDefaults) do
+      args[unitKey .. filterKey] = {
+        type = "toggle",
+        name = FILTER_LABELS[filterKey] or filterKey,
         order = order,
-        get   = function()
+        get = function()
           local f = MVPF_DB.filters[unitKey]
           return f and f[filterKey]
         end,
-        set   = function(_, val)
+        set = function(_, val)
+          MVPF_DB.filters[unitKey] = MVPF_DB.filters[unitKey] or {}
           MVPF_DB.filters[unitKey][filterKey] = val
-        end,
+        end
       }
-
       order = order + 1
     end
-
-    order = order + 5 -- spacing between groups
+    order = order + 4
   end
 
-  local Options = {
+  return {
     type = "group",
-    name = "MVPF",
-    args = {
-      general = {
-        type  = "group",
-        name  = "Auras",
-        order = 1,
-        args  = args,
-      },
-    },
+    name = "Auras",
+    args = args
   }
-
-  return Options
 end
 
+local CURRENT_VERSION = "4"
 function MVPF.InitConfigAndOptions()
   MVPF_DB = MVPF_DB or {}
+  MVPF_DB.version = MVPF_DB.version or "1"
+  if MVPF_DB.version ~= CURRENT_VERSION then
+    wipe(MVPF_DB.filters)
+    MVPF_DB.version = CURRENT_VERSION
+  end
   MVPF_DB.filters = MVPF_DB.filters or {
     player = {},
     target = {},
     party  = {},
   }
-  MVPF_DB.onlyShowCrowdControlAuras = MVPF_DB.onlyShowCrowdControlAuras or false
 
   -- Apply defaults for any missing filter on each unit
   for unit, defaults in pairs(DEFAULT_FILTERS) do
@@ -248,9 +211,7 @@ function MVPF.InitConfigAndOptions()
     end
   end
 
-  -- Build the Ace3 options table dynamically from DEFAULT_FILTERS
   local Options = BuildOptionsTable()
-
   AceConfig:RegisterOptionsTable("MVPF", Options)
   AceConfigDialog:AddToBlizOptions("MVPF", "MVPF")
 end
