@@ -1,6 +1,9 @@
+local _, MVPF = ...
 local baseName = "MVPF_BossFrame"
 
 local MAX_BOSS_FRAMES = 5
+local MAX_AURAS = 4
+local DEFAULT_SIZE = 32
 
 local blizzContainerName = "BossTargetFrameContainer"
 local blizzFrameBase = "Boss" -- Boss1TargetFrame, Boss2TargetFrame, ...
@@ -18,12 +21,13 @@ local function SetBossFrame(index)
   local unit = "boss" .. index
   local name = baseName .. index
 
-  local f, health = MVPF_Common.CreateUnitFrame({
-    name  = name,
-    unit  = unit,
-    point = { "CENTER", UIParent, "CENTER", 280 + (index - 1) * 55, 0 },
-    size  = { 50, 210 },
-    kind  = "boss",
+  local f, auraContainer, health = MVPF_Common.CreateUnitFrame({
+    name     = name,
+    unit     = unit,
+    point    = { "CENTER", UIParent, "CENTER", 280 + (index - 1) * 55, 0 },
+    size     = { 50, 210 },
+    maxAuras = MAX_AURAS,
+    iconSize = DEFAULT_SIZE,
   })
 
   f:SetFrameLevel(10)
@@ -70,12 +74,34 @@ local function SetBossFrame(index)
     end
   end
 
+  local function UpdateAuras()
+    if not UnitExists(unit) then
+      MVPF_Common.UpdateAuras(auraContainer, unit, {}, 0)
+      return
+    end
+    local filters = {}
+    local cfg = MVPF.GetUnitFilters("boss")
+    for filter, enabled in pairs(cfg) do
+      if enabled then
+        table.insert(filters, filter)
+      end
+    end
+
+    MVPF_Common.UpdateAuras(
+      auraContainer,
+      unit,
+      filters,
+      MAX_AURAS
+    )
+  end
+
   function f:UpdateVisibility() UpdateVisibility() end
 
   f:RegisterEvent("PLAYER_ENTERING_WORLD")
   f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
   f:RegisterEvent("UNIT_HEALTH")
   f:RegisterEvent("UNIT_MAXHEALTH")
+  f:RegisterEvent("UNIT_AURA")
   f:RegisterEvent("PLAYER_TARGET_CHANGED")
   f:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
   f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
@@ -99,6 +125,8 @@ local function SetBossFrame(index)
       UpdateTargetHighlight()
     elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" then
       UpdateColor()
+    elseif event == "UNIT_AURA" and arg1 == f.unit then
+      UpdateAuras()
     end
   end)
 end
@@ -147,7 +175,7 @@ local function HideBossContainer()
   if not container then return end
   if container.MVPF_Hooked then return end
   if container.UpdateShownState then
-    hooksecurefunc(container, "UpdateShownState", ForceHide)
+    hooksecurefunc(container, "Show", ForceHide)
   end
   --hooksecurefunc(container, "Show", ForceHide)
   for i = 1, MAX_BOSS_FRAMES do

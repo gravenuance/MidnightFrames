@@ -30,7 +30,9 @@
       "NO",
       "CANCEL",
       "DONE",
-      "OKAY"
+      "OKAY",
+      "LOSS_OF_CONTROL_DISPLAY_CYCLONE",
+      "LOSS_OF_CONTROL_DISPLAY_INTERRUPT_SCHOOL"
     ],
     "Lua.type.weakUnionCheck": true
 }

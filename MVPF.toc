@@ -14,3 +14,4 @@ Player.lua
 Target.lua
 Arena.lua
 Boss.lua
+EditMode.lua

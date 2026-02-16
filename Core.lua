@@ -61,12 +61,15 @@ end)
 -- Defaults
 local DEFAULT_FILTERS = {
   player = {
-    ["HARMFUL|IMPORTANT"]          = true,
-    ["HELPFUL|IMPORTANT"]          = true,
-    ["HARMFUL|CROWD_CONTROL"]      = true,
-    ["HELPFUL|BIG_DEFENSIVE"]      = true,
+    ["HARMFUL|IMPORTANT"] = true,
+    ["HELPFUL|IMPORTANT"] = true,
+    ["HARMFUL|CROWD_CONTROL"] = true,
+    ["HELPFUL|CROWD_CONTROL"] = true,
+    ["HARMFUL|BIG_DEFENSIVE"] = true,
+    ["HELPFUL|BIG_DEFENSIVE"] = true,
     ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["PLAYER|RAID_IN_COMBAT"]      = true,
+    ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["PLAYER|RAID_IN_COMBAT"] = true,
   },
 
   target = {
@@ -85,10 +88,37 @@ local DEFAULT_FILTERS = {
     ["HARMFUL|IMPORTANT"] = true,
     ["HELPFUL|IMPORTANT"] = true,
     ["HARMFUL|CROWD_CONTROL"] = true,
+    ["HELPFUL|CROWD_CONTROL"] = true,
+    ["HARMFUL|BIG_DEFENSIVE"] = true,
     ["HELPFUL|BIG_DEFENSIVE"] = true,
     ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
     ["PLAYER|RAID_IN_COMBAT"] = true,
   },
+
+  arena = { -- testing all of them
+    ["HARMFUL|IMPORTANT"] = true,
+    ["HELPFUL|IMPORTANT"] = true,
+    ["HARMFUL|CROWD_CONTROL"] = true,
+    ["HELPFUL|CROWD_CONTROL"] = true,
+    ["HARMFUL|BIG_DEFENSIVE"] = true,
+    ["HELPFUL|BIG_DEFENSIVE"] = true,
+    ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["PLAYER|RAID_IN_COMBAT"] = true,
+  },
+
+  boss = {
+    ["HARMFUL|IMPORTANT"] = true,
+    ["HELPFUL|IMPORTANT"] = true,
+    ["HARMFUL|CROWD_CONTROL"] = true,
+    ["HELPFUL|CROWD_CONTROL"] = true,
+    ["HARMFUL|BIG_DEFENSIVE"] = true,
+    ["HELPFUL|BIG_DEFENSIVE"] = true,
+    ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["PLAYER|RAID_IN_COMBAT"] = true,
+  }
 }
 
 local FILTER_LABELS = {
@@ -100,13 +130,15 @@ local FILTER_LABELS = {
   ["HARMFUL|BIG_DEFENSIVE"] = "Harmful Big Defensives",
   ["HELPFUL|EXTERNAL_DEFENSIVE"] = "Helpful External Defensives",
   ["HARMFUL|EXTERNAL_DEFENSIVE"] = "Harmful External Defensives",
-  ["PLAYER|RAID_IN_COMBAT"] = "Player In Combat (HoTs)",
+  ["PLAYER|RAID_IN_COMBAT"] = "HoTs and DoTs",
 }
 
 local UNIT_LABELS = {
   player = "Player",
   target = "Target",
   party  = "Party",
+  arena  = "Arena",
+  boss   = "Boss",
 }
 
 -- Public accessor for other files
@@ -187,7 +219,7 @@ local function BuildOptionsTable()
   }
 end
 
-local CURRENT_VERSION = "4"
+local CURRENT_VERSION = "5"
 function MVPF.InitConfigAndOptions()
   MVPF_DB = MVPF_DB or {}
   MVPF_DB.version = MVPF_DB.version or "1"
@@ -199,6 +231,8 @@ function MVPF.InitConfigAndOptions()
     player = {},
     target = {},
     party  = {},
+    arena  = {},
+    boss   = {},
   }
 
   -- Apply defaults for any missing filter on each unit

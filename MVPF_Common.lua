@@ -13,6 +13,28 @@ Enum.DispelType                 = {
   Bleed   = 11,
 }
 
+local CategoryRemap             = {
+  [Enum.SpellDiminishCategory.Root]         = 0,
+  [Enum.SpellDiminishCategory.Taunt]        = 1,
+  [Enum.SpellDiminishCategory.Stun]         = 2,
+  [Enum.SpellDiminishCategory.AoEKnockback] = 3,
+  [Enum.SpellDiminishCategory.Incapacitate] = 4,
+  [Enum.SpellDiminishCategory.Disorient]    = 5,
+  [Enum.SpellDiminishCategory.Silence]      = 6,
+  [Enum.SpellDiminishCategory.Disarm]       = 7,
+}
+
+local DRTextures                = {
+  [0] = "Interface\\Icons\\spell_nature_stranglevines",
+  [1] = "Interface\\Icons\\ability_warrior_mockingblow",
+  [2] = "Interface\\Icons\\ability_rogue_kidneyshot",
+  [3] = "Interface\\Icons\\spell_shaman_thunderstorm",
+  [4] = "Interface\\Icons\\spell_nature_polymorph",
+  [5] = "Interface\\Icons\\spell_shadow_psychicscream",
+  [6] = "Interface\\Icons\\spell_shadow_soulleech_3",
+  [7] = "Interface\\Icons\\ability_warrior_disarm",
+}
+
 MVPF_Common.RegAlpha            = 0.7
 MVPF_Common.OtherAlpha          = 0.4
 local errorMargin               = 0.6
@@ -165,7 +187,7 @@ function MVPF_Common.CreateUnitFrame(params)
   local size     = params.size or { 50, 220 }
   local maxAuras = params.maxAuras or 4
   local iconSize = params.iconSize or 26
-  local kind     = params.kind or "none"
+  local pvpIcons = params.pvpIcons or false
 
   local f        = CreateFrame("Button", name, UIParent, "SecureUnitButtonTemplate")
   f:SetSize(size[1], size[2])
@@ -188,6 +210,7 @@ function MVPF_Common.CreateUnitFrame(params)
   })
   f.border:SetBackdropBorderColor(0, 0, 0, 1)
 
+  -- Mouseover
   f.mouseoverBorder = CreateFrame("Frame", nil, f, "BackdropTemplate")
   f.mouseoverBorder:SetAllPoints(f)
   f.mouseoverBorder:SetBackdrop({
@@ -208,9 +231,10 @@ function MVPF_Common.CreateUnitFrame(params)
   health:SetFrameStrata("MEDIUM")
   health:SetFrameLevel(f:GetFrameLevel() + 1)
   f.health = health
-  if kind == "arena" or kind == "boss" then
+
+  --[[ if kind == "arena" or kind == "boss" then
     return f, health
-  end
+  end ]]
 
   f:SetScript("OnEnter", function(self)
     f.mouseoverBorder:Show()
@@ -230,6 +254,20 @@ function MVPF_Common.CreateUnitFrame(params)
   auraContainer.icons = {}
 
   MVPF_Common.LayoutAuraButtons(auraContainer)
+
+  if pvpIcons then
+    local secondContainer = CreateFrame("Frame", name .. "Buttons", f)
+    secondContainer.iconSize = iconSize
+
+    totalHeight = iconSize * 5 + 2 * (5 - 1)
+    secondContainer:SetSize(28, totalHeight)
+    secondContainer:SetPoint("TOP", f, "BOTTOM", 0, -10)
+    secondContainer.icons = {}
+
+    MVPF_Common.LayoutPvPButtons(secondContainer)
+
+    return f, auraContainer, health, secondContainer
+  end
 
   return f, auraContainer, health
 end
@@ -251,10 +289,6 @@ function MVPF_Common.CreateAuraButton(parent, index)
   btn.icon:SetAlpha(0.8)
   btn.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 
-  -- Count text
-  --btn.count = btn:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
-  --btn.count:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", -1, 1)
-
   -- Cooldown
   btn.cooldown = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
   btn.cooldown:SetAllPoints(btn)
@@ -275,6 +309,45 @@ function MVPF_Common.CreateAuraButton(parent, index)
   end)
 
   return btn
+end
+
+function MVPF_Common.CreateGenericButton(parent, index)
+  local btn = CreateFrame("Button", parent:GetName() .. "Aura" .. index, parent)
+  btn:SetSize(parent.iconSize, parent.iconSize)
+
+  -- Border behind the icon
+  btn.border = btn:CreateTexture(nil, "BACKGROUND")
+  btn.border:SetTexture("Interface\\Buttons\\WHITE8x8")
+  btn.border:SetVertexColor(0, 0, 0, 1)
+  btn.border:SetPoint("TOPLEFT", -1, 1)
+  btn.border:SetPoint("BOTTOMRIGHT", 1, -1)
+
+  -- Icon above border
+  btn.icon = btn:CreateTexture(nil, "BORDER")
+  btn.icon:SetAllPoints(btn)
+  btn.icon:SetAlpha(0.8)
+  btn.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+
+  -- Cooldown
+  btn.cooldown = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
+  btn.cooldown:SetAllPoints(btn)
+  btn.cooldown:Hide()
+
+  return btn
+end
+
+function MVPF_Common.LayoutPvPButtons(container)
+  for i = 1, 4 do
+    local btn = container.icons[i] or MVPF_Common.CreateGenericButton(container, i)
+    container.icons[i] = btn
+    btn:ClearAllPoints()
+    if i == 1 then
+      btn:SetPoint("TOP", container, "TOP", 0, 0)
+    else
+      local prev = container.icons[i - 1]
+      btn:SetPoint("TOP", prev, "BOTTOM", 0, -4)
+    end
+  end
 end
 
 function MVPF_Common.LayoutAuraButtons(container)
@@ -313,9 +386,248 @@ function MVPF_SetAuraTexture(btn, auraData)
   return true
 end
 
+function MVPF_Common.ResetDR(container)
+  if container then
+    for i = 2, 4 do
+      local btn = container.icons[i]
+      if btn then
+        btn.enabled = false
+        btn:Hide()
+        if btn.btn then
+          btn.btn:Hide()
+        end
+      end
+    end
+  end
+end
+
+function MVPF_Common.ResetBlizzardButton(button)
+  if button.MVPF_Button then
+    local btn = button.MVPF_Button
+    btn.enabled = false
+    btn:Hide()
+    button.MVPF_Button = nil
+  end
+end
+
+function MVPF_Common.MoveBlizzardButton(button, candidate, size)
+  button:ClearAllPoints()
+  button:SetPoint("CENTER", candidate, "CENTER", 0, 0)
+  button:SetSize(size, size)
+  local baseLevel = candidate:GetFrameLevel()
+  button:SetFrameStrata(candidate:GetFrameStrata())
+  button:SetFrameLevel(baseLevel + 1)
+  if button.Icon then
+    button.Icon:SetAlpha(0.8)
+    button.Icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+  end
+end
+
+-- fml
+function MVPF_Common.UpdateBlizzardDR(button, container, size)
+  if not button or not container then return end
+  if button.MVPF_Button then
+    MVPF_Common.MoveBlizzardButton(button, button.MVPF_Button, size)
+    return
+  end
+  local candidate
+  for i = 2, 4 do
+    candidate = container.icons and container.icons[i]
+    if candidate and not candidate.enabled then
+      candidate.enabled = true
+      candidate:Show()
+      candidate.btn = button
+      button.MVPF_Button = candidate
+      MVPF_Common.MoveBlizzardButton(button, candidate, size)
+      return
+    end
+  end
+  if not candidate then
+    button:Hide()
+  end
+end
+
+function MVPF_Common.UpdateBlizzardDRBackup(tray, container, size)
+  if not tray or not container then
+    return
+  end
+  local _, children = pcall(function() return { tray:GetChildren() } end)
+  pcall(function()
+    for _, child in ipairs(children) do
+      if not child:GetCategory() then break end
+      MVPF_Common.UpdateBlizzardDR(child, container, size)
+    end
+  end)
+end
+
+--unsafe
+function MVPF_Common.UpdateDR(trackerInfo, container, drContainer)
+  if not trackerInfo then
+    print("MVPF DR: no categoryInfo")
+    return
+  end
+  if not C_SpellDiminish or not C_SpellDiminish.IsSystemSupported() then
+    return
+  end
+  local category, startTime, duration
+  local success, info = pcall(function()
+    category = trackerInfo.category
+    startTime = trackerInfo.startTime
+    duration = trackerInfo.duration
+  end)
+  if not success or not category then
+    print("Nil category:", info)
+    return
+  end
+  local catIndex = CategoryRemap[category]
+  if not catIndex then
+    return
+  end
+  local categoryInfo
+  success, info = pcall(function()
+    categoryInfo = C_SpellDiminish.GetSpellDiminishCategoryInfo(catIndex)
+  end)
+  if not success or not categoryInfo then
+    print("No category info:", info)
+    return
+  end
+  --[[ local categoryIcon
+  success = pcall(function()
+    categoryIcon = categoryInfo.icon
+  end)
+  if not success then return end ]]
+  local btn
+  local drTex
+  --success = pcall(function() drTex = DRTextures[category] end)
+  success = pcall(function()
+    drTex = categoryInfo.icon
+  end)
+  if not success or not drTex then
+    print("No valid texture path.")
+    return
+  end
+  local drBtn
+  success = pcall(function() drBtn = drContainer[catIndex] end)
+  if not success then
+    print("Cannot access table.")
+    return
+  end
+
+  if drBtn and drBtn.index then
+    btn = container.icons[drBtn.index]
+  end
+
+  if not btn then
+    for i = 2, 4 do
+      local candidate = container.icons and container.icons[i]
+      if candidate and not candidate.category then
+        btn = candidate
+        drContainer = drContainer or {}
+        drContainer[catIndex] = { index = i }
+        print("MVPF DR: assigning category", tostring(catIndex), "to slot", i)
+        break
+      end
+    end
+  end
+
+  if not btn then
+    print("MVPF DR: no free button for category", tostring(catIndex))
+    return
+  end
+
+  if startTime and duration then
+    btn.icon:SetTexture(drTex)
+    btn.category = catIndex
+    btn.cooldown:SetCooldown(startTime, duration)
+    btn:Show()
+  else
+    btn:Hide()
+    btn.category = nil
+  end
+end
+
+local defaultTrinket = "Interface\\Icons\\inv_jewelry_trinketpvp_01"
+
+function MVPF_Common.ResetAndRequestTrinket(container, unit)
+  if container then
+    local btn = container.icons[1]
+    if btn then
+      btn:Hide()
+      if btn.cooldown then btn.cooldown:Hide() end
+      btn.duration = nil
+      btn.startTime = nil
+      btn.spellId = nil
+      if UnitExists(unit) then
+        local spellId, startTimeMs, durationMs = C_PvP.GetArenaCrowdControlInfo(unit)
+        --print("MVPF Trinket: info for", unit, "spellId=", spellId, "start=", startTimeMs, "dur=", durationMs)
+        btn.spellId = spellId
+        if C_Spell and C_Spell.GetSpellTexture then
+          local iconID
+          if not spellId then
+            iconID = defaultTrinket
+            --print("MVPF Trinket: using default icon for", unit, iconID)
+          else
+            iconID = C_Spell.GetSpellTexture(spellId)
+            --print("MVPF Trinket: spell icon for", unit, spellId, iconID)
+          end
+          if not iconID then
+            --print("MVPF Trinket: no iconID, hiding icon for", unit)
+            btn:Hide()
+            return
+          end
+          btn.icon:SetTexture(iconID)
+          btn:Show()
+        end
+        if startTimeMs and durationMs then
+          btn.duration = durationMs / 1000
+          btn.startTime = startTimeMs / 1000
+          btn.cooldown:SetCooldown(btn.startTime, btn.duration)
+        end
+      end
+    end
+  end
+end
+
+function MVPF_Common.UpdateTrinket(container, unit)
+  local btn = container.icons[1]
+  if not C_PvP or not C_PvP.GetArenaCrowdControlInfo then
+    --print("MVPF Trinket: CPvP API missing, hiding button for", unit)
+    if btn then
+      btn:Hide()
+    end
+    return
+  end
+
+  local spellId, startTimeMs, durationMs = C_PvP.GetArenaCrowdControlInfo(unit)
+  --print("MVPF Trinket: info for", unit, "spellId=", spellId, "start=", startTimeMs, "dur=", durationMs)
+  btn.spellId = spellId
+  if C_Spell and C_Spell.GetSpellTexture then
+    local iconID
+    if not spellId then
+      iconID = defaultTrinket
+      --print("MVPF Trinket: using default icon for", unit, iconID)
+    else
+      iconID = C_Spell.GetSpellTexture(spellId)
+      --print("MVPF Trinket: spell icon for", unit, spellId, iconID)
+    end
+    if not iconID then
+      --print("MVPF Trinket: no iconID, hiding icon for", unit)
+      btn:Hide()
+      return
+    end
+    btn.icon:SetTexture(iconID)
+    btn:Show()
+  end
+  if startTimeMs and durationMs then
+    btn.duration = durationMs / 1000
+    btn.startTime = startTimeMs / 1000
+    btn.cooldown:SetCooldown(btn.startTime, btn.duration)
+  end
+end
+
 function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
   if not C_UnitAuras
-      or not C_UnitAuras.GetAuraDataByIndex
+      or not C_UnitAuras.GetUnitAuras
       or not UnitExists(unit) then
     for i = 1, container.maxAuras do
       local btn = container.icons[i]
@@ -349,7 +661,6 @@ function MVPF_Common.UpdateAuras(container, unit, filters, maxRemaining)
     if not auraList or totalAuras == 0 then
       return
     end
-
     for listIndex = 1, totalAuras do
       if shown > container.maxAuras then
         break

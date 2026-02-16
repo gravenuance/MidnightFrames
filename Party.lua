@@ -18,17 +18,19 @@ local function CreatePartyFrame(index)
   local unit = "party" .. index
   local name = baseName .. index
 
-  local f, auraContainer, health = MVPF_Common.CreateUnitFrame({
+  -- Set up frames
+  local f, auraContainer, health, pvpContainer = MVPF_Common.CreateUnitFrame({
     name     = name,
     unit     = unit,
     point    = { "CENTER", UIParent, "CENTER", -280 - (index - 1) * 55, 0 },
     size     = { 50, 210 },
     maxAuras = MAX_AURAS,
     iconSize = DEFAULT_SIZE,
+    pvpIcons = true,
   })
   f:SetAttribute("type2", "togglemenu")
-
   f.IsDriverRegistered = false
+  local DRContainer = {}
 
   local defaultR, defaultG, defaultB
   local function UpdateHealth()
@@ -121,8 +123,11 @@ local function CreatePartyFrame(index)
   f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
   f:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+  f:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
+  f:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
+  f:RegisterEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED")
 
-  f:SetScript("OnEvent", function(_, event, arg1)
+  f:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"
         or event == "PLAYER_ENTERING_WORLD"
         or event == "ZONE_CHANGED_NEW_AREA"
@@ -135,6 +140,8 @@ local function CreatePartyFrame(index)
       SetClassColor()
       UpdateHealth()
       UpdateAuras()
+      MVPF_Common.ResetDR(pvpContainer)
+      MVPF_Common.ResetAndRequestTrinket(pvpContainer, unit)
     end
     if MVPF_PartyTestMode then return end
     if event == "PLAYER_TARGET_CHANGED" then
@@ -148,6 +155,17 @@ local function CreatePartyFrame(index)
       SetClassColor()
     elseif event == "UNIT_AURA" and arg1 == unit then
       UpdateAuras()
+    elseif event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" or event == "ARENA_COOLDOWNS_UPDATE" then
+      if arg1 == unit then
+        --print("MVPF Arena:", event, "for", unit)
+        MVPF_Common.UpdateTrinket(pvpContainer, unit)
+      end
+    elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" -- Only one needed for DR
+    then
+      if arg1 == unit then
+        --print("MVPF Arena:", event, "for", unit)
+        --MVPF_Common.UpdateDR(arg2, pvpContainer, DRContainer)
+      end
     end
   end)
 end
