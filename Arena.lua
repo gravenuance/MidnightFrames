@@ -217,23 +217,20 @@ local function SetArenaFrame(index)
       local tray = member.SpellDiminishStatusTray
       tray.MVPF_Hooked = true
       hooksecurefunc(member.SpellDiminishStatusTray, "TryUpdateOrAddTrayItem", function(self)
-        print("Trigger 1")
-        MV.UpdateBlizzardDRBackup(self, frame.pvpContainer, MV.DefaultSize)
+        MV.UpdateBlizzardDRBackup(self, frame.otherContainer, MV.DefaultSize)
       end)
       local _, children = pcall(function() return { tray:GetChildren() } end)
       pcall(function()
         for _, child in ipairs(children) do
-          hooksecurefunc(child, "SetCategoryInfo", function(self)
-            print("Trigger 2")
-            MV.UpdateBlizzardDR(self, frame.pvpContainer, MV.DefaultSize)
+          hooksecurefunc(child, "SetCategoryInfo", function()
+            MV.UpdateBlizzardDR(child, frame.otherContainer, MV.DefaultSize)
           end)
         end
       end)
       pcall(function()
         for _, child in ipairs(children) do
-          hooksecurefunc(child, "Reset", function(self)
-            print("Trigger 3")
-            MV.ResetBlizzardButton(self)
+          hooksecurefunc(child, "Reset", function()
+            MV.ResetBlizzardButton(child)
           end)
         end
       end)
