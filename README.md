@@ -1,22 +1,38 @@
-This is the UI I have had since BfA as a WeakAura.
-With the death of WeakAuras, I have had to convert it into an addon.
-
 ![UI](/image.png)
+# MV Frames
 
-The philosophy is simple:
-The interface is built on a horizontal axis.
-This means that default UI frames have to 'fight' for space with other frames in order to be visible.
-It often results in UI clutter. This issue is exaggerated by addons creating even more custom frames that have to exist on a horizontal plane.
-The issue of space became glaring for me when I had to move and adjust the camera just so I could see my nameplates underneath party and arena frames.
-Moreover, because of the limited space that frames are given, child frames have to be smaller or reside outside of the frame.
-This has been true for both cooldown tracking and buffs. Buff icons tend to be tiny, and cooldown tracking (now obsolete, but still relevant) had to be placed near the corners of the screen.
-Both of these design choices make it difficult to view the information on the screen in a constructive way.
+This UI originated as a WeakAura during BfA. With the decline of WeakAuras, I’ve since converted it into a standalone addon.
 
-This UI constructs frames for party, player, target, and arena that are vertical. Their construction is equivalent, they both grow from the middle towards the left and right to represent Party and Arena 1..X.
-This creates an intuitive way to quickly locate a unit member, since Party2 and Arena2, for example, are equally distanced from the center.
-Further, because the frames occupy the left and right side of the screen on a 0 Y-axis, the middle, top, and bottom of the screen remain empty.
-That means that nameplates directly in front of a player and around them are always visible.
-Another concomitant effect is that vertical frames allow for all buffs, debuffs, and other related frames attached to party and arena to be displayed as larger icons across the frames.
-The health bar remains visible, and the buffs are easier to read.
+The core philosophy is simple: the default interface is built on a horizontal axis. As a result, UI frames must compete with one another for limited horizontal space, which often leads to visual clutter. This problem is amplified by addons that introduce additional frames on the same plane. For me, the issue became especially apparent when I had to adjust my camera simply to see nameplates beneath party and arena frames.
 
-I will keep this updated for as long as I play, because I have gotten too comfortable with these frames to use the default option.
+Because horizontal space is constrained, child elements are often forced to be smaller or placed outside their parent frames. This has long affected both buff and cooldown tracking. Buff icons tend to be too small to read comfortably, while cooldown trackers (now largely obsolete, but still relevant) were commonly pushed toward the corners of the screen. Both choices make it harder to process information efficiently.
+
+This UI instead uses vertically oriented frames for the player, party, target, and arena. These frames share a consistent construction and expand outward from the center, with party and arena units distributed symmetrically to the left and right (Party 1…X, Arena 1…X). This symmetry makes unit positions intuitive—Party 2 and Arena 2, for example, are equally distant from the center point.
+
+By occupying the left and right sides of the screen along a neutral Y-axis, the center, top, and bottom remain unobstructed. This ensures that nameplates directly in front of the player and in their immediate surroundings are always visible. An additional benefit of vertical frames is that attached elements—buffs, debuffs, and other indicators—can be displayed as larger, more legible icons without obscuring the health bar.
+
+I intend to maintain this UI for as long as I continue playing; I’ve grown too accustomed to its clarity and ergonomics to return to the default layout.
+
+## Features
+
+* Class-based color coding: Each unit frame is color coded by class for immediate visual identification.
+
+* Interactive highlighting: Frames respond to mouseover and target states, providing clear visual feedback for interaction and focus.
+
+* Filtered buff display: Buffs are selectively shown to reduce visual noise and emphasize relevant information.
+
+* PvP utilities: Party and arena frames include trinket tracking, while arena frames additionally display diminishing return (DR) trackers.
+
+* Extended unit coverage: The addon includes dedicated boss frames and a player pet frame.
+
+* Enhanced player frame: The player frame displays current power as a percentage for quick resource evaluation.
+
+* Range awareness: A lightweight, lazy-approximation range check provides contextual awareness without excessive overhead.
+
+## Potential Features
+
+* Better DR, when Blizzard starts allowing access to the required functions.
+
+* Better range tracking.
+  
+* Raid frames.
