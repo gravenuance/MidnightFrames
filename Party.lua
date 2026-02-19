@@ -1,59 +1,30 @@
-local _, MVPF      = ...
+local _, MV      = ...
 
-local baseName     = "MVPF_PartyFrame"
+local baseName   = "MV_PartyFrame"
 
-MVPF_PartyTestMode = false
+MV_PartyTestMode = false
 
-local MAX_AURAS    = 3
-local DEFAULT_SIZE = 32
-
-
-
-
--- ===========================
--- Create one party unit frame
--- ===========================
+local MAX_AURAS  = 3
 
 local function CreatePartyFrame(index)
   local unit = "party" .. index
   local name = baseName .. index
 
   -- Set up frames
-  local f, auraContainer, health, pvpContainer = MVPF_Common.CreateUnitFrame({
+  local f = MV.CreateUnitFrame({
     name     = name,
     unit     = unit,
     point    = { "CENTER", UIParent, "CENTER", -280 - (index - 1) * 55, 0 },
     size     = { 50, 210 },
     maxAuras = MAX_AURAS,
-    iconSize = DEFAULT_SIZE,
+    iconSize = MV.DefaultSize,
     pvpIcons = true,
   })
-  f:SetAttribute("type2", "togglemenu")
   f.IsDriverRegistered = false
-  local DRContainer = {}
-
-  local defaultR, defaultG, defaultB
-  local function UpdateHealth()
-    if MVPF_PartyTestMode then return end
-    MVPF_Common.UpdateHealthBar(health, unit)
-    if not health or not defaultR then return end
-    if MVPF_Common.CheckMultiSpellRange(unit) then
-      health:SetStatusBarColor(defaultR, defaultG, defaultB, MVPF_Common.RegAlpha)
-    else
-      health:SetStatusBarColor(defaultR, defaultG, defaultB, MVPF_Common.OtherAlpha)
-    end
-  end
-
-  local function SetClassColor()
-    local r, g, b = MVPF_Common.GetClassColor(unit)
-    if not health then return end
-    health:SetStatusBarColor(r, g, b, MVPF_Common.RegAlpha)
-    defaultR, defaultG, defaultB = r, g, b
-  end
 
   local function UpdateVisibility()
     local numGroup = GetNumGroupMembers() or 0
-    if MVPF_PartyTestMode then
+    if MV_PartyTestMode then
       UnregisterUnitWatch(f)
       f.IsDriverRegistered = false
       f:Show()
@@ -67,56 +38,14 @@ local function CreatePartyFrame(index)
     end
   end
 
-  local function UpdateTargetHighlight()
-    MVPF_Common.UpdateTargetHighlight(f, unit, "MVPF_PartyTestMode")
-  end
-
-  -- ======================
-  -- Aura container & icons
-  -- ======================
-
-  local function UpdateAuras()
-    if MVPF_PartyTestMode then return end
-    if not UnitExists(unit) then
-      MVPF_Common.UpdateAuras(auraContainer, unit, {}, 0)
-      return
-    end
-    local filters = {}
-    local cfg = MVPF.GetUnitFilters("party")
-    for filter, enabled in pairs(cfg) do
-      if enabled then
-        table.insert(filters, filter)
-      end
-    end
-
-    MVPF_Common.UpdateAuras(
-      auraContainer,
-      unit,
-      filters,
-      MAX_AURAS
-    )
-  end
-
-  function f:UpdateHealth() UpdateHealth() end
-
-  function f:UpdateAuras() UpdateAuras() end
-
   function f:UpdateVisibility() UpdateVisibility() end
-
-  function f:SetClassColor() SetClassColor() end
-
-  function f:UpdateTargetHighlight() UpdateTargetHighlight() end
-
-  -- ===================
-  -- Event-driven wiring
-  -- ===================
 
   f:RegisterEvent("GROUP_ROSTER_UPDATE")
   f:RegisterEvent("PLAYER_ENTERING_WORLD")
-  f:RegisterEvent("UNIT_HEALTH")
-  f:RegisterEvent("UNIT_MAXHEALTH")
-  f:RegisterEvent("UNIT_NAME_UPDATE")
-  f:RegisterEvent("UNIT_AURA")
+  f:RegisterUnitEvent("UNIT_HEALTH", unit)
+  f:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
+  f:RegisterUnitEvent("UNIT_NAME_UPDATE", unit)
+  f:RegisterUnitEvent("UNIT_AURA", unit)
   f:RegisterEvent("PLAYER_TARGET_CHANGED")
   f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
   f:RegisterEvent("UNIT_OTHER_PARTY_CHANGED")
@@ -125,7 +54,6 @@ local function CreatePartyFrame(index)
   f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
   f:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
   f:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
-  f:RegisterEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED")
 
   f:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"
@@ -133,44 +61,35 @@ local function CreatePartyFrame(index)
         or event == "ZONE_CHANGED_NEW_AREA"
         or event == "UNIT_OTHER_PARTY_CHANGED"
     then
-      MVPF_PartyTestMode = false
+      MV_PartyTestMode = false
       UpdateVisibility()
       if not UnitExists(unit) then return end
-      UpdateTargetHighlight()
-      SetClassColor()
-      UpdateHealth()
-      UpdateAuras()
-      MVPF_Common.ResetDR(pvpContainer)
-      MVPF_Common.ResetAndRequestTrinket(pvpContainer, unit)
+      MV.UpdateTargetHighlight(f)
+      MV.ApplyClassColor(f)
+      MV.UpdateHealthBar(f)
+      MV.UpdateAuras(f)
+      MV.ResetDR(f)
+      MV.ResetAndRequestTrinket(f)
     end
-    if MVPF_PartyTestMode then return end
+    if MV_PartyTestMode then return end
     if event == "PLAYER_TARGET_CHANGED" then
-      UpdateTargetHighlight()
-    elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH")
-        and arg1 == unit then
-      UpdateHealth()
+      MV.UpdateTargetHighlight(f)
+    elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
+      MV.UpdateHealthBar(f)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-      UpdateHealth()
-    elseif event == "UNIT_NAME_UPDATE" and arg1 == unit then
-      SetClassColor()
-    elseif event == "UNIT_AURA" and arg1 == unit then
-      UpdateAuras()
+      MV.UpdateHealthBar(f)
+    elseif event == "UNIT_NAME_UPDATE" then
+      MV.ApplyClassColor(f)
+    elseif event == "UNIT_AURA" then
+      MV.UpdateAuras(f)
     elseif event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" or event == "ARENA_COOLDOWNS_UPDATE" then
       if arg1 == unit then
-        --print("MVPF Arena:", event, "for", unit)
-        MVPF_Common.UpdateTrinket(pvpContainer, unit)
-      end
-    elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" -- Only one needed for DR
-    then
-      if arg1 == unit then
-        --print("MVPF Arena:", event, "for", unit)
-        --MVPF_Common.UpdateDR(arg2, pvpContainer, DRContainer)
+        MV.UpdateTrinket(f)
       end
     end
   end)
 end
 
--- Create frames for party1–party4
 for i = 1, 4 do
   CreatePartyFrame(i)
 end

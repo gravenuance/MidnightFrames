@@ -1,12 +1,11 @@
-local _, MVPF = ...
-local baseName = "MVPF_BossFrame"
+local _, MV = ...
+local baseName = "MV_BossFrame"
 
 local MAX_BOSS_FRAMES = 5
 local MAX_AURAS = 4
-local DEFAULT_SIZE = 32
 
 local blizzContainerName = "BossTargetFrameContainer"
-local blizzFrameBase = "Boss" -- Boss1TargetFrame, Boss2TargetFrame, ...
+local blizzFrameBase = "Boss"
 
 function InInstance()
   local _, instanceType = IsInInstance()
@@ -21,37 +20,15 @@ local function SetBossFrame(index)
   local unit = "boss" .. index
   local name = baseName .. index
 
-  local f, auraContainer, health = MVPF_Common.CreateUnitFrame({
+  local f = MV.CreateUnitFrame({
     name     = name,
     unit     = unit,
     point    = { "CENTER", UIParent, "CENTER", 280 + (index - 1) * 55, 0 },
     size     = { 50, 210 },
     maxAuras = MAX_AURAS,
-    iconSize = DEFAULT_SIZE,
+    iconSize = MV.DefaultSize,
   })
-
   f:SetFrameLevel(10)
-  local defaultR, defaultG, defaultB
-
-  local function UpdateColor()
-    local r, g, b = MVPF_Common.GetClassColor(unit)
-    health:SetStatusBarColor(r, g, b, MVPF_Common.RegAlpha)
-    defaultR, defaultG, defaultB = r, g, b
-  end
-
-  local function UpdateHealth()
-    MVPF_Common.UpdateHealthBar(health, unit)
-    if not health or not defaultR then return end
-    if MVPF_Common.CheckMultiSpellRange(unit) then
-      health:SetStatusBarColor(defaultR, defaultG, defaultB, MVPF_Common.RegAlpha)
-    else
-      health:SetStatusBarColor(defaultR, defaultG, defaultB, MVPF_Common.OtherAlpha)
-    end
-  end
-
-  local function UpdateTargetHighlight()
-    MVPF_Common.UpdateTargetHighlight(f, unit)
-  end
 
   local HAS_REGISTERED_WATCH = false
   local function UpdateVisibility()
@@ -74,145 +51,81 @@ local function SetBossFrame(index)
     end
   end
 
-  local function UpdateAuras()
-    if not UnitExists(unit) then
-      MVPF_Common.UpdateAuras(auraContainer, unit, {}, 0)
-      return
-    end
-    local filters = {}
-    local cfg = MVPF.GetUnitFilters("boss")
-    for filter, enabled in pairs(cfg) do
-      if enabled then
-        table.insert(filters, filter)
-      end
-    end
+  function f:UpdateVisibility() UpdateVisibility() end
 
-    MVPF_Common.UpdateAuras(
-      auraContainer,
-      unit,
-      filters,
-      MAX_AURAS
-    )
+  local function ForceHide(frame)
+    frame:SetAlpha(0)
   end
 
-  function f:UpdateVisibility() UpdateVisibility() end
+  local function HideBossFrameAndSpellBar(index)
+    local frame = _G[blizzFrameBase .. index .. "TargetFrame"]
+    if not frame then return end
+    if frame.MVPF_Hooked then return end
+    local spellBar = frame.spellBar or _G[frame:GetName() .. "SpellBar"] or
+        _G[blizzFrameBase .. index .. "TargetFrameSpellBar"]
+    if spellBar then
+      if spellBar.UpdateShownState then
+        hooksecurefunc(spellBar, "UpdateShownState", ForceHide)
+      end
+    end
+    if frame.UpdateShownState then
+      hooksecurefunc(frame, "UpdateShownState", ForceHide)
+    end
+    if frame.OnShow then
+      hooksecurefunc(frame, "OnShow", ForceHide)
+    end
+    frame.MVPF_Hooked = true
+  end
+
+  local function HideBossContainer()
+    local container = _G[blizzContainerName]
+    if not container then return end
+    if container.MVPF_Hooked then return end
+    if container.UpdateShownState then
+      hooksecurefunc(container, "Show", ForceHide)
+    end
+    for i = 1, MAX_BOSS_FRAMES do
+      HideBossFrameAndSpellBar(i)
+    end
+    container.MVPF_Hooked = true
+  end
+
+  local function SetupBossHooks()
+    HideBossContainer()
+  end
 
   f:RegisterEvent("PLAYER_ENTERING_WORLD")
   f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-  f:RegisterEvent("UNIT_HEALTH")
-  f:RegisterEvent("UNIT_MAXHEALTH")
-  f:RegisterEvent("UNIT_AURA")
+  f:RegisterUnitEvent("UNIT_HEALTH", unit)
+  f:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
+  f:RegisterUnitEvent("UNIT_AURA", unit)
   f:RegisterEvent("PLAYER_TARGET_CHANGED")
   f:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
   f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
   f:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
-  f:SetScript("OnEvent", function(self, event, arg1)
+  f:SetScript("OnEvent", function(self, event)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
-      UpdateHealth()
       UpdateVisibility()
-      UpdateTargetHighlight()
+      SetupBossHooks()
+      MV.UpdateHealthBar(f)
+      MV.UpdateTargetHighlight(f)
     end
     if not InInstance() then return end
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
-      if arg1 == unit then
-        UpdateHealth()
-      end
-    elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" or event == "PLAYER_SOFT_INTERACT_CHANGED" then
-      UpdateHealth()
+      MV.UpdateHealthBar(f)
+    elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
+      MV.SetRangeAlpha(f)
     elseif event == "PLAYER_TARGET_CHANGED" then
-      UpdateTargetHighlight()
+      MV.UpdateTargetHighlight(f)
     elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" then
-      UpdateColor()
-    elseif event == "UNIT_AURA" and arg1 == f.unit then
-      UpdateAuras()
+      MV.ApplyClassColor(f)
+    elseif event == "UNIT_AURA" then
+      MV.UpdateAuras(f)
     end
   end)
 end
-
-------------------------------------------------------------------------
--- Hide Blizzard boss frames & container
-------------------------------------------------------------------------
-local function ForceHide(frame)
-  frame:SetAlpha(0)
-end
-
-local function PrintFuncs(obj, prefix)
-  prefix = prefix or ""
-  for k, v in pairs(obj) do
-    if type(v) == "function" then
-      print(prefix .. tostring(k))
-    end
-  end
-end
-
-local function HideBossFrameAndSpellBar(index)
-  local frame = _G[blizzFrameBase .. index .. "TargetFrame"]
-  if not frame then return end
-  if frame.MVPF_Hooked then return end
-  local spellBar = frame.spellBar or _G[frame:GetName() .. "SpellBar"] or
-      _G[blizzFrameBase .. index .. "TargetFrameSpellBar"]
-  if spellBar then
-    --spellBar:SetAlpha(0)
-    --spellBar.Show = spellBar.Hide
-    --hooksecurefunc(spellBar, "Show", spellBar.Hide)
-    if spellBar.UpdateShownState then
-      hooksecurefunc(spellBar, "UpdateShownState", ForceHide)
-    end
-  end
-  if frame.UpdateShownState then
-    hooksecurefunc(frame, "UpdateShownState", ForceHide)
-  end
-  if frame.OnShow then
-    hooksecurefunc(frame, "OnShow", ForceHide)
-  end
-  frame.MVPF_Hooked = true
-end
-
-local function HideBossContainer()
-  local container = _G[blizzContainerName]
-  if not container then return end
-  if container.MVPF_Hooked then return end
-  if container.UpdateShownState then
-    hooksecurefunc(container, "Show", ForceHide)
-  end
-  --hooksecurefunc(container, "Show", ForceHide)
-  for i = 1, MAX_BOSS_FRAMES do
-    HideBossFrameAndSpellBar(i)
-  end
-  container.MVPF_Hooked = true
-end
-
-------------------------------------------------------------------------
--- Loader: create MVPF boss frames + keep Blizzard hidden
-------------------------------------------------------------------------
-
-local function MVPF_SetupBossHooks()
-  HideBossContainer()
-  --[[ local container = _G[blizzContainerName]
-  if container and not container.MVPF_OnShowHooked then
-    container.MVPF_OnShowHooked = true
-    hooksecurefunc(container, "Show", function(self)
-      HideBossContainer()
-    end)
-  end ]]
-end
-
-local loader = CreateFrame("Frame")
-loader:RegisterEvent("PLAYER_LOGIN")
-loader:RegisterEvent("PLAYER_ENTERING_WORLD")
-loader:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-loader:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
-loader:SetScript("OnEvent", function()
-  MVPF_SetupBossHooks()
-  for i = 1, MAX_BOSS_FRAMES do
-    local f = _G[baseName .. i]
-    if f and f.UpdateVisibility then
-      f:UpdateVisibility()
-    end
-  end
-end)
 
 for i = 1, MAX_BOSS_FRAMES do
   SetBossFrame(i)

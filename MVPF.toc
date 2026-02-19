@@ -1,17 +1,24 @@
 ## Interface: 120000, 120001
-## Title: Massive Venus Pulsating Frames
+## Title: Mega Villos
 ## Notes: Custom frames for almost everything.
 ## IconTexture: Interface\AddOns\MVPF\Media\icon
-## SavedVariables: MVPF_DB
+## SavedVariables: MV_DB
 ## Dependencies: Ace3
 ## Category: Matcha Latte
 
-
+Modules/Setup.lua
+Modules/AuraUtil.lua
+Modules/DRUtil.lua
+Modules/FrameUtil.lua
+Modules/HealthFrameUtil.lua
+Modules/HighlightUtil.lua
+Modules/RangeUtil.lua
+Modules/TestUtil.lua
+Modules/TrinketUtil.lua
 Core.lua
-MVPF_Common.lua
 Party.lua
 Player.lua
 Target.lua
 Arena.lua
 Boss.lua
-EditMode.lua
+

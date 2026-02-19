@@ -1,6 +1,6 @@
-local _, MVPF           = ...
+local _, MV             = ...
 
-local baseName          = "MVPF_Core"
+local baseName          = "MV_Core"
 
 local pendingPostCombat = {}
 
@@ -19,18 +19,18 @@ SlashCmdList.MV = function(msg)
 
   if msg == "target" then
     RunOrDefer("MV_target_test", function()
-      MVPF_Common.ToggleTestMode("target", not MVPF_TargetTestMode)
-      print("MV: target test mode " .. (MVPF_TargetTestMode and "ON" or "OFF"))
+      MV.ToggleTestMode("target", not MV_TargetTestMode)
+      print("MV: target test mode " .. (MV_TargetTestMode and "ON" or "OFF"))
     end)
   elseif msg == "party" then
     RunOrDefer("MV_party_test", function()
-      MVPF_Common.ToggleTestMode("party", not MVPF_PartyTestMode)
-      print("MV: party test mode " .. (MVPF_PartyTestMode and "ON" or "OFF"))
+      MV.ToggleTestMode("party", not MV_PartyTestMode)
+      print("MV: party test mode " .. (MV_PartyTestMode and "ON" or "OFF"))
     end)
   elseif msg == "arena" then
     RunOrDefer("MV_arena_test", function()
-      MVPF_Common.ToggleTestMode("arena", not MVPF_ArenaTestMode)
-      print("MV: arena test mode " .. (MVPF_ArenaTestMode and "ON" or "OFF"))
+      MV.ToggleTestMode("arena", not MV_ArenaTestMode)
+      print("MV: arena test mode " .. (MV_ArenaTestMode and "ON" or "OFF"))
     end)
   else
     print("Usage: /mv target | party | arena")
@@ -42,7 +42,6 @@ ef:RegisterEvent("PLAYER_REGEN_ENABLED")
 ef:RegisterEvent("PLAYER_LOGIN")
 ef:SetScript("OnEvent", function(self, event)
   if event == "PLAYER_REGEN_ENABLED" then
-    -- optional safety check:
     if InCombatLockdown() then return end
 
     for key, data in pairs(pendingPostCombat) do
@@ -50,13 +49,9 @@ ef:SetScript("OnEvent", function(self, event)
       pendingPostCombat[key] = nil
     end
   elseif event == "PLAYER_LOGIN" then
-    MVPF.InitConfigAndOptions()
+    MV.InitConfigAndOptions()
   end
 end)
-
--------------------------------------------------
--- CONFIG + ACE3 OPTIONS
--------------------------------------------------
 
 -- Defaults
 local DEFAULT_FILTERS = {
@@ -142,11 +137,11 @@ local UNIT_LABELS = {
 }
 
 -- Public accessor for other files
-function MVPF.GetUnitFilters(unit)
-  if not MVPF_DB or not MVPF_DB.filters then
+function MV.GetUnitFilters(unit)
+  if not MV_DB or not MV_DB.filters then
     return {}
   end
-  return MVPF_DB.filters[unit] or {}
+  return MV_DB.filters[unit] or {}
 end
 
 local _ = LibStub("AceAddon-3.0")
@@ -169,17 +164,17 @@ local function BuildOptionsTable()
       testTarget = {
         type = "execute",
         name = "Toggle Target Test Mode",
-        func = function() MVPF_Common.ToggleTestMode("target", not MVPF_TargetTestMode) end
+        func = function() MV.ToggleTestMode("target", not MV_TargetTestMode) end
       },
       testParty  = {
         type = "execute",
         name = "Toggle Party Test Mode",
-        func = function() MVPF_Common.ToggleTestMode("party", not MVPF_PartyTestMode) end
+        func = function() MV.ToggleTestMode("party", not MV_PartyTestMode) end
       },
       testArena  = {
         type = "execute",
         name = "Toggle Arena Test Mode",
-        func = function() MVPF_Common.ToggleTestMode("arena", not MVPF_ArenaTestMode) end
+        func = function() MV.ToggleTestMode("arena", not MV_ArenaTestMode) end
       }
     }
   }
@@ -199,12 +194,12 @@ local function BuildOptionsTable()
         name = FILTER_LABELS[filterKey] or filterKey,
         order = order,
         get = function()
-          local f = MVPF_DB.filters[unitKey]
+          local f = MV_DB.filters[unitKey]
           return f and f[filterKey]
         end,
         set = function(_, val)
-          MVPF_DB.filters[unitKey] = MVPF_DB.filters[unitKey] or {}
-          MVPF_DB.filters[unitKey][filterKey] = val
+          MV_DB.filters[unitKey] = MV_DB.filters[unitKey] or {}
+          MV_DB.filters[unitKey][filterKey] = val
         end
       }
       order = order + 1
@@ -220,14 +215,16 @@ local function BuildOptionsTable()
 end
 
 local CURRENT_VERSION = "5"
-function MVPF.InitConfigAndOptions()
-  MVPF_DB = MVPF_DB or {}
-  MVPF_DB.version = MVPF_DB.version or "1"
-  if MVPF_DB.version ~= CURRENT_VERSION then
-    wipe(MVPF_DB.filters)
-    MVPF_DB.version = CURRENT_VERSION
+function MV.InitConfigAndOptions()
+  MV_DB = MV_DB or {}
+  MV_DB.version = MV_DB.version or "1"
+  if MV_DB.version ~= CURRENT_VERSION then
+    if MV_DB.filters then
+      wipe(MV_DB.filters)
+    end
+    MV_DB.version = CURRENT_VERSION
   end
-  MVPF_DB.filters = MVPF_DB.filters or {
+  MV_DB.filters = MV_DB.filters or {
     player = {},
     target = {},
     party  = {},
@@ -237,15 +234,15 @@ function MVPF.InitConfigAndOptions()
 
   -- Apply defaults for any missing filter on each unit
   for unit, defaults in pairs(DEFAULT_FILTERS) do
-    MVPF_DB.filters[unit] = MVPF_DB.filters[unit] or {}
+    MV_DB.filters[unit] = MV_DB.filters[unit] or {}
     for filter, val in pairs(defaults) do
-      if MVPF_DB.filters[unit][filter] == nil then
-        MVPF_DB.filters[unit][filter] = val
+      if MV_DB.filters[unit][filter] == nil then
+        MV_DB.filters[unit][filter] = val
       end
     end
   end
 
   local Options = BuildOptionsTable()
-  AceConfig:RegisterOptionsTable("MVPF", Options)
-  AceConfigDialog:AddToBlizOptions("MVPF", "MVPF")
+  AceConfig:RegisterOptionsTable("MV", Options)
+  AceConfigDialog:AddToBlizOptions("MV", "MV")
 end

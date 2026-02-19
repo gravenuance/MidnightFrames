@@ -32,7 +32,26 @@
       "DONE",
       "OKAY",
       "LOSS_OF_CONTROL_DISPLAY_CYCLONE",
-      "LOSS_OF_CONTROL_DISPLAY_INTERRUPT_SCHOOL"
+      "LOSS_OF_CONTROL_DISPLAY_INTERRUPT_SCHOOL",
+      "PARTY_IN_PUBLIC_GROUP_MESSAGE",
+      "INCOMING_SUMMON_TOOLTIP_SUMMON_PENDING",
+      "INCOMING_SUMMON_TOOLTIP_SUMMON_ACCEPTED",
+      "INCOMING_SUMMON_TOOLTIP_SUMMON_DECLINED",
+      "RAID_TARGET_ICON",
+      "PLAYER_OFFLINE",
+      "DEAD",
+      "BUFF_STACKS_OVERFLOW",
+      "LOST_HEALTH",
+      "LFG_FOLLOWER_NAME_PREFIX",
+      "NORMAL_FONT_COLOR_CODE",
+      "ACCEPT",
+      "UNKNOWNOBJECT",
+      "CompactPartyFrame",
+      "FocusFrameToT",
+      "TargetFrameToT"
     ],
-    "Lua.type.weakUnionCheck": true
+    "Lua.type.weakUnionCheck": true,
+    "Lua.diagnostics.disable": [
+      "assign-type-mismatch"
+    ]
 }

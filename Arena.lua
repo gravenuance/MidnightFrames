@@ -1,28 +1,18 @@
-local _, MVPF = ...
-local baseName = "MVPF_ArenaFrame"
+local _, MV = ...
+local baseName = "MV_ArenaFrame"
 local SOLID_TEXTURE = "Interface\\Buttons\\WHITE8x8"
 
-MVPF_ArenaTestMode = false
+MV_ArenaTestMode = false
 
 local blizzFrame = "CompactArenaFrame"
-local CompactArenaFrame = _G[blizzFrame]
-local CompactArenaFrameTitle = _G[blizzFrame .. "Title"]
 
-local altAlpha = MVPF_Common.OtherAlpha
-local regAlpha = MVPF_Common.RegAlpha
-
-local DEFAULT_SIZE = 32
+local altAlpha = MV.OtherAlpha
+local regAlpha = MV.RegAlpha
 
 local MAX_AURAS = 4
 
 local c1, c2, c3, c4 = 0.1, 0.9, 0.1, 0.9 -- Default zoom coords
 local stealthIcon = 132320
-
-local arenaKeepList = {
-  DebuffFrame = true,
-  CcRemoverFrame = true,
-  SpellDiminishStatusTray = true,
-}
 
 local function SetIconZoom(owner)
   local x1, x2, x3, x4 = owner:GetTexCoord()
@@ -109,32 +99,24 @@ end
 local function SetArenaFrame(index)
   local unit = "arena" .. index
   local unitFrame = _G[blizzFrame .. "Member" .. index]
-  local unitStealthFrame = CompactArenaFrame and CompactArenaFrame["StealthedUnitFrame" .. index]
   local name = baseName .. index
-  local f, auraContainer, health, pvpContainer = MVPF_Common.CreateUnitFrame({
+  local f = MV.CreateUnitFrame({
     name = name,
     unit = unit,
     point = { "CENTER", UIParent, "CENTER", 280 + (index - 1) * 55, 0 },
     size = { 50, 210 },
     maxAuras = MAX_AURAS,
-    iconSize = DEFAULT_SIZE,
+    iconSize = MV.DefaultSize,
     pvpIcons = true,
   })
   f:SetFrameLevel(10) -- base level for MVPF frame
-  f.pvpContainer = pvpContainer
-  local defaultR, defaultG, defaultB
-  local DRCategories = {}
   local function SetAnchor(type, point, relative, x, y, sizeX, sizeY)
     local a = CreateFrame("Frame", baseName .. type, f)
     a:SetSize(sizeX or 1, sizeY or 1)
     a:SetPoint(point, f, relative, x, y)
     return a
   end
-
-  --f.trinketAnchor = SetAnchor("Trinket", "TOP", "BOTTOM", 0, -30)
-  --f.debuffAnchor = SetAnchor("Debuff", "BOTTOM", "BOTTOM", 0, 30)
   f.statusIconAnchor = SetAnchor("StatusIcon", "CENTER", "CENTER", 0, 0, 36, 36)
-  --f.diminishAnchor = SetAnchor("Diminish", "BOTTOM", "BOTTOM", 0, 90)
   f.statusIconAnchor:SetFrameLevel(f:GetFrameLevel() + 5)
   local function IsInStealth(idx)
     if not IsUnit(idx) then
@@ -148,47 +130,10 @@ local function SetArenaFrame(index)
     local _, c = GetOpponentSpecAndClass(index)
     if c then
       local r, g, b = GetClassColors(c)
-      health:SetStatusBarColor(r, g, b, alpha or regAlpha)
-      defaultR, defaultG, defaultB = r, g, b
+      f.health:SetStatusBarColor(r, g, b, alpha or regAlpha)
       return true
     end
     return false
-  end
-
-  local function UpdateHealth()
-    MVPF_Common.UpdateHealthBar(health, unit)
-    if not health or not defaultR then return end
-    if MVPF_Common.CheckMultiSpellRange(unit) then
-      health:SetStatusBarColor(defaultR, defaultG, defaultB, MVPF_Common.RegAlpha)
-    else
-      health:SetStatusBarColor(defaultR, defaultG, defaultB, MVPF_Common.OtherAlpha)
-    end
-  end
-
-  local function UpdateTargetHighlight()
-    MVPF_Common.UpdateTargetHighlight(f, unit, "MVPF_ArenaTestMode")
-  end
-
-  local function UpdateAuras()
-    if MVPF_ArenaTestMode then return end
-    if not UnitExists(unit) then
-      MVPF_Common.UpdateAuras(auraContainer, unit, {}, 0)
-      return
-    end
-    local filters = {}
-    local cfg = MVPF.GetUnitFilters("arena")
-    for filter, enabled in pairs(cfg) do
-      if enabled then
-        table.insert(filters, filter)
-      end
-    end
-
-    MVPF_Common.UpdateAuras(
-      auraContainer,
-      unit,
-      filters,
-      MAX_AURAS
-    )
   end
 
   local function SetStatusIcon()
@@ -230,7 +175,7 @@ local function SetArenaFrame(index)
   end
 
   local function UpdateVisibility()
-    if MVPF_ArenaTestMode then
+    if MV_ArenaTestMode then
       f:Show()
       return
     end
@@ -272,75 +217,77 @@ local function SetArenaFrame(index)
       local tray = member.SpellDiminishStatusTray
       tray.MVPF_Hooked = true
       hooksecurefunc(member.SpellDiminishStatusTray, "TryUpdateOrAddTrayItem", function(self)
-        MVPF_Common.UpdateBlizzardDRBackup(self, frame.pvpContainer, DEFAULT_SIZE)
+        MV.UpdateBlizzardDRBackup(self, frame.pvpContainer, MV.DefaultSize)
       end)
       local _, children = pcall(function() return { tray:GetChildren() } end)
       pcall(function()
         for _, child in ipairs(children) do
           hooksecurefunc(child, "SetCategoryInfo", function(self)
-            MVPF_Common.UpdateBlizzardDR(self, frame.pvpContainer, DEFAULT_SIZE)
+            MV.UpdateBlizzardDR(self, frame.pvpContainer, MV.DefaultSize)
           end)
         end
       end)
       pcall(function()
         for _, child in ipairs(children) do
           hooksecurefunc(child, "Reset", function(self)
-            MVPF_Common.ResetBlizzardButton(self)
+            MV.ResetBlizzardButton(self)
           end)
         end
       end)
     end
   end
 
-  f:RegisterEvent("PLAYER_ENTERING_WORLD") -- Reset values
+  -- SET DEFAULTS
+  f:RegisterEvent("PLAYER_ENTERING_WORLD")
   f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
-  f:RegisterEvent("UNIT_HEALTH")
-  f:RegisterEvent("UNIT_MAXHEALTH")
-  f:RegisterEvent("UNIT_AURA")
+  -- APPROXIMATE RANGE CHECKER
+  f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED") -- Range
+  f:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
+  f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
-  f:RegisterEvent("PLAYER_TARGET_CHANGED")               -- Target highlight
+  -- UNIT INFORMATION
+  f:RegisterUnitEvent("UNIT_HEALTH", unit)
+  f:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
+  f:RegisterUnitEvent("UNIT_AURA", unit)
 
+  --HIGHLIGHT
+  f:RegisterEvent("PLAYER_TARGET_CHANGED") -- Target highlight
+
+  --CHECK STATE CHANGES
   f:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS") -- No payload, must scan all
   f:RegisterEvent("PVP_MATCH_STATE_CHANGED")             -- Start/End of the game
   f:RegisterEvent("UPDATE_BATTLEFIELD_SCORE")
   f:RegisterEvent("GROUP_ROSTER_UPDATE")
 
-  f:RegisterEvent("UNIT_OTHER_PARTY_CHANGED") -- Triggers for arenaX
-  f:RegisterEvent("ARENA_OPPONENT_UPDATE")    -- Unseen = left.
+  --CHECK ARENA UPDATES
+  f:RegisterUnitEvent("UNIT_OTHER_PARTY_CHANGED", unit) -- Triggers for arenaX
+  f:RegisterEvent("ARENA_OPPONENT_UPDATE")              -- Unseen = left.
 
-  f:RegisterEvent("ARENA_COOLDOWNS_UPDATE")   -- Trinket
+  --CHECK TRINKET UPDATES
+  f:RegisterEvent("ARENA_COOLDOWNS_UPDATE") -- Trinket
   f:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
 
-  f:RegisterEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED") -- DR
-
-  f:RegisterEvent("LOSS_OF_CONTROL_UPDATE")                     -- Big Debuff
-  f:RegisterEvent("LOSS_OF_CONTROL_ADDED")
-
-  f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED") -- Range
-  f:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
-  f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
 
-  f:SetScript("OnEvent", function(_, event, arg1, arg2)
+
+  f:SetScript("OnEvent", function(_, event, arg1)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
-      MVPF_ArenaTestMode = false
-      UpdateHealth()
+      MV_ArenaTestMode = false
       UpdateVisibility()
-      UpdateTargetHighlight()
-      UpdateAuras()
-      MVPF_Common.ResetDR(pvpContainer)
-      MVPF_Common.ResetAndRequestTrinket(pvpContainer, unit)
+      MV.UpdateHealthBar(f)
+      MV.UpdateTargetHighlight(f, MV_ArenaTestMode)
+      MV.UpdateAuras(f)
+      MV.ResetDR(f)
+      MV.ResetAndRequestTrinket(f)
     end
     if not IsInArena() then return end
     if (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
-      if arg1 == unit then
-        UpdateHealth()
-      end
-    elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-      UpdateHealth()
-    elseif event == "PLAYER_TARGET_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" then
-      UpdateTargetHighlight()
+      MV.UpdateHealthBar(f)
+    elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
+      MV.SetRangeAlpha(f)
+    elseif event == "PLAYER_TARGET_CHANGED" then
+      MV.UpdateTargetHighlight(f, MV_ArenaTestMode)
     elseif event == "PVP_MATCH_STATE_CHANGED"
         or event == "GROUP_ROSTER_UPDATE"
         or event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS"
@@ -352,28 +299,15 @@ local function SetArenaFrame(index)
     then
       if arg1 == unit then
         SetMemberFrame(index)
-        MVPF_Common.ResetAndRequestTrinket(pvpContainer, unit)
+        MV.ResetAndRequestTrinket(f)
         HookDR(f)
       end
-    elseif event == "UNIT_AURA" and arg1 == unit then
-      --print("MVPF Arena:", event, "for", unit)
-      UpdateAuras()
-    elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" -- Only one needed for DR
-    then
-      if arg1 == unit then
-        --print("MVPF Arena:", event, "for", unit)
-        --MVPF_Common.UpdateDR(arg2, pvpContainer, DRCategories)
-      end
+    elseif event == "UNIT_AURA" then
+      MV.UpdateAuras(f)
     elseif event == "ARENA_COOLDOWNS_UPDATE" or event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then -- These are the only two needed: Trinket
       if arg1 == unit then
-        --print("MVPF Arena:", event, "for", unit)
-        MVPF_Common.UpdateTrinket(pvpContainer, unit)
+        MV.UpdateTrinket(f)
       end
-      --[[ elseif event == "LOSS_OF_CONTROL_UPDATE" or event == "LOSS_OF_CONTROL_ADDED" -- Only two needed for the Debuff
-    then
-      if arg1 == unit then
-
-      end ]]
     end
   end)
 end
