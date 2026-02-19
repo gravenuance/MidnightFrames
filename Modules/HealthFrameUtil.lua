@@ -1,9 +1,9 @@
 local _, MV = ...
 local function IsDeadOrGhost(unit)
-  return UnitExists(unit) and UnitIsDeadOrGhost(unit) and not MVPF_ArenaTestMode
+  return UnitExists(unit) and UnitIsDeadOrGhost(unit)
 end
 local function IsLegalUnit(unit)
-  return UnitIsConnected(unit) and UnitExists(unit) and not MVPF_ArenaTestMode
+  return UnitIsConnected(unit) and UnitExists(unit)
 end
 
 local function GetNPCReactionColor(unit)
