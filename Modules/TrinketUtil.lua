@@ -29,8 +29,8 @@ function MV.ResetAndRequestTrinket(frame)
           btn:Show()
         end
         if startTimeMs and durationMs then
-          btn.duration = durationMs / 1000
-          btn.startTime = startTimeMs / 1000
+          btn.duration = durationMs   --/ 1000
+          btn.startTime = startTimeMs --/ 1000
           btn.cooldown:SetCooldown(btn.startTime, btn.duration)
         end
       end

@@ -11,7 +11,7 @@ local regAlpha = MV.RegAlpha
 
 local MAX_AURAS = 4
 
-local c1, c2, c3, c4 = 0.1, 0.9, 0.1, 0.9 -- Default zoom coords
+local c1, c2, c3, c4 = 0.1, 0.9, 0.1, 0.9
 local stealthIcon = 132320
 
 local function SetIconZoom(owner)
@@ -109,7 +109,7 @@ local function SetArenaFrame(index)
     iconSize = MV.DefaultSize,
     pvpIcons = true,
   })
-  f:SetFrameLevel(10) -- base level for MVPF frame
+  f:SetFrameLevel(10)
   local function SetAnchor(type, point, relative, x, y, sizeX, sizeY)
     local a = CreateFrame("Frame", baseName .. type, f)
     a:SetSize(sizeX or 1, sizeY or 1)
@@ -118,6 +118,7 @@ local function SetArenaFrame(index)
   end
   f.statusIconAnchor = SetAnchor("StatusIcon", "CENTER", "CENTER", 0, 0, 36, 36)
   f.statusIconAnchor:SetFrameLevel(f:GetFrameLevel() + 5)
+
   local function IsInStealth(idx)
     if not IsUnit(idx) then
       return false
@@ -304,6 +305,7 @@ local function SetArenaFrame(index)
         HookDR(f)
       end
     elseif event == "UNIT_AURA" then
+      print("Aura")
       MV.UpdateAuras(f)
     elseif event == "ARENA_COOLDOWNS_UPDATE" or event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then -- These are the only two needed: Trinket
       if arg1 == unit then

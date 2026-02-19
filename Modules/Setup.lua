@@ -134,7 +134,7 @@ function MV.CreateUnitFrame(params)
     edgeFile = "Interface\\Buttons\\WHITE8x8",
     edgeSize = 2,
   })
-  f.mouseoverBorder:SetBackdropBorderColor(0.39, 0.72, 0.72, 1)
+  f.mouseoverBorder:SetBackdropBorderColor(0.694, 0.372, 0.98, 1)
   f.mouseoverBorder:SetFrameLevel(f.border:GetFrameLevel() + 1)
   f.mouseoverBorder:Hide()
 
