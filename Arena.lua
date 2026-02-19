@@ -230,6 +230,7 @@ local function SetArenaFrame(index)
       pcall(function()
         for _, child in ipairs(children) do
           hooksecurefunc(child, "Reset", function()
+            print("Trigger 3")
             MV.ResetBlizzardButton(child)
           end)
         end
