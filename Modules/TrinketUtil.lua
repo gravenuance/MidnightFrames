@@ -3,8 +3,8 @@ local _, MV          = ...
 local defaultTrinket = "Interface\\Icons\\inv_jewelry_trinketpvp_01"
 
 function MV.ResetAndRequestTrinket(frame)
-  if frame.pvpContainer then
-    local btn = frame.pvpContainer.icons[1]
+  if frame.otherContainer then
+    local btn = frame.otherContainer.icons[1]
     if btn then
       btn:Hide()
       if btn.cooldown then btn.cooldown:Hide() end
@@ -43,7 +43,7 @@ function MV.ResetAndRequestTrinket(frame)
 end
 
 function MV.UpdateTrinket(frame)
-  local btn = frame.pvpContainer.icons[1]
+  local btn = frame.otherContainer.icons[1]
   if not btn then return end
   if not C_PvP or not C_PvP.GetArenaCrowdControlInfo then
     --print("MVPF Trinket: CPvP API missing, hiding button for", unit)

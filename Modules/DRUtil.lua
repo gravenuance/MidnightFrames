@@ -1,9 +1,9 @@
 local _, MV = ...
 
 function MV.ResetDR(frame)
-  if frame.pvpContainer then
+  if frame.otherContainer then
     for i = 2, 4 do
-      local btn = frame.pvpContainer.icons[i]
+      local btn = frame.otherContainer.icons[i]
       if btn then
         btn.enabled = false
         btn:Hide()
@@ -16,11 +16,18 @@ function MV.ResetDR(frame)
 end
 
 function MV.ResetBlizzardButton(button)
-  if button.MVPF_Button then
-    local btn = button.MVPF_Button
+  if button.MV_Button then
+    local btn = button.MV_Button
     btn.enabled = false
-    btn:Hide()
-    button.MVPF_Button = nil
+    local container = btn.container
+    if container then
+      for i = 2, 4 do
+        if container.icons[i] and not container.icons[i].enabled then
+          btn:Hide()
+          button.MV_Button = nil
+        end
+      end
+    end
   end
 end
 
@@ -39,8 +46,8 @@ end
 
 function MV.UpdateBlizzardDR(button, container, size)
   if not button or not container then return end
-  if button.MVPF_Button then
-    MV.MoveBlizzardButton(button, button.MVPF_Button, size)
+  if button.MV_Button then
+    MV.MoveBlizzardButton(button, button.MV_Button, size)
     return
   end
   local candidate
@@ -50,7 +57,7 @@ function MV.UpdateBlizzardDR(button, container, size)
       candidate.enabled = true
       candidate:Show()
       candidate.btn = button
-      button.MVPF_Button = candidate
+      button.MV_Button = candidate
       MV.MoveBlizzardButton(button, candidate, size)
       return
     end

@@ -82,6 +82,7 @@ local function LayoutPvPButtons(container)
   for i = 1, 4 do
     local btn = container.icons[i] or CreateGenericButton(container, i)
     container.icons[i] = btn
+    btn.container = container
     btn:ClearAllPoints()
     if i == 1 then
       btn:SetPoint("TOP", container, "TOP", 0, 0)
@@ -167,15 +168,15 @@ function MV.CreateUnitFrame(params)
   LayoutAuraButtons(f.auraContainer)
 
   if pvpIcons then
-    f.secondContainer = CreateFrame("Frame", name .. "Buttons", f)
-    f.secondContainer.iconSize = iconSize
+    f.otherContainer = CreateFrame("Frame", name .. "Buttons", f)
+    f.otherContainer.iconSize = iconSize
 
     totalHeight = iconSize * 5 + 2 * (5 - 1)
-    f.secondContainer:SetSize(28, totalHeight)
-    f.secondContainer:SetPoint("TOP", f, "BOTTOM", 0, -10)
-    f.secondContainer.icons = {}
+    f.otherContainer:SetSize(28, totalHeight)
+    f.otherContainer:SetPoint("TOP", f, "BOTTOM", 0, -10)
+    f.otherContainer.icons = {}
 
-    LayoutPvPButtons(f.secondContainer)
+    LayoutPvPButtons(f.otherContainer)
 
     return f
   end
