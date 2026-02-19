@@ -43,17 +43,15 @@ function MV.UpdateAuras(frame)
 end
 
 function MV.UpdatePowerLabel(frame)
-  if not frame.powerLabel or not UnitExists(frame.unit) then return end
+  if not frame.power or not UnitExists(frame.unit) then return end
   local curve = C_CurveUtil.CreateCurve()
   curve:SetType(Enum.LuaCurveType.Linear)
   curve:AddPoint(0.0, 0)
   curve:AddPoint(1.0, 100)
-  -- Fetch secret or normal power; do not touch it arithmetically
   local power = UnitPowerPercent(frame.unit, nil, true, curve)
   if power == nil then
-    frame.powerLabel:SetText("")
+    frame.power:SetText("")
     return
   end
-  -- Convert to string without doing math; concatenation is allowed
-  frame.powerLabel:SetText(string.format("%.0f", power))
+  frame.power:SetText(string.format("%.0f", power))
 end
