@@ -111,6 +111,7 @@ function MV.CreateUnitFrame(params)
   f:SetAttribute("type2", "togglemenu")
 
   f.unit = unit
+  f.unitKey = unit:match("^(%w+)") or unit
   f.maxAuras = maxAuras
 
   -- Background

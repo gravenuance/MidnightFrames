@@ -6,7 +6,7 @@ local IsDriverRegistered = false
 
 local MAX_AURAS = 4
 
-local f = MV.CreateUnitFrame({
+local targetFrame = MV.CreateUnitFrame({
   name     = "MV_TargetFrame",
   unit     = "target",
   point    = { "CENTER", UIParent, "CENTER", MV.FrameXAlt, 0 },
@@ -18,49 +18,47 @@ local f = MV.CreateUnitFrame({
 local function UpdateVisibility()
   if InCombatLockdown() then return end
   if MV_TargetTestMode then
-    UnregisterUnitWatch(f)
-    f:Show()
+    UnregisterUnitWatch(targetFrame)
+    targetFrame:Show()
     IsDriverRegistered = false
   elseif not IsDriverRegistered then
-    RegisterUnitWatch(f)
+    RegisterUnitWatch(targetFrame)
     IsDriverRegistered = true
   end
 end
 
-function f:UpdateVisibility() UpdateVisibility() end
+function targetFrame:UpdateVisibility() UpdateVisibility() end
 
-f:RegisterEvent("PLAYER_TARGET_CHANGED")
-f:RegisterUnitEvent("UNIT_HEALTH", f.unit)
-f:RegisterUnitEvent("UNIT_MAXHEALTH", f.unit)
-f:RegisterUnitEvent("UNIT_AURA", f.unit)
-f:RegisterUnitEvent("UNIT_NAME_UPDATE", f.unit)
-f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-f:RegisterEvent("PLAYER_ENTERING_WORLD")
-f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
-f:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
-f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+targetFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+targetFrame:RegisterUnitEvent("UNIT_HEALTH", targetFrame.unit)
+targetFrame:RegisterUnitEvent("UNIT_MAXHEALTH", targetFrame.unit)
+targetFrame:RegisterUnitEvent("UNIT_AURA", targetFrame.unit)
+targetFrame:RegisterUnitEvent("UNIT_NAME_UPDATE", targetFrame.unit)
+targetFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+targetFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+targetFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
+targetFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
+targetFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
-f:SetScript("OnEvent", function(_, event, arg1)
+targetFrame:SetScript("OnEvent", function(_, event, arg1)
   if (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
     MV_TargetTestMode = false
     UpdateVisibility()
   end
   if MV_TargetTestMode then return end
-
   if event == "PLAYER_TARGET_CHANGED"
-      or (event == "UNIT_NAME_UPDATE" and arg1 == f.unit) then
+      or (event == "UNIT_NAME_UPDATE" and arg1 == targetFrame.unit) then
     UpdateVisibility()
-    if not UnitExists(f.unit) then
-      return
+    if UnitExists(targetFrame.unit) then
+      MV.ApplyClassColor(targetFrame)
+      MV.UpdateHealthBar(targetFrame)
+      MV.UpdateAuras(targetFrame)
     end
-    MV.ApplyClassColor(f)
-    MV.UpdateHealthBar(f)
-    MV.UpdateAuras(f)
   elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
-    MV.UpdateHealthBar(f)
+    MV.UpdateHealthBar(targetFrame)
   elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-    MV.SetRangeAlpha(f)
+    MV.SetRangeAlpha(targetFrame)
   elseif event == "UNIT_AURA" then
-    MV.UpdateAuras(f)
+    MV.UpdateAuras(targetFrame)
   end
 end)

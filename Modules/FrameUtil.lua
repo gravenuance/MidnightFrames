@@ -35,15 +35,15 @@ function MV.UpdateAuras(frame)
     MV.GetAndUpdateAuras(frame.auraContainer, frame.unit, {}, 0)
     return
   end
-
   local filters = {}
-  local cfg = MV.GetUnitFilters(frame.unit)
+  local cfg = MV.GetUnitFilters(frame.unitKey)
 
   for filter, enabled in pairs(cfg) do
     if enabled then
       table.insert(filters, filter)
     end
   end
+  print("Unit:", frame.unit, "cfg:", cfg, "#filters:", #filters)
   MV.GetAndUpdateAuras(
     frame.auraContainer,
     frame.unit,

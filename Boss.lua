@@ -20,7 +20,7 @@ local function SetBossFrame(index)
   local unit = "boss" .. index
   local name = baseName .. index
 
-  local f = MV.CreateUnitFrame({
+  local bossFrame = MV.CreateUnitFrame({
     name     = name,
     unit     = unit,
     point    = { "CENTER", UIParent, "CENTER", MV.FrameX + (index - 1) * MV.FrameSpace, 0 },
@@ -28,7 +28,7 @@ local function SetBossFrame(index)
     maxAuras = MAX_AURAS,
     iconSize = MV.DefaultSize,
   })
-  f:SetFrameLevel(10)
+  bossFrame:SetFrameLevel(10)
 
   local HAS_REGISTERED_WATCH = false
   local function UpdateVisibility()
@@ -36,22 +36,22 @@ local function SetBossFrame(index)
 
     if not InInstance() or not hasUnit then
       if HAS_REGISTERED_WATCH and not InCombatLockdown() then
-        UnregisterUnitWatch(f)
+        UnregisterUnitWatch(bossFrame)
         HAS_REGISTERED_WATCH = false
       end
       if not InCombatLockdown() then
-        f:Hide()
+        bossFrame:Hide()
       end
       return
     end
 
     if not HAS_REGISTERED_WATCH and not InCombatLockdown() then
-      RegisterUnitWatch(f)
+      RegisterUnitWatch(bossFrame)
       HAS_REGISTERED_WATCH = true
     end
   end
 
-  function f:UpdateVisibility() UpdateVisibility() end
+  function bossFrame:UpdateVisibility() UpdateVisibility() end
 
   local function ForceHide(frame)
     frame:SetAlpha(0)
@@ -94,35 +94,33 @@ local function SetBossFrame(index)
     HideBossContainer()
   end
 
-  f:RegisterEvent("PLAYER_ENTERING_WORLD")
-  f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-  f:RegisterUnitEvent("UNIT_HEALTH", unit)
-  f:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
-  f:RegisterUnitEvent("UNIT_AURA", unit)
-  f:RegisterEvent("PLAYER_TARGET_CHANGED")
-  f:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
-  f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
-  f:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
-  f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+  bossFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+  bossFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+  bossFrame:RegisterUnitEvent("UNIT_HEALTH", unit)
+  bossFrame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
+  bossFrame:RegisterUnitEvent("UNIT_AURA", unit)
+  bossFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+  bossFrame:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
+  bossFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
+  bossFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
+  bossFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
-  f:SetScript("OnEvent", function(self, event)
+  bossFrame:SetScript("OnEvent", function(self, event)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
       UpdateVisibility()
       SetupBossHooks()
-      MV.UpdateHealthBar(f)
-      MV.UpdateTargetHighlight(f)
     end
     if not InInstance() then return end
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
-      MV.UpdateHealthBar(f)
+      MV.UpdateHealthBar(bossFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-      MV.SetRangeAlpha(f)
+      MV.SetRangeAlpha(bossFrame)
     elseif event == "PLAYER_TARGET_CHANGED" then
-      MV.UpdateTargetHighlight(f)
+      MV.UpdateTargetHighlight(bossFrame)
     elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" then
-      MV.ApplyClassColor(f)
+      MV.ApplyClassColor(bossFrame)
     elseif event == "UNIT_AURA" then
-      MV.UpdateAuras(f)
+      MV.UpdateAuras(bossFrame)
     end
   end)
 end

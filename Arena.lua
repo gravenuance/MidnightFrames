@@ -100,7 +100,7 @@ local function SetArenaFrame(index)
   local unit = "arena" .. index
   local unitFrame = _G[blizzFrame .. "Member" .. index]
   local name = baseName .. index
-  local f = MV.CreateUnitFrame({
+  local arenaFrame = MV.CreateUnitFrame({
     name = name,
     unit = unit,
     point = { "CENTER", UIParent, "CENTER", MV.FrameX + (index - 1) * MV.FrameSpace, 0 },
@@ -109,15 +109,15 @@ local function SetArenaFrame(index)
     iconSize = MV.DefaultSize,
     pvpIcons = true,
   })
-  f:SetFrameLevel(10)
+  arenaFrame:SetFrameLevel(10)
   local function SetAnchor(type, point, relative, x, y, sizeX, sizeY)
-    local a = CreateFrame("Frame", baseName .. type, f)
-    a:SetSize(sizeX or 1, sizeY or 1)
-    a:SetPoint(point, f, relative, x, y)
-    return a
+    local anchor = CreateFrame("Frame", baseName .. type, arenaFrame)
+    anchor:SetSize(sizeX or 1, sizeY or 1)
+    anchor:SetPoint(point, arenaFrame, relative, x, y)
+    return anchor
   end
-  f.statusIconAnchor = SetAnchor("StatusIcon", "CENTER", "CENTER", 0, 0, 36, 36)
-  f.statusIconAnchor:SetFrameLevel(f:GetFrameLevel() + 5)
+  arenaFrame.statusIconAnchor = SetAnchor("StatusIcon", "CENTER", "CENTER", 0, 0, 36, 36)
+  arenaFrame.statusIconAnchor:SetFrameLevel(arenaFrame:GetFrameLevel() + 5)
 
   local function IsInStealth(idx)
     if not IsUnit(idx) then
@@ -128,48 +128,48 @@ local function SetArenaFrame(index)
   end
 
   local function SetClassColor(alpha)
-    local _, c = GetOpponentSpecAndClass(index)
-    if c then
-      local r, g, b = GetClassColors(c)
-      f.health:SetStatusBarColor(r, g, b, alpha or regAlpha)
+    local _, class = GetOpponentSpecAndClass(index)
+    if class then
+      local r, g, b = GetClassColors(class)
+      arenaFrame.health:SetStatusBarColor(r, g, b, alpha or regAlpha)
       return true
     end
     return false
   end
 
   local function SetStatusIcon()
-    if not f.statusIconAnchor.Icon then
-      f.statusIconAnchor.Icon = f.statusIconAnchor:CreateTexture(nil, "OVERLAY")
-      f.statusIconAnchor.Icon:SetAllPoints(f.statusIconAnchor)
+    if not arenaFrame.statusIconAnchor.Icon then
+      arenaFrame.statusIconAnchor.Icon = arenaFrame.statusIconAnchor:CreateTexture(nil, "OVERLAY")
+      arenaFrame.statusIconAnchor.Icon:SetAllPoints(arenaFrame.statusIconAnchor)
     end
 
-    local icon = f.statusIconAnchor.Icon
+    local icon = arenaFrame.statusIconAnchor.Icon
     if not icon then
       return false
     end
 
-    local tex
+    local texture
 
     if IsInPrep() then
-      tex = GetOpponentSpecAndClass(index)
+      texture = GetOpponentSpecAndClass(index)
     elseif IsArenaInProgress() and IsInStealth(index) then
-      tex = stealthIcon
+      texture = stealthIcon
     else
-      tex = nil
+      texture = nil
     end
 
-    if tex then
-      icon:SetTexture(tex)
-      UpdateBorder(f.statusIconAnchor)
-      if f.statusIconAnchor.Border then
-        f.statusIconAnchor.Border:SetFrameLevel(f.statusIconAnchor:GetFrameLevel())
-        f.statusIconAnchor.Border:Show()
+    if texture then
+      icon:SetTexture(texture)
+      UpdateBorder(arenaFrame.statusIconAnchor)
+      if arenaFrame.statusIconAnchor.Border then
+        arenaFrame.statusIconAnchor.Border:SetFrameLevel(arenaFrame.statusIconAnchor:GetFrameLevel())
+        arenaFrame.statusIconAnchor.Border:Show()
       end
       return true
     else
       icon:SetTexture(nil)
-      if f.statusIconAnchor.Border then
-        f.statusIconAnchor.Border:Hide()
+      if arenaFrame.statusIconAnchor.Border then
+        arenaFrame.statusIconAnchor.Border:Hide()
       end
       return false
     end
@@ -177,16 +177,16 @@ local function SetArenaFrame(index)
 
   local function UpdateVisibility()
     if MV_ArenaTestMode then
-      f:Show()
+      arenaFrame:Show()
       return
     end
     if not IsInArena() and not InCombatLockdown() then
-      f:Hide()
+      arenaFrame:Hide()
       return
     end
 
     local hasIcon = SetStatusIcon()
-    f.statusIconAnchor:SetShown(hasIcon)
+    arenaFrame.statusIconAnchor:SetShown(hasIcon)
 
     if hasIcon then
       SetClassColor(altAlpha)
@@ -195,14 +195,14 @@ local function SetArenaFrame(index)
     end
 
     if InCombatLockdown() then return end
-    f:SetShown(IsUnit(index))
+    arenaFrame:SetShown(IsUnit(index))
   end
-  function f:UpdateVisibility() UpdateVisibility() end
+  function arenaFrame:UpdateVisibility() UpdateVisibility() end
 
   local function SetMemberFrame(i)
-    local mv = _G[baseName .. i]
-    if mv then
-      mv:UpdateVisibility()
+    local addonFrame = _G[baseName .. i]
+    if addonFrame then
+      addonFrame:UpdateVisibility()
     end
   end
 
@@ -227,56 +227,56 @@ local function SetArenaFrame(index)
   end
 
   -- SET DEFAULTS
-  f:RegisterEvent("PLAYER_ENTERING_WORLD")
-  f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+  arenaFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+  arenaFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
   -- APPROXIMATE RANGE CHECKER
-  f:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED") -- Range
-  f:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
-  f:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+  arenaFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED") -- Range
+  arenaFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
+  arenaFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
   -- UNIT INFORMATION
-  f:RegisterUnitEvent("UNIT_HEALTH", unit)
-  f:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
-  f:RegisterUnitEvent("UNIT_AURA", unit)
+  arenaFrame:RegisterUnitEvent("UNIT_HEALTH", unit)
+  arenaFrame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
+  arenaFrame:RegisterUnitEvent("UNIT_AURA", unit)
 
   --HIGHLIGHT
-  f:RegisterEvent("PLAYER_TARGET_CHANGED") -- Target highlight
+  arenaFrame:RegisterEvent("PLAYER_TARGET_CHANGED") -- Target highlight
 
   --CHECK STATE CHANGES
-  f:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS") -- No payload, must scan all
-  f:RegisterEvent("PVP_MATCH_STATE_CHANGED")             -- Start/End of the game
-  f:RegisterEvent("UPDATE_BATTLEFIELD_SCORE")
-  f:RegisterEvent("GROUP_ROSTER_UPDATE")
+  arenaFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS") -- No payload, must scan all
+  arenaFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")             -- Start/End of the game
+  arenaFrame:RegisterEvent("UPDATE_BATTLEFIELD_SCORE")
+  arenaFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
   --CHECK ARENA UPDATES
-  f:RegisterUnitEvent("UNIT_OTHER_PARTY_CHANGED", unit) -- Triggers for arenaX
-  f:RegisterEvent("ARENA_OPPONENT_UPDATE")              -- Unseen = left.
+  arenaFrame:RegisterUnitEvent("UNIT_OTHER_PARTY_CHANGED", unit) -- Triggers for arenaX
+  arenaFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")              -- Unseen = left.
 
   --CHECK TRINKET UPDATES
-  f:RegisterEvent("ARENA_COOLDOWNS_UPDATE") -- Trinket
-  f:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
+  arenaFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE") -- Trinket
+  arenaFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
 
 
 
 
-  f:SetScript("OnEvent", function(_, event, arg1)
+  arenaFrame:SetScript("OnEvent", function(_, event, arg1)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
       MV_ArenaTestMode = false
       UpdateVisibility()
-      MV.UpdateHealthBar(f)
-      MV.UpdateTargetHighlight(f, MV_ArenaTestMode)
-      MV.UpdateAuras(f)
-      MV.ResetDR(f)
-      MV.ResetAndRequestTrinket(f)
+      MV.UpdateHealthBar(arenaFrame)
+      MV.UpdateTargetHighlight(arenaFrame, MV_ArenaTestMode)
+      MV.UpdateAuras(arenaFrame)
+      MV.ResetDR(arenaFrame)
+      MV.ResetAndRequestTrinket(arenaFrame)
     end
     if not IsInArena() then return end
     if (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
-      MV.UpdateHealthBar(f)
+      MV.UpdateHealthBar(arenaFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-      MV.SetRangeAlpha(f)
+      MV.SetRangeAlpha(arenaFrame)
     elseif event == "PLAYER_TARGET_CHANGED" then
-      MV.UpdateTargetHighlight(f, MV_ArenaTestMode)
+      MV.UpdateTargetHighlight(arenaFrame, MV_ArenaTestMode)
     elseif event == "PVP_MATCH_STATE_CHANGED"
         or event == "GROUP_ROSTER_UPDATE"
         or event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS"
@@ -288,14 +288,14 @@ local function SetArenaFrame(index)
     then
       if arg1 == unit then
         SetMemberFrame(index)
-        MV.ResetAndRequestTrinket(f)
-        HookDR(f)
+        MV.ResetAndRequestTrinket(arenaFrame)
+        HookDR(arenaFrame)
       end
     elseif event == "UNIT_AURA" then
-      MV.UpdateAuras(f)
+      MV.UpdateAuras(arenaFrame)
     elseif event == "ARENA_COOLDOWNS_UPDATE" or event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then -- These are the only two needed: Trinket
       if arg1 == unit then
-        MV.UpdateTrinket(f)
+        MV.UpdateTrinket(arenaFrame)
       end
     end
   end)
