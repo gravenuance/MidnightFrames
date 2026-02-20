@@ -214,9 +214,9 @@ local function SetArenaFrame(index)
 
   local function HookDR(frame)
     local member = unitFrame
-    if member and member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MVPF_Hooked then
+    if member and member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MV_Hooked then
       local tray = member.SpellDiminishStatusTray
-      tray.MVPF_Hooked = true
+      tray.MV_Hooked = true
       hooksecurefunc(member.SpellDiminishStatusTray, "TryUpdateOrAddTrayItem", function(self)
         MV.UpdateBlizzardDRBackup(self, frame)
       end)

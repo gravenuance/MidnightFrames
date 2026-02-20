@@ -60,7 +60,7 @@ local function SetBossFrame(index)
   local function HideBossFrameAndSpellBar(index)
     local frame = _G[blizzFrameBase .. index .. "TargetFrame"]
     if not frame then return end
-    if frame.MVPF_Hooked then return end
+    if frame.MV_Hooked then return end
     local spellBar = frame.spellBar or _G[frame:GetName() .. "SpellBar"] or
         _G[blizzFrameBase .. index .. "TargetFrameSpellBar"]
     if spellBar then
@@ -74,20 +74,20 @@ local function SetBossFrame(index)
     if frame.OnShow then
       hooksecurefunc(frame, "OnShow", ForceHide)
     end
-    frame.MVPF_Hooked = true
+    frame.MV_Hooked = true
   end
 
   local function HideBossContainer()
     local container = _G[blizzContainerName]
     if not container then return end
-    if container.MVPF_Hooked then return end
+    if container.MV_Hooked then return end
     if container.UpdateShownState then
       hooksecurefunc(container, "Show", ForceHide)
     end
     for i = 1, MAX_BOSS_FRAMES do
       HideBossFrameAndSpellBar(i)
     end
-    container.MVPF_Hooked = true
+    container.MV_Hooked = true
   end
 
   local function SetupBossHooks()
