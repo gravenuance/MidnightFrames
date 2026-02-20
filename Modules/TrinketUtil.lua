@@ -43,7 +43,7 @@ function MV.UpdateTrinket(frame)
     return
   end
 
-  local spellId = C_PvP.GetArenaCrowdControlInfo(frame.unit)
+  local spellId, start, duration = C_PvP.GetArenaCrowdControlInfo(frame.unit)
   btn.spellId = spellId
   if C_Spell and C_Spell.GetSpellTexture then
     local iconID
@@ -59,11 +59,13 @@ function MV.UpdateTrinket(frame)
     btn.icon:SetTexture(iconID)
     btn:Show()
     local startTime = GetTime()
-    local duration = 120
+    local durationAlt = 120
     if spellId then
       btn.duration = duration
       btn.startTime = startTime
-      btn.cooldown:SetCooldown(btn.startTime, btn.duration)
+      --btn.cooldown:SetCooldown(btn.startTime, btn.duration)
+      btn.cooldown:SetHideCountdownNumbers(false)
+      btn.cooldown:SetCooldown(start, duration, 1000)
     end
   end
 end
