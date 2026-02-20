@@ -218,24 +218,26 @@ local function SetArenaFrame(index)
       local tray = member.SpellDiminishStatusTray
       tray.MVPF_Hooked = true
       hooksecurefunc(member.SpellDiminishStatusTray, "TryUpdateOrAddTrayItem", function(self)
-        MV.UpdateBlizzardDRBackup(self, frame.otherContainer, MV.DefaultSize)
+        MV.UpdateBlizzardDRBackup(self, frame)
       end)
-      local _, children = pcall(function() return { tray:GetChildren() } end)
-      pcall(function()
+      hooksecurefunc(member.SpellDiminishStatusTray, "RemoveCategoryFromOrder", function()
+        MV.ResetTray(frame)
+      end)
+      --local _, children = pcall(function() return { tray:GetChildren() } end)
+      --[[ pcall(function()
         for _, child in ipairs(children) do
-          hooksecurefunc(child, "SetCategoryInfo", function()
-            MV.UpdateBlizzardDR(child, frame.otherContainer, MV.DefaultSize)
+          hooksecurefunc(child, "SetCategoryInfo", function(self)
+            MV.UpdateBlizzardDR(self, frame)
           end)
         end
       end)
       pcall(function()
         for _, child in ipairs(children) do
-          hooksecurefunc(child, "Reset", function()
-            print("Trigger 3")
-            MV.ResetBlizzardButton(child)
+          hooksecurefunc(child, "Reset", function(self)
+            MV.ResetBlizzardButton(self)
           end)
         end
-      end)
+      end) ]]
     end
   end
 
@@ -305,7 +307,6 @@ local function SetArenaFrame(index)
         HookDR(f)
       end
     elseif event == "UNIT_AURA" then
-      print("Aura")
       MV.UpdateAuras(f)
     elseif event == "ARENA_COOLDOWNS_UPDATE" or event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then -- These are the only two needed: Trinket
       if arg1 == unit then
