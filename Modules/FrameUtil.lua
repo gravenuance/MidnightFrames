@@ -3,6 +3,16 @@ local _, MV = ...
 local C_CurveUtil = C_CurveUtil
 local UnitPowerPercent = UnitPowerPercent
 
+MV.FrameSpace = 55
+MV.FrameX = 280
+MV.FrameXAlt = 225
+MV.SizeX = 50
+MV.SizeY = 220
+MV.SizeYAlt = 210
+MV.PetX = 20
+MV.PetY = 80
+MV.PetSpace = 5
+
 function MV.ApplyClassColor(frame)
   local r, g, b = MV.GetClassColor(frame.unit)
 

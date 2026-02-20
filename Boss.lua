@@ -23,8 +23,8 @@ local function SetBossFrame(index)
   local f = MV.CreateUnitFrame({
     name     = name,
     unit     = unit,
-    point    = { "CENTER", UIParent, "CENTER", 280 + (index - 1) * 55, 0 },
-    size     = { 50, 210 },
+    point    = { "CENTER", UIParent, "CENTER", MV.FrameX + (index - 1) * MV.FrameSpace, 0 },
+    size     = { MV.SizeX, MV.SizeYAlt },
     maxAuras = MAX_AURAS,
     iconSize = MV.DefaultSize,
   })
@@ -82,7 +82,7 @@ local function SetBossFrame(index)
     if not container then return end
     if container.MV_Hooked then return end
     if container.UpdateShownState then
-      hooksecurefunc(container, "Show", ForceHide)
+      hooksecurefunc(container, "SetShown", ForceHide)
     end
     for i = 1, MAX_BOSS_FRAMES do
       HideBossFrameAndSpellBar(i)

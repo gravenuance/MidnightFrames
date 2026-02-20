@@ -103,8 +103,8 @@ local function SetArenaFrame(index)
   local f = MV.CreateUnitFrame({
     name = name,
     unit = unit,
-    point = { "CENTER", UIParent, "CENTER", 280 + (index - 1) * 55, 0 },
-    size = { 50, 210 },
+    point = { "CENTER", UIParent, "CENTER", MV.FrameX + (index - 1) * MV.FrameSpace, 0 },
+    size = { MV.SizeX, MV.SizeYAlt },
     maxAuras = MAX_AURAS,
     iconSize = MV.DefaultSize,
     pvpIcons = true,

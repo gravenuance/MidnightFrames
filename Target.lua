@@ -9,8 +9,8 @@ local MAX_AURAS = 4
 local f = MV.CreateUnitFrame({
   name     = "MV_TargetFrame",
   unit     = "target",
-  point    = { "CENTER", UIParent, "CENTER", 225, 0 },
-  size     = { 50, 220 },
+  point    = { "CENTER", UIParent, "CENTER", MV.FrameXAlt, 0 },
+  size     = { MV.SizeX, MV.SizeY },
   maxAuras = MAX_AURAS,
   iconSize = MV.DefaultSize,
 })
