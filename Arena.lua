@@ -223,21 +223,6 @@ local function SetArenaFrame(index)
       hooksecurefunc(member.SpellDiminishStatusTray, "RemoveCategoryFromOrder", function()
         MV.ResetTray(frame)
       end)
-      --local _, children = pcall(function() return { tray:GetChildren() } end)
-      --[[ pcall(function()
-        for _, child in ipairs(children) do
-          hooksecurefunc(child, "SetCategoryInfo", function(self)
-            MV.UpdateBlizzardDR(self, frame)
-          end)
-        end
-      end)
-      pcall(function()
-        for _, child in ipairs(children) do
-          hooksecurefunc(child, "Reset", function(self)
-            MV.ResetBlizzardButton(self)
-          end)
-        end
-      end) ]]
     end
   end
 
