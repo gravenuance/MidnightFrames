@@ -84,7 +84,7 @@ local function IsInArena()
 end
 
 local function IsInPrep()
-  return IsInArena() and not IsMatchEngaged() and not C_PvP.IsMatchComplete() and not MVPF_ArenaTestMode
+  return IsInArena() and not IsMatchEngaged() and not C_PvP.IsMatchComplete() and not MV_ArenaTestMode
 end
 
 local function IsArenaInProgress()
