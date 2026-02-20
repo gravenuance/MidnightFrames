@@ -9,6 +9,7 @@ local MAX_AURAS = 4
 local targetFrame = MV.CreateUnitFrame({
   name     = "MV_TargetFrame",
   unit     = "target",
+  unitKey  = "target",
   point    = { "CENTER", UIParent, "CENTER", MV.FrameXAlt, 0 },
   size     = { MV.SizeX, MV.SizeY },
   maxAuras = MAX_AURAS,

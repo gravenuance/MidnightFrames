@@ -2,7 +2,7 @@ local _, MV = ...
 
 function MV.ResetDR(frame)
   if frame.otherContainer then
-    for i = 2, 4 do
+    for i = 2, 5 do
       local btn = frame.otherContainer.icons[i]
       if btn then
         btn.enabled = false
@@ -19,7 +19,7 @@ end
 
 function MV.ResetTray(frame)
   if frame.otherContainer then
-    for i = 2, 4 do
+    for i = 2, 5 do
       local btn = frame.otherContainer.icons[i]
       if btn then
         if btn.blizzButton then
@@ -29,6 +29,8 @@ function MV.ResetTray(frame)
             btn.blizzButton = nil
             btn.enabled = false
           end
+        else
+          btn:Hide()
         end
       end
     end
@@ -43,7 +45,7 @@ function MV.ResetBlizzardButton(button)
     btn.enabled = false
     local container = btn.container
     if container then
-      for i = 2, 4 do
+      for i = 2, 5 do
         if container.icons[i] and not container.icons[i].enabled then
           print("Hiding ", i, "because: ", container.icons[i].enabled and "ON" or "OFF")
           btn = container.icons[i]
@@ -71,12 +73,13 @@ end
 
 function MV.UpdateBlizzardDR(button, frame)
   if not button or not frame then return end
+  if not button:IsShown() then return end
   if button.MV_Button then
     MV.MoveBlizzardButton(button, button.MV_Button)
     return
   end
   local candidate
-  for i = 2, 4 do
+  for i = 2, 5 do
     candidate = frame.otherContainer.icons and frame.otherContainer.icons[i]
     if candidate and not candidate.enabled then
       candidate.enabled = true
@@ -86,9 +89,6 @@ function MV.UpdateBlizzardDR(button, frame)
       MV.MoveBlizzardButton(button, candidate)
       return
     end
-  end
-  if not candidate then
-    button:Hide()
   end
 end
 

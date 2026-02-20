@@ -103,6 +103,7 @@ local function SetArenaFrame(index)
   local arenaFrame = MV.CreateUnitFrame({
     name = name,
     unit = unit,
+    unitKey = "arena",
     point = { "CENTER", UIParent, "CENTER", MV.FrameX + (index - 1) * MV.FrameSpace, 0 },
     size = { MV.SizeX, MV.SizeYAlt },
     maxAuras = MAX_AURAS,
@@ -220,7 +221,19 @@ local function SetArenaFrame(index)
       hooksecurefunc(member.SpellDiminishStatusTray, "TryUpdateOrAddTrayItem", function(self)
         MV.UpdateBlizzardDRBackup(self, frame)
       end)
+      hooksecurefunc(member.SpellDiminishStatusTray, "UpdateOrAddTrayItem", function(self)
+        MV.UpdateBlizzardDRBackup(self, frame)
+      end)
+      hooksecurefunc(member.SpellDiminishStatusTray, "RefreshTrayLayout", function(self)
+        MV.UpdateBlizzardDRBackup(self, frame)
+      end)
+      hooksecurefunc(member.SpellDiminishStatusTray, "AddNewItemToTray", function(self)
+        MV.UpdateBlizzardDRBackup(self, frame)
+      end)
       hooksecurefunc(member.SpellDiminishStatusTray, "RemoveCategoryFromOrder", function()
+        MV.ResetTray(frame)
+      end)
+      hooksecurefunc(member.SpellDiminishStatusTray, "OnTrayItemCooldownDone", function()
         MV.ResetTray(frame)
       end)
     end

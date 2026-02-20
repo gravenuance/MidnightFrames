@@ -131,7 +131,7 @@ local function SetAuraTexture(btn, auraData)
   return true
 end
 
-function MV.GetAndUpdateAuras(container, unit, filters, maxRemaining)
+local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
   if not C_UnitAuras
       or not C_UnitAuras.GetUnitAuras
       or not UnitExists(unit) then
@@ -214,4 +214,26 @@ function MV.GetAndUpdateAuras(container, unit, filters, maxRemaining)
       if btn.cooldown then btn.cooldown:Hide() end
     end
   end
+end
+
+function MV.UpdateAuras(frame)
+  if not UnitExists(frame.unit) then
+    GetAndUpdateAuras(frame.auraContainer, frame.unit, {}, 0)
+    return
+  end
+  local filters = {}
+  local cfg = MV.GetUnitFilters(frame.unitKey)
+
+  for filter, enabled in pairs(cfg) do
+    if enabled then
+      table.insert(filters, filter)
+    end
+  end
+
+  GetAndUpdateAuras(
+    frame.auraContainer,
+    frame.unit,
+    filters,
+    frame.maxAuras
+  )
 end

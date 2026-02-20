@@ -22,5 +22,13 @@ function MV.ToggleTestMode(kind, on)
         if f.UpdateVisibility then f:UpdateVisibility() end
       end
     end
+  elseif kind == "boss" then
+    MV_BossTestMode = on
+    for i = 1, 5 do
+      local f = _G["MV_BossFrame" .. i]
+      if f then
+        if f.UpdateVisibility then f:UpdateVisibility() end
+      end
+    end
   end
 end

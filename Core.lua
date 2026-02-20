@@ -32,8 +32,13 @@ SlashCmdList.MV = function(msg)
       MV.ToggleTestMode("arena", not MV_ArenaTestMode)
       print("MV: arena test mode " .. (MV_ArenaTestMode and "ON" or "OFF"))
     end)
+  elseif msg == "boss" then
+    RunOrDefer("MV_boss_test", function()
+      MV.ToggleTestMode("boss", not MV_BossTestMode)
+      print("MV: arena test mode " .. (MV_BossTestMode and "ON" or "OFF"))
+    end)
   else
-    print("Usage: /mv target | party | arena")
+    print("Usage: /mv target | party | arena | boss")
   end
 end
 
@@ -175,6 +180,11 @@ local function BuildOptionsTable()
         type = "execute",
         name = "Toggle Arena Test Mode",
         func = function() MV.ToggleTestMode("arena", not MV_ArenaTestMode) end
+      },
+      testBoss   = {
+        type = "execute",
+        name = "Toggle Boss Test Mode",
+        func = function() MV.ToggleTestMode("boss", not MV_BossTestMode) end
       }
     }
   }

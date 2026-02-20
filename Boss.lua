@@ -1,6 +1,8 @@
 local _, MV = ...
 local baseName = "MV_BossFrame"
 
+MV_BossTestMode = false
+
 local MAX_BOSS_FRAMES = 5
 local MAX_AURAS = 4
 
@@ -23,6 +25,7 @@ local function SetBossFrame(index)
   local bossFrame = MV.CreateUnitFrame({
     name     = name,
     unit     = unit,
+    unitKey  = "boss",
     point    = { "CENTER", UIParent, "CENTER", MV.FrameX + (index - 1) * MV.FrameSpace, 0 },
     size     = { MV.SizeX, MV.SizeYAlt },
     maxAuras = MAX_AURAS,
@@ -34,13 +37,17 @@ local function SetBossFrame(index)
   local function UpdateVisibility()
     local hasUnit = UnitExists(unit)
 
-    if not InInstance() or not hasUnit then
+    if not InInstance() or not hasUnit or MV_BossTestMode then
       if HAS_REGISTERED_WATCH and not InCombatLockdown() then
         UnregisterUnitWatch(bossFrame)
         HAS_REGISTERED_WATCH = false
       end
       if not InCombatLockdown() then
-        bossFrame:Hide()
+        if MV_BossTestMode then
+          bossFrame:Show()
+        else
+          bossFrame:Hide()
+        end
       end
       return
     end
@@ -107,6 +114,7 @@ local function SetBossFrame(index)
 
   bossFrame:SetScript("OnEvent", function(self, event)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
+      MV_BossTestMode = false
       UpdateVisibility()
       SetupBossHooks()
     end
@@ -116,7 +124,7 @@ local function SetBossFrame(index)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
       MV.SetRangeAlpha(bossFrame)
     elseif event == "PLAYER_TARGET_CHANGED" then
-      MV.UpdateTargetHighlight(bossFrame)
+      MV.UpdateTargetHighlight(bossFrame, MV_BossTestMode)
     elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" then
       MV.ApplyClassColor(bossFrame)
     elseif event == "UNIT_AURA" then

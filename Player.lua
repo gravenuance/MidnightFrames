@@ -5,6 +5,7 @@ local MAX_AURAS = 4
 local playerFrame = MV.CreateUnitFrame({
   name = "MV_PlayerFrame",
   unit = "player",
+  unitKey = "player",
   point = { "CENTER", UIParent, "CENTER", -MV.FrameXAlt, 0 },
   size = { MV.SizeX, MV.SizeY },
   maxAuras = MAX_AURAS,
@@ -27,6 +28,7 @@ end
 local petFrame = MV.CreateUnitFrame({
   name     = "MV_PetFrame",
   unit     = "pet",
+  unitKey  = "pet",
   point    = { "TOPLEFT", playerFrame, "TOPRIGHT", MV.PetSpace, 0 },
   size     = { MV.PetX, MV.PetY },
   maxAuras = 0,

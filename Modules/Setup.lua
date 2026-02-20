@@ -35,7 +35,7 @@ local function CreateAuraButton(parent, index)
     if GameTooltip:IsForbidden() then return end
     GameTooltip:Hide()
   end)
-
+  btn:Hide()
   return btn
 end
 
@@ -74,12 +74,12 @@ local function CreateGenericButton(parent, index)
   btn.cooldown = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
   btn.cooldown:SetAllPoints(btn)
   btn.cooldown:Hide()
-
+  btn:Hide()
   return btn
 end
 
 local function LayoutPvPButtons(container)
-  for i = 1, 4 do
+  for i = 1, 5 do
     local btn = container.icons[i] or CreateGenericButton(container, i)
     container.icons[i] = btn
     btn.container = container
@@ -96,6 +96,7 @@ end
 function MV.CreateUnitFrame(params)
   local name     = params.name
   local unit     = params.unit
+  local unitKey  = params.unitKey
   local point    = params.point
   local size     = params.size or { 50, 220 }
   local maxAuras = params.maxAuras or 4
@@ -111,7 +112,7 @@ function MV.CreateUnitFrame(params)
   f:SetAttribute("type2", "togglemenu")
 
   f.unit = unit
-  f.unitKey = unit:match("^(%w+)") or unit
+  f.unitKey = unitKey
   f.maxAuras = maxAuras
 
   -- Background
@@ -147,6 +148,7 @@ function MV.CreateUnitFrame(params)
   f.health:SetOrientation("VERTICAL")
   f.health:SetRotatesTexture(true)
   f.health:SetFrameStrata("MEDIUM")
+  f.health:SetStatusBarColor(0.2, 0.6, 1, 0.2)
   f.health:SetFrameLevel(f:GetFrameLevel() + 1)
 
   f:SetScript("OnEnter", function(self)
@@ -156,6 +158,7 @@ function MV.CreateUnitFrame(params)
   f:SetScript("OnLeave", function(self)
     self.mouseoverBorder:Hide()
   end)
+
   -- Aura container
   f.auraContainer = CreateFrame("Frame", name .. "Auras", f)
   f.auraContainer.maxAuras = maxAuras

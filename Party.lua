@@ -14,6 +14,7 @@ local function CreatePartyFrame(index)
   local partyFrame = MV.CreateUnitFrame({
     name     = name,
     unit     = unit,
+    unitKey  = "party",
     point    = { "CENTER", UIParent, "CENTER", -MV.FrameX - (index - 1) * MV.FrameSpace, 0 },
     size     = { MV.SizeX, MV.SizeYAlt },
     maxAuras = MAX_AURAS,

@@ -30,28 +30,6 @@ function MV.ApplyClassColor(frame)
   end
 end
 
-function MV.UpdateAuras(frame)
-  if not UnitExists(frame.unit) then
-    MV.GetAndUpdateAuras(frame.auraContainer, frame.unit, {}, 0)
-    return
-  end
-  local filters = {}
-  local cfg = MV.GetUnitFilters(frame.unitKey)
-
-  for filter, enabled in pairs(cfg) do
-    if enabled then
-      table.insert(filters, filter)
-    end
-  end
-  print("Unit:", frame.unit, "cfg:", cfg, "#filters:", #filters)
-  MV.GetAndUpdateAuras(
-    frame.auraContainer,
-    frame.unit,
-    filters,
-    frame.maxAuras
-  )
-end
-
 function MV.UpdatePowerLabel(frame)
   if not frame.power or not UnitExists(frame.unit) then return end
   local curve = C_CurveUtil.CreateCurve()
