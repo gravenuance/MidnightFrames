@@ -96,7 +96,15 @@ function MV.UpdateBlizzardDRBackup(tray, frame)
   if not tray or not frame then
     return
   end
-  local _, children = pcall(function() return { tray:GetChildren() } end)
+
+  local ok, children = MV.CallExternalFunction(
+    {
+      namespace = tray,
+      args = { tray },
+      functionName = "GetChildren",
+    }
+  )
+  if not ok then return end
   pcall(function()
     for _, child in ipairs(children) do
       if not child:GetCategory() then break end

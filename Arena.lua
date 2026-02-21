@@ -53,49 +53,6 @@ local function GetClassColors(class)
   end
 end
 
-local function GetArenaSize()
-  local numOpponentSpecs = GetNumArenaOpponentSpecs()
-  if numOpponentSpecs and numOpponentSpecs > 0 then
-    return numOpponentSpecs
-  end
-
-  local numOpponents = GetNumArenaOpponents()
-  if numOpponents and numOpponents > 0 then
-    return numOpponents
-  end
-
-  return 0
-end
-
-local function GetOpponentSpecAndClass(index)
-  local specID = GetArenaOpponentSpec(index)
-  if specID and specID > 0 then
-    local _, _, _, specIcon, _, class = GetSpecializationInfoByID(specID)
-    return specIcon, class
-  end
-end
-
-local function IsMatchEngaged()
-  return C_PvP.GetActiveMatchState() == Enum.PvPMatchState.Engaged
-end
-
-local function IsInArena()
-  return C_PvP.IsMatchConsideredArena() and (C_PvP.IsMatchActive() or C_PvP.IsMatchComplete())
-end
-
-local function IsInPrep()
-  return IsInArena() and not IsMatchEngaged() and not C_PvP.IsMatchComplete() and not MV_ArenaTestMode
-end
-
-local function IsArenaInProgress()
-  return IsInArena() and IsMatchEngaged()
-end
-
-local function IsUnit(index)
-  local specID = GetArenaOpponentSpec(index)
-  return specID and specID > 0
-end
-
 local function SetArenaFrame(index)
   local unit = "arena" .. index
   local unitFrame = _G[blizzFrame .. "Member" .. index]
@@ -120,16 +77,8 @@ local function SetArenaFrame(index)
   arenaFrame.statusIconAnchor = SetAnchor("StatusIcon", "CENTER", "CENTER", 0, 0, 36, 36)
   arenaFrame.statusIconAnchor:SetFrameLevel(arenaFrame:GetFrameLevel() + 5)
 
-  local function IsInStealth(idx)
-    if not IsUnit(idx) then
-      return false
-    end
-
-    return not ArenaUtil.UnitExists(unit) and IsArenaInProgress()
-  end
-
   local function SetClassColor(alpha)
-    local _, class = GetOpponentSpecAndClass(index)
+    local _, class = MV.GetOpponentSpecAndClass(index)
     if class then
       local r, g, b = GetClassColors(class)
       arenaFrame.health:SetStatusBarColor(r, g, b, alpha or regAlpha)
@@ -151,9 +100,9 @@ local function SetArenaFrame(index)
 
     local texture
 
-    if IsInPrep() then
-      texture = GetOpponentSpecAndClass(index)
-    elseif IsArenaInProgress() and IsInStealth(index) then
+    if MV.IsInPrep() then
+      texture = MV.GetOpponentSpecAndClass(index)
+    elseif MV.IsArenaInProgress() and MV.IsInStealth(index, unit) then
       texture = stealthIcon
     else
       texture = nil
@@ -181,7 +130,7 @@ local function SetArenaFrame(index)
       arenaFrame:Show()
       return
     end
-    if not IsInArena() and not InCombatLockdown() then
+    if not MV.IsInArena() and not InCombatLockdown() then
       arenaFrame:Hide()
       return
     end
@@ -196,7 +145,7 @@ local function SetArenaFrame(index)
     end
 
     if InCombatLockdown() then return end
-    arenaFrame:SetShown(IsUnit(index))
+    arenaFrame:SetShown(MV.IsUnit(index))
   end
   function arenaFrame:UpdateVisibility() UpdateVisibility() end
 
@@ -208,7 +157,7 @@ local function SetArenaFrame(index)
   end
 
   local function SetFrames()
-    for i = 1, GetArenaSize() do
+    for i = 1, MV.GetArenaSize() do
       SetMemberFrame(i)
     end
   end
@@ -281,9 +230,9 @@ local function SetArenaFrame(index)
       MV.UpdateTargetHighlight(arenaFrame, MV_ArenaTestMode)
       MV.UpdateAuras(arenaFrame)
       MV.ResetDR(arenaFrame)
-      MV.ResetAndRequestTrinket(arenaFrame)
+      MV.UpdateTrinket(arenaFrame)
     end
-    if not IsInArena() then return end
+    if not MV.IsInArena() then return end
     if (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
       MV.UpdateHealthBar(arenaFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
@@ -301,14 +250,14 @@ local function SetArenaFrame(index)
     then
       if arg1 == unit then
         SetMemberFrame(index)
-        MV.ResetAndRequestTrinket(arenaFrame)
+        MV.UpdateTrinket(arenaFrame)
         HookDR(arenaFrame)
       end
     elseif event == "UNIT_AURA" then
       MV.UpdateAuras(arenaFrame)
     elseif event == "ARENA_COOLDOWNS_UPDATE" or event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then -- These are the only two needed: Trinket
       if arg1 == unit then
-        MV.UpdateTrinket(arenaFrame)
+        MV.UpdateTrinket(arenaFrame, true)
       end
     end
   end)

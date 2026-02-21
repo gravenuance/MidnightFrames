@@ -6,6 +6,8 @@
 ## Dependencies: Ace3
 ## Category: Matcha Latte
 
+Modules/SecureUtil.lua
+Modules/ArenaUtil.lua
 Modules/Setup.lua
 Modules/AuraUtil.lua
 Modules/DRUtil.lua

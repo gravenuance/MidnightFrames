@@ -1,6 +1,6 @@
 local _, MV                     = ...
-local C_UnitAuras               = C_UnitAuras
-local C_CurveUtil               = C_CurveUtil
+local C_UnitAuras               = _G.C_UnitAuras
+local C_CurveUtil               = _G.C_CurveUtil
 
 MV.DefaultSize                  = 32
 
@@ -14,6 +14,8 @@ Enum.DispelType                 = {
   Bleed   = 11,
 }
 
+local curveType                 = Enum.LuaCurveType.Step
+
 local dispel                    = {}
 dispel[Enum.DispelType.None]    = _G.DEBUFF_TYPE_NONE_COLOR
 dispel[Enum.DispelType.Magic]   = _G.DEBUFF_TYPE_MAGIC_COLOR
@@ -26,24 +28,34 @@ dispel[Enum.DispelType.Enrage]  = CreateColor(243 / 255, 95 / 255, 245 / 255, 1)
 local dispelTypeCurve
 
 local function GetDispelTypeCurve()
-  if dispelTypeCurve then
+  if not MV.IsNil(dispelTypeCurve) then
     return dispelTypeCurve
   end
 
-  if not C_CurveUtil or not C_CurveUtil.CreateColorCurve then
-    return nil
-  end
-
-  local curve = C_CurveUtil.CreateColorCurve()
-  curve:SetType(Enum.LuaCurveType.Step)
-
+  local ok, curve = MV.CallExternalFunction({
+    namespace = C_CurveUtil,
+    functionName = "CreateColorCurve"
+  }
+  )
+  if not ok then return end
+  ok, _ = MV.CallExternalFunction({
+    namespace = curve,
+    functionName = "SetType",
+    args = { curve, curveType },
+    argumentValidators = { MV.IsUserData, MV.IsNumber }
+  })
+  if not ok then return end
   for _, dispelIndex in next, Enum.DispelType do
     local color = dispel[dispelIndex]
     if color then
-      curve:AddPoint(dispelIndex, color)
+      ok, _ = MV.CallExternalFunction({
+        namespace = curve,
+        functionName = "AddPoint",
+        args = { curve, dispelIndex, color },
+        argumentValidators = { MV.IsUserData, MV.IsNumber, MV.IsTable }
+      })
     end
   end
-
   dispelTypeCurve = curve
   return dispelTypeCurve
 end
@@ -60,13 +72,15 @@ local function ApplyAuraDispelBorderColor(btn, unit, auraData)
 
   local curve = GetDispelTypeCurve()
   if not curve then
-    print("MV: No curve object.")
+    print("No curve object")
     return
   end
-  if not C_UnitAuras or not C_UnitAuras.GetAuraDispelTypeColor then
-    return
-  end
-  local ok, dispelTypeColor = pcall(C_UnitAuras.GetAuraDispelTypeColor, unit, auraData.auraInstanceID, curve)
+  local ok, dispelTypeColor = MV.CallExternalFunction({
+    namespace = C_UnitAuras,
+    functionName = "GetAuraDispelTypeColor",
+    args = { unit, auraData.auraInstanceID, curve },
+    argumentValidators = { MV.IsString, MV.IsNumber, MV.IsUserData }
+  })
   if ok then
     border:SetVertexColor(dispelTypeColor:GetRGBA())
   end
@@ -82,57 +96,62 @@ local function ApplyAuraCooldown(btn, unit, auraData)
     return
   end
 
-  -- 1) Duration Object (preferred, Midnight-safe)
-  if C_UnitAuras and C_UnitAuras.GetAuraDuration and cd.SetCooldownFromDurationObject then
-    local ok, duration = pcall(C_UnitAuras.GetAuraDuration, unit, auraData.auraInstanceID)
+  local ok, result = MV.CallExternalFunction(
+    {
+      namespace = C_UnitAuras,
+      functionName = "GetAuraDuration",
+      args = { unit, auraData.auraInstanceID },
+      argumentValidators = { MV.IsString, MV.IsNumber }
+    }
+  )
+  if ok then
+    ok, result = MV.CallExternalFunction(
+      {
+        namespace = cd,
+        functionName = "SetCooldownFromDurationObject",
+        args = { cd, result, true },
+        argumentValidators = { MV.IsTable, MV.IsUserData, MV.IsBoolean },
+      }
+    )
     if ok then
-      ok = pcall(cd.SetCooldownFromDurationObject, cd, duration, true)
-      if ok then
-        cd:Show()
-        return
-      end
-    end
-  end
-
-  -- 2) SetCooldownFromExpirationTime
-  if type(cd.SetCooldownFromExpirationTime) == "function"
-      and auraData.duration and auraData.expirationTime
-  then
-    local ok, didSet = pcall(function()
-      cd:SetCooldownFromExpirationTime(auraData.expirationTime, auraData.duration)
-      return true
-    end)
-    if ok and didSet then
       cd:Show()
       return
     end
+  end
+  ok, result = MV.CallExternalFunction(
+    {
+      namespace = cd,
+      functionName = "SetCooldownFromExpirationTime",
+      args = { cd, auraData.duration, auraData.expirationTime },
+      argumentValidators = { MV.IsTable, MV.IsNumber, MV.IsNumber }
+    }
+  )
+  if ok then
+    cd:Show()
   end
 end
 
 local function SetAuraTexture(btn, auraData)
   if not btn or not btn.icon then
-    print("MV_SetAuraTexture: invalid button")
     return false
   end
   btn.icon:SetTexture(nil)
 
-  if not auraData or not auraData.icon then
-    print("MV_SetAuraTexture: no aura data or icon")
+  if not auraData then
     return false
   end
 
   local tex = auraData.icon
-
-  if type(tex) ~= "number" and type(tex) ~= "string" then
-    print("MV_SetAuraTexture: invalid icon type: " .. tostring(tex))
+  if not MV.IsNumber(tex) and not MV.IsString(tex) then
     return false
   end
+
   btn.icon:SetTexture(tex)
   return true
 end
 
 local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
-  if not C_UnitAuras
+  --[[ if not C_UnitAuras
       or not C_UnitAuras.GetUnitAuras
       or not UnitExists(unit) then
     for i = 1, container.maxAuras do
@@ -143,27 +162,35 @@ local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
       end
     end
     return
+  end ]]
+  if not MV.UnitExists(unit) then
+    for i = 1, container.maxAuras do
+      local btn = container.icons[i]
+      if btn then
+        btn:Hide()
+        if btn.cooldown then btn.cooldown:Hide() end
+      end
+    end
+    return
   end
-
   local shown = 1
-  maxRemaining = maxRemaining or 8
+  maxRemaining = maxRemaining or 4
   local seen = {}
 
   local function AddAuras(filter)
     local auraList, totalAuras
 
-    if C_UnitAuras and C_UnitAuras.GetUnitAuras then
-      local ok, result = pcall(C_UnitAuras.GetUnitAuras, unit, filter, maxRemaining, Enum.UnitAuraSortRule.BigDefensive,
-        Enum.UnitAuraSortDirection.Reverse)
-
-      if ok and type(result) == "table" then
-        local count = #result
-
-        auraList = result
-        totalAuras = count
-      end
+    local ok, result = MV.CallExternalFunction({
+      namespace = C_UnitAuras,
+      functionName = "GetUnitAuras",
+      args = { unit, filter, maxRemaining, Enum.UnitAuraSortRule.BigDefensive, Enum.UnitAuraSortDirection.Reverse },
+      argumentValidators = { MV.IsString, MV.IsString, MV.IsNumber, MV.IsNumber, MV.IsNumber }
+    })
+    if ok and MV.IsTable(result) then
+      local count = #result
+      auraList = result
+      totalAuras = count
     end
-
     if not auraList or totalAuras == 0 then
       return
     end
@@ -217,10 +244,10 @@ local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
 end
 
 function MV.UpdateAuras(frame)
-  if not UnitExists(frame.unit) then
+  --[[ if not UnitExists(frame.unit) then
     GetAndUpdateAuras(frame.auraContainer, frame.unit, {}, 0)
     return
-  end
+  end ]]
   local filters = {}
   local cfg = MV.GetUnitFilters(frame.unitKey)
 

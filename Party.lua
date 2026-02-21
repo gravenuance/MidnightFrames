@@ -70,7 +70,7 @@ local function CreatePartyFrame(index)
         MV.UpdateHealthBar(partyFrame)
         MV.UpdateAuras(partyFrame)
         MV.ResetDR(partyFrame)
-        MV.ResetAndRequestTrinket(partyFrame)
+        MV.UpdateTrinket(partyFrame)
       end
     end
     if MV_PartyTestMode then return end
@@ -86,7 +86,7 @@ local function CreatePartyFrame(index)
       MV.UpdateAuras(partyFrame)
     elseif event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" or event == "ARENA_COOLDOWNS_UPDATE" then
       if arg1 == unit then
-        MV.UpdateTrinket(partyFrame)
+        MV.UpdateTrinket(partyFrame, true)
       end
     end
   end)

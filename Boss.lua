@@ -35,7 +35,7 @@ local function SetBossFrame(index)
 
   local HAS_REGISTERED_WATCH = false
   local function UpdateVisibility()
-    local hasUnit = UnitExists(unit)
+    local hasUnit = MV.UnitExists(unit)
 
     if not InInstance() or not hasUnit or MV_BossTestMode then
       if HAS_REGISTERED_WATCH and not InCombatLockdown() then

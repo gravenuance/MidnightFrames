@@ -27,8 +27,22 @@ local function CreateAuraButton(parent, index)
     if not self.unit or not self.auraInstanceID or GameTooltip:IsForbidden() then
       return
     end
-    GameTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT")
-    GameTooltip:SetUnitAuraByAuraInstanceID(self.unit, self.auraInstanceID)
+    MV.CallExternalFunction(
+      {
+        namespace = GameTooltip,
+        functionName = "SetOwner",
+        args = { GameTooltip, self, "ANCHOR_BOTTOMRIGHT" },
+        argumentValidators = { MV.IsUserData, MV.IsUserData, MV.IsString }
+      }
+    )
+    MV.CallExternalFunction(
+      {
+        namespace = GameTooltip,
+        functionName = "SetUnitAuraByAuraInstanceID",
+        args = { GameTooltip, self.unit, self.auraInstanceID },
+        argumentValidators = { MV.IsUserData, MV.IsString, MV.IsNumber }
+      }
+    )
   end)
 
   btn:SetScript("OnLeave", function()
