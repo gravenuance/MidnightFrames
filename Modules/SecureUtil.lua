@@ -169,3 +169,11 @@ function MV.UnitClass(unit)
   )
   return ok, r1, r2, r3
 end
+
+function MV.GetField(obj, key)
+  if type(obj) ~= "table" and type(obj) ~= "userdata" then
+    return nil
+  end
+  local ok, value = pcall(function() return obj[key] end)
+  return ok and value or nil
+end

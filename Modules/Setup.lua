@@ -72,11 +72,19 @@ local function CreateGenericButton(parent, index)
   btn:SetSize(parent.iconSize, parent.iconSize)
 
   -- Border behind the icon
-  btn.border = btn:CreateTexture(nil, "BACKGROUND")
+  btn.border = btn:CreateTexture(nil, "BACKGROUND", nil, 0)
   btn.border:SetTexture("Interface\\Buttons\\WHITE8x8")
   btn.border:SetVertexColor(0, 0, 0, 1)
   btn.border:SetPoint("TOPLEFT", -1, 1)
   btn.border:SetPoint("BOTTOMRIGHT", 1, -1)
+
+  -- Above the border
+  btn.immune = btn:CreateTexture(nil, "BACKGROUND", nil, 1)
+  btn.immune:SetTexture("Interface\\Buttons\\WHITE8x8")
+  btn.immune:SetVertexColor(1, 0, 0, 1)
+  btn.immune:SetPoint("TOPLEFT", -1, 1)
+  btn.immune:SetPoint("BOTTOMRIGHT", 1, -1)
+  btn.immune:Hide()
 
   -- Icon above border
   btn.icon = btn:CreateTexture(nil, "BORDER")
@@ -193,6 +201,7 @@ function MV.CreateUnitFrame(params)
     f.otherContainer:SetSize(28, totalHeight)
     f.otherContainer:SetPoint("TOP", f, "BOTTOM", 0, -10)
     f.otherContainer.icons = {}
+    f.categories = {}
 
     LayoutPvPButtons(f.otherContainer)
 

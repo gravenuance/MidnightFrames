@@ -44,7 +44,6 @@ local function CheckMultiSpellRange(unit)
       if not MV.IsNil(spell.helpful) then
         if canAttack and spell.helpful then break end
         if not canAttack and not spell.helpful then break end
-        print(spellId, spell.helpful)
       end
     end
     local ok, range = MV.CallExternalFunction(
@@ -63,6 +62,7 @@ local function CheckMultiSpellRange(unit)
     end
   end
   local result = totalRangeCount > 0 and count > math.floor(totalRangeCount * MV.errorMargin)
+  --print(result)
   return result
 end
 

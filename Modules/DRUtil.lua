@@ -1,5 +1,24 @@
 local _, MV = ...
 
+local ENEMY_DR_RESET_TIME = 16
+local ENEMY_DR_ORDER = {
+  "stun",
+  "incap",
+  "disorient",
+  "silence",
+  "disarm",
+  "root",
+}
+
+local CATEGORY_ICON = {
+  stun = "Interface\\Icons\\Ability_Rogue_CheapShot",
+  incap = "Interface\\Icons\\Ability_Rogue_Sap",
+  disorient = "Interface\\Icons\\Spell_Shadow_MindSteal",
+  silence = "Interface\\Icons\\Ability_Rogue_Garrote",
+  disarm = "Interface\\Icons\\Ability_Warrior_Disarm",
+  root = "Interface\\Icons\\Spell_Nature_StrangleVines",
+}
+
 function MV.ResetDR(frame)
   if frame.otherContainer then
     for i = 2, 5 do
@@ -111,4 +130,134 @@ function MV.UpdateBlizzardDRBackup(tray, frame)
       MV.UpdateBlizzardDR(child, frame)
     end
   end)
+end
+
+local function IsTracked(category)
+  for _, key in ipairs(ENEMY_DR_ORDER) do
+    if key == category then
+      return true
+    end
+  end
+  return false
+end
+
+local function SetButtonIcon(button, icon, expires, now, showCountdown, isImmune)
+  if button.icon and icon then
+    button.icon:SetTexture(icon)
+    if button.immune and isImmune then
+      button.immune:Show()
+    else
+      button.immune:Hide()
+    end
+    button:Show()
+  end
+  local duration = expires - now
+  if duration > 0 then
+    local ok = MV.CallExternalFunction({
+      namespace = button.cooldown,
+      functionName = "SetCooldownFromExpirationTime",
+      args = { button.cooldown, expires, duration },
+      argumentValidators = { MV.IsUserData, MV.IsNumber, MV.IsNumber }
+    })
+    if ok then
+      MV.CallExternalFunction({
+        namespace = button.cooldown,
+        functionName = "SetShowCountdownNumbers",
+        args = { button.cooldown, showCountdown },
+        argumentValidators = { MV.IsUserData, MV.IsBoolean }
+      })
+    end
+  end
+end
+
+function MV.ResetDRButtons(frame)
+  if MV.IsTable(frame.categories) then
+    wipe(frame.categories)
+  end
+  for i = 2, 5 do
+    local candidate = frame.otherContainer.icons[i]
+    if not candidate.categoryTable then
+      candidate.categoryTable = nil
+      candidate:Hide()
+      break
+    end
+  end
+end
+
+local function SetButtons(frame)
+  if not frame then
+    return
+  end
+
+  local now = GetTime()
+
+  for category, categoryTable in pairs(frame.categories) do
+    local expires       = categoryTable.expiration
+    local isImmune      = categoryTable.isImmune
+    local showCountdown = categoryTable.showCountdown
+    local icon          = categoryTable.icon
+    local button        = categoryTable.button
+
+    if not MV.IsNumber(expires) then
+      if button then
+        button:Hide()
+        button.categoryTable = nil
+      end
+      frame.categories[category] = nil
+    elseif expires <= now then
+      if button then
+        button:Hide()
+        button.categoryTable = nil
+      end
+      frame.categories[category] = nil
+    else
+      if button then
+        SetButtonIcon(button, icon, expires, now, showCountdown, isImmune)
+      else
+        for i = 2, 5 do
+          local candidate = frame.otherContainer.icons[i]
+          if not candidate.categoryTable then
+            button = candidate
+            categoryTable.button = button
+            button.categoryTable = categoryTable
+            SetButtonIcon(button, icon, expires, now, showCountdown, isImmune)
+            break
+          end
+        end
+      end
+    end
+  end
+end
+
+function MV.TryAndUpdateDRState(frame, trackerInfo)
+  if not MV.IsTable(trackerInfo) then
+    return
+  end
+  local category = MV.GetField(trackerInfo, "category")
+  if not MV.IsString(category) then return end
+  category = string.lower(category)
+  if category == "incapacitate" then
+    category = "incap"
+  end
+  if not IsTracked(category) then return end
+  local startTime = MV.GetField(trackerInfo, "startTime")
+  local duration = MV.GetField(trackerInfo, "duration")
+  local isImmune = MV.GetField(trackerInfo, "isImmune")
+  local showCountdown = MV.GetField(trackerInfo, "showCountdown")
+
+  local expires
+  if MV.IsNumber(startTime) and MV.IsNumber(duration) then
+    if duration > 0 then
+      expires = startTime + duration
+    end
+  end
+  if MV.IsNumber(expires) then
+    frame.categories[category] = {
+      expiration = expires,
+      isImmune = isImmune,
+      showCountdown = showCountdown,
+      icon = CATEGORY_ICON[category]
+    }
+  end
+  SetButtons(frame)
 end
