@@ -171,9 +171,9 @@ function MV.UnitClass(unit)
 end
 
 function MV.GetField(obj, key)
-  if type(obj) ~= "table" and type(obj) ~= "userdata" then
-    return nil
+  if not MV.IsTable(obj) and not MV.IsUserData(obj) then
+    return false, "Wrong type"
   end
   local ok, value = pcall(function() return obj[key] end)
-  return ok and value or nil
+  return ok, value
 end

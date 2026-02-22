@@ -162,7 +162,7 @@ local function SetArenaFrame(index)
     end
   end
 
-  --[[   local function HookDR(frame)
+  local function HookDR(frame)
     local member = unitFrame
     if member and member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MV_Hooked then
       local tray = member.SpellDiminishStatusTray
@@ -186,7 +186,7 @@ local function SetArenaFrame(index)
         MV.ResetTray(frame)
       end)
     end
-  end ]]
+  end
 
   -- SET DEFAULTS
   arenaFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -231,8 +231,8 @@ local function SetArenaFrame(index)
       MV.UpdateHealthBar(arenaFrame)
       MV.UpdateTargetHighlight(arenaFrame, MV_ArenaTestMode)
       MV.UpdateAuras(arenaFrame)
-      --MV.ResetDR(arenaFrame)
-      MV.ResetDRButtons(arenaFrame)
+      MV.ResetDR(arenaFrame)
+      --MV.ResetDRButtons(arenaFrame)
       MV.UpdateTrinket(arenaFrame)
     end
     if not MV.IsInArena() then return end
@@ -254,7 +254,7 @@ local function SetArenaFrame(index)
       if arg1 == unit then
         SetMemberFrame(index)
         MV.UpdateTrinket(arenaFrame)
-        --HookDR(arenaFrame)
+        HookDR(arenaFrame)
       end
     elseif event == "UNIT_AURA" then
       MV.UpdateAuras(arenaFrame)
@@ -263,7 +263,7 @@ local function SetArenaFrame(index)
         MV.UpdateTrinket(arenaFrame, true)
       end
     elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
-      MV.TryAndUpdateDRState(arenaFrame, arg2)
+      --MV.TryAndUpdateDRState(arenaFrame, arg2)
     end
   end)
 end

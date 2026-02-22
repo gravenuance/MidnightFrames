@@ -53,7 +53,11 @@ function MV.IsUnit(index)
 end
 
 function MV.GetOpponentSpecAndClass(index)
-  local ok, specID = GetArenaOpponentSpec(index)
+  local ok, specID = MV.CallExternalFunction({
+    functionName = "GetArenaOpponentSpec",
+    args = { index },
+    argumentValidators = { MV.IsNumber },
+  })
   if ok then
     local ok2, _, _, _, icon, _, class = MV.CallExternalFunction({
       functionName = "GetSpecializationInfoByID",

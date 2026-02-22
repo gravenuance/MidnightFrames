@@ -35,10 +35,15 @@ SlashCmdList.MV = function(msg)
   elseif msg == "boss" then
     RunOrDefer("MV_boss_test", function()
       MV.ToggleTestMode("boss", not MV_BossTestMode)
-      print("MV: arena test mode " .. (MV_BossTestMode and "ON" or "OFF"))
+      print("MV: boss test mode " .. (MV_BossTestMode and "ON" or "OFF"))
+    end)
+  elseif msg == "raid" then
+    RunOrDefer("MV_raid_test", function()
+      MV.ToggleTestMode("raid", not MV_RaidTestMode)
+      print("MV: raid test mode " .. (MV_RaidTestMode and "ON" or "OFF"))
     end)
   else
-    print("Usage: /mv target | party | arena | boss")
+    print("Usage: /mv target | party | raid | arena | boss")
   end
 end
 
@@ -118,6 +123,18 @@ local DEFAULT_FILTERS = {
     ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
     ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
     ["PLAYER|RAID_IN_COMBAT"] = true,
+  },
+
+  raid = {
+    ["HARMFUL|IMPORTANT"] = true,
+    ["HELPFUL|IMPORTANT"] = true,
+    ["HARMFUL|CROWD_CONTROL"] = true,
+    ["HELPFUL|CROWD_CONTROL"] = true,
+    ["HARMFUL|BIG_DEFENSIVE"] = true,
+    ["HELPFUL|BIG_DEFENSIVE"] = true,
+    ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["PLAYER|RAID_IN_COMBAT"] = true,
   }
 }
 
@@ -139,6 +156,7 @@ local UNIT_LABELS = {
   party  = "Party",
   arena  = "Arena",
   boss   = "Boss",
+  raid   = "Raid",
 }
 
 -- Public accessor for other files
@@ -185,6 +203,11 @@ local function BuildOptionsTable()
         type = "execute",
         name = "Toggle Boss Test Mode",
         func = function() MV.ToggleTestMode("boss", not MV_BossTestMode) end
+      },
+      testRaid   = {
+        type = "execute",
+        name = "Toggle Raid Test Mode",
+        func = function() MV.ToggleTestMode("boss", not MV_RaidTestMode) end
       }
     }
   }

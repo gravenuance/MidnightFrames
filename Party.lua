@@ -64,7 +64,7 @@ local function CreatePartyFrame(index)
     then
       MV_PartyTestMode = false
       UpdateVisibility()
-      if UnitExists(unit) then
+      if MV.UnitExists(unit) then
         MV.UpdateTargetHighlight(partyFrame)
         MV.ApplyClassColor(partyFrame)
         MV.UpdateHealthBar(partyFrame)

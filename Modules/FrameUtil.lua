@@ -11,6 +11,8 @@ MV.SizeYAlt = 210
 MV.PetX = 20
 MV.PetY = 80
 MV.PetSpace = 5
+MV.RaidSizeX = 150
+MV.RaidSizeY = 35
 
 local powerCurve
 local curveType = Enum.LuaCurveType.Linear

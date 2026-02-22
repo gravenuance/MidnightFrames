@@ -53,16 +53,25 @@ local function CreateAuraButton(parent, index)
   return btn
 end
 
-local function LayoutAuraButtons(container)
+local function LayoutAuraButtons(container, horizontal)
   for i = 1, container.maxAuras do
     local btn = container.icons[i] or CreateAuraButton(container, i)
     container.icons[i] = btn
     btn:ClearAllPoints()
-    if i == 1 then
-      btn:SetPoint("BOTTOM", container, "BOTTOM", 0, 0)
+    if horizontal then
+      if i == 1 then
+        btn:SetPoint("LEFT", container, "LEFT", 0, 0)
+      else
+        local prev = container.icons[i - 1]
+        btn:SetPoint("LEFT", prev, "RIGHT", 4, 0)
+      end
     else
-      local prev = container.icons[i - 1]
-      btn:SetPoint("BOTTOM", prev, "TOP", 0, 4)
+      if i == 1 then
+        btn:SetPoint("BOTTOM", container, "BOTTOM", 0, 0)
+      else
+        local prev = container.icons[i - 1]
+        btn:SetPoint("BOTTOM", prev, "TOP", 0, 4)
+      end
     end
   end
 end
@@ -100,32 +109,42 @@ local function CreateGenericButton(parent, index)
   return btn
 end
 
-local function LayoutPvPButtons(container)
+local function LayoutPvPButtons(container, horizontal)
   for i = 1, 5 do
     local btn = container.icons[i] or CreateGenericButton(container, i)
     container.icons[i] = btn
     btn.container = container
     btn:ClearAllPoints()
-    if i == 1 then
-      btn:SetPoint("TOP", container, "TOP", 0, 0)
+    if horizontal then
+      if i == 1 then
+        btn:SetPoint("RIGHT", container, "RIGHT", 0, 0)
+      else
+        local prev = container.icons[i - 1]
+        btn:SetPoint("RIGHT", prev, "LEFT", -4, 0)
+      end
     else
-      local prev = container.icons[i - 1]
-      btn:SetPoint("TOP", prev, "BOTTOM", 0, -4)
+      if i == 1 then
+        btn:SetPoint("TOP", container, "TOP", 0, 0)
+      else
+        local prev = container.icons[i - 1]
+        btn:SetPoint("TOP", prev, "BOTTOM", 0, -4)
+      end
     end
   end
 end
 
 function MV.CreateUnitFrame(params)
-  local name     = params.name
-  local unit     = params.unit
-  local unitKey  = params.unitKey
-  local point    = params.point
-  local size     = params.size or { 50, 220 }
-  local maxAuras = params.maxAuras or 4
-  local iconSize = params.iconSize or 32
-  local pvpIcons = params.pvpIcons or false
+  local name       = params.name
+  local unit       = params.unit
+  local unitKey    = params.unitKey
+  local point      = params.point
+  local size       = params.size or { 50, 220 }
+  local maxAuras   = params.maxAuras or 4
+  local iconSize   = params.iconSize or 32
+  local pvpIcons   = params.pvpIcons or false
+  local horizontal = params.horizontal or false
 
-  local f        = CreateFrame("Button", name, UIParent, "SecureUnitButtonTemplate")
+  local f          = CreateFrame("Button", name, UIParent, "SecureUnitButtonTemplate")
   f:SetSize(size[1], size[2])
   f:SetPoint(point[1], point[2] or UIParent, point[3], point[4], point[5])
   f:SetAttribute("unit", unit)
@@ -185,25 +204,34 @@ function MV.CreateUnitFrame(params)
   f.auraContainer = CreateFrame("Frame", name .. "Auras", f)
   f.auraContainer.maxAuras = maxAuras
   f.auraContainer.iconSize = iconSize
-
   local totalHeight = iconSize * maxAuras + 2 * (maxAuras - 1)
-  f.auraContainer:SetSize(28, totalHeight)
-  f.auraContainer:SetPoint("BOTTOM", f, "TOP", 0, -190)
+  if horizontal then
+    f.auraContainer:SetSize(totalHeight, 28)
+    f.auraContainer:SetPoint("RIGHT", f, "LEFT", 10, 0)
+  else
+    f.auraContainer:SetSize(28, totalHeight)
+    f.auraContainer:SetPoint("BOTTOM", f, "TOP", 0, -190)
+  end
   f.auraContainer.icons = {}
-
-  LayoutAuraButtons(f.auraContainer)
+  LayoutAuraButtons(f.auraContainer, horizontal)
 
   if pvpIcons then
     f.otherContainer = CreateFrame("Frame", name .. "Buttons", f)
     f.otherContainer.iconSize = iconSize
-
     totalHeight = iconSize * 5 + 2 * (5 - 1)
-    f.otherContainer:SetSize(28, totalHeight)
-    f.otherContainer:SetPoint("TOP", f, "BOTTOM", 0, -10)
+    if horizontal then
+      f.otherContainer:SetSize(totalHeight, 28)
+      f.otherContainer:SetPoint("LEFT", f, "RIGHT", -10, 0)
+    else
+      f.otherContainer:SetSize(28, totalHeight)
+      f.otherContainer:SetPoint("TOP", f, "BOTTOM", 0, -10)
+    end
+
+
     f.otherContainer.icons = {}
     f.categories = {}
 
-    LayoutPvPButtons(f.otherContainer)
+    LayoutPvPButtons(f.otherContainer, horizontal)
 
     return f
   end

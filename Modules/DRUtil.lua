@@ -2,12 +2,12 @@ local _, MV = ...
 
 local ENEMY_DR_RESET_TIME = 16
 local ENEMY_DR_ORDER = {
-  "stun",
-  "incap",
-  "disorient",
-  "silence",
-  "disarm",
-  "root",
+  [2] = "stun",
+  [4] = "incap",
+  [5] = "disorient",
+  [6] = "silence",
+  [7] = "disarm",
+  [0] = "root",
 }
 
 local CATEGORY_ICON = {
@@ -132,15 +132,6 @@ function MV.UpdateBlizzardDRBackup(tray, frame)
   end)
 end
 
-local function IsTracked(category)
-  for _, key in ipairs(ENEMY_DR_ORDER) do
-    if key == category then
-      return true
-    end
-  end
-  return false
-end
-
 local function SetButtonIcon(button, icon, expires, now, showCountdown, isImmune)
   if button.icon and icon then
     button.icon:SetTexture(icon)
@@ -229,29 +220,50 @@ local function SetButtons(frame)
   end
 end
 
+local function GetAndInterpretField(table, field)
+  local ok, result = MV.GetField(table, field)
+  if ok then
+    return result
+  else
+    print(ok, "Result:", result)
+    return nil
+  end
+end
+
+local function IsTracked(category)
+  local result = GetAndInterpretField(ENEMY_DR_ORDER, category)
+  if not MV.IsNil(result) then return result end
+  return false
+end
+
 function MV.TryAndUpdateDRState(frame, trackerInfo)
-  if not MV.IsTable(trackerInfo) then
+  if not MV.IsTable(trackerInfo) and not MV.IsUserData(trackerInfo) then
     return
   end
-  local category = MV.GetField(trackerInfo, "category")
-  if not MV.IsString(category) then return end
-  category = string.lower(category)
-  if category == "incapacitate" then
-    category = "incap"
+  local category = GetAndInterpretField(trackerInfo, "category")
+  local ok, info = MV.IsNumber(category)
+  if not ok then
+    print(ok, info)
+    return
   end
-  if not IsTracked(category) then return end
-  local startTime = MV.GetField(trackerInfo, "startTime")
-  local duration = MV.GetField(trackerInfo, "duration")
-  local isImmune = MV.GetField(trackerInfo, "isImmune")
-  local showCountdown = MV.GetField(trackerInfo, "showCountdown")
+  category = IsTracked(category)
+  if not MV.IsString(category) then return end
+  print("It is tracked")
+  local startTime = GetAndInterpretField(trackerInfo, "startTime")
+  local duration = GetAndInterpretField(trackerInfo, "duration")
+  local isImmune = GetAndInterpretField(trackerInfo, "isImmune")
+  local showCountdown = GetAndInterpretField(trackerInfo, "showCountdown")
+  print("Got all the information")
 
-  local expires
+  local expires = nil
   if MV.IsNumber(startTime) and MV.IsNumber(duration) then
     if duration > 0 then
       expires = startTime + duration
     end
+    print("Setting expiration")
   end
   if MV.IsNumber(expires) then
+    print("Creating category")
     frame.categories[category] = {
       expiration = expires,
       isImmune = isImmune,

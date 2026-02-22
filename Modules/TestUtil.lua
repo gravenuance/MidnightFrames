@@ -30,5 +30,11 @@ function MV.ToggleTestMode(kind, on)
         if f.UpdateVisibility then f:UpdateVisibility() end
       end
     end
+  elseif kind == "raid" then
+    MV_RaidTestMode = on
+    local f = _G["MV_RaidFrame" .. 1]
+    if f then
+      if f.UpdateVisibility then f:UpdateVisibility() end
+    end
   end
 end
