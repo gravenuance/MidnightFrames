@@ -1,23 +1,35 @@
-local _, MV        = ...
+local _, MV       = ...
 
-local baseName     = "MV_RaidFrame"
+local baseName    = "MV_RaidFrame"
 
-MV_RaidTestMode    = false
+MV_RaidTestMode   = false
+MV.MaxRaidMembers = 20
 
-local RaidFrames   = {}
+local RaidFrames  = {}
 
-local MAX_AURAS    = 3
-
-local visibleUnits = 0
+local MAX_AURAS   = 3
 
 local function LayoutRaidFrames()
-  if visibleUnits < 6 then return end
-  local placed = math.floor(visibleUnits / 2)
-  for key, frame in pairs(RaidFrames) do
-    if MV.UnitExists(frame.unit) then
+  local numRaid = GetNumGroupMembers() or 0
+  if MV_RaidTestMode then numRaid = MV.MaxRaidMembers end
+  if numRaid < 6 then
+    return
+  end
+
+  local spacingY = MV.RaidSizeY + 5
+  local startY = spacingY * math.floor(numRaid / 2)
+  local shown = 0
+
+  for index = 1, #RaidFrames do
+    local frame = RaidFrames[index]
+    local unit = frame.unit
+    if MV.UnitExists(unit) or MV_RaidTestMode then
+      shown = shown + 1
       frame:ClearAllPoints()
-      frame:SetPoint("CENTER", UIParent, "CENTER", -MV.FrameX * 1.5, placed * (MV.RaidSizeY + 5))
-      placed = placed - 1
+      frame:SetPoint("CENTER", UIParent, "CENTER",
+        -MV.FrameX * 1.5,
+        startY - (shown - 1) * spacingY)
+      --print(index .. ": " .. tostring(startY - (shown - 1) * spacingY))
     end
   end
 end
@@ -49,6 +61,9 @@ local function CreateRaidFrame(index)
       UnregisterUnitWatch(raidFrame)
       raidFrame.IsDriverRegistered = false
       raidFrame:Show()
+      if raidFrame.unit == "raid1" then
+        LayoutRaidFrames()
+      end
     elseif (numRaid < 6 or numRaid == 0) and not InCombatLockdown() then
       UnregisterUnitWatch(raidFrame)
       raidFrame.IsDriverRegistered = false
@@ -84,7 +99,6 @@ local function CreateRaidFrame(index)
     then
       MV_RaidTestMode = false
       UpdateVisibility()
-      visibleUnits = visibleUnits - 1
       if MV.UnitExists(unit) then
         MV.UpdateTargetHighlight(raidFrame)
         MV.ApplyClassColor(raidFrame)
@@ -92,7 +106,8 @@ local function CreateRaidFrame(index)
         MV.UpdateAuras(raidFrame)
         MV.ResetDR(raidFrame)
         MV.UpdateTrinket(raidFrame)
-        visibleUnits = visibleUnits + 1
+      end
+      if raidFrame.unit == "raid1" then
         LayoutRaidFrames()
       end
     end
@@ -116,6 +131,6 @@ local function CreateRaidFrame(index)
   RaidFrames[index] = raidFrame
 end
 
-for i = 1, 20 do
+for i = 1, MV.MaxRaidMembers do
   CreateRaidFrame(i)
 end

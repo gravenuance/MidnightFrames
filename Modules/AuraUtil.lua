@@ -3,7 +3,7 @@ local C_UnitAuras               = _G.C_UnitAuras
 local C_CurveUtil               = _G.C_CurveUtil
 
 MV.DefaultSize                  = 32
-MV.DefaultSizeSmall             = 24
+MV.DefaultSizeSmall             = 22
 
 Enum.DispelType                 = {
   None    = 0,

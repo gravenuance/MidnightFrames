@@ -186,7 +186,9 @@ function MV.CreateUnitFrame(params)
   f.health:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 4, 4)
   f.health:SetPoint("TOPRIGHT", f, "TOPRIGHT", -4, -4)
   f.health:SetStatusBarTexture("Interface\\Buttons\\WHITE8x8")
-  f.health:SetOrientation("VERTICAL")
+  if not horizontal then
+    f.health:SetOrientation("VERTICAL")
+  end
   f.health:SetRotatesTexture(true)
   f.health:SetFrameStrata("MEDIUM")
   f.health:SetStatusBarColor(0.2, 0.6, 1, 0.2)
@@ -207,7 +209,7 @@ function MV.CreateUnitFrame(params)
   local totalHeight = iconSize * maxAuras + 2 * (maxAuras - 1)
   if horizontal then
     f.auraContainer:SetSize(totalHeight, 28)
-    f.auraContainer:SetPoint("RIGHT", f, "LEFT", 10, 0)
+    f.auraContainer:SetPoint("LEFT", f, "LEFT", 10, 0)
   else
     f.auraContainer:SetSize(28, totalHeight)
     f.auraContainer:SetPoint("BOTTOM", f, "TOP", 0, -190)
@@ -221,7 +223,7 @@ function MV.CreateUnitFrame(params)
     totalHeight = iconSize * 5 + 2 * (5 - 1)
     if horizontal then
       f.otherContainer:SetSize(totalHeight, 28)
-      f.otherContainer:SetPoint("LEFT", f, "RIGHT", -10, 0)
+      f.otherContainer:SetPoint("RIGHT", f, "LEFT", -10, 0)
     else
       f.otherContainer:SetSize(28, totalHeight)
       f.otherContainer:SetPoint("TOP", f, "BOTTOM", 0, -10)
