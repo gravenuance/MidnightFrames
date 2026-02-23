@@ -161,18 +161,24 @@ function MV.CreateUnitFrame(params)
   f.bg:SetAllPoints(f)
   f.bg:SetColorTexture(0, 0, 0, 0.6)
 
-  -- Border
-  f.border = CreateFrame("Frame", nil, f, "BackdropTemplate")
-  f.border:SetAllPoints(f)
+  local inset      = 0  -- on the frame edge
+  local innerInset = 2  -- 2px inside
+  local outerInset = -2 -- 2px outside
+
+  -- Base border (on edge)
+  f.border         = CreateFrame("Frame", nil, f, "BackdropTemplate")
+  f.border:SetPoint("TOPLEFT", inset, -inset)
+  f.border:SetPoint("BOTTOMRIGHT", -inset, inset)
   f.border:SetBackdrop({
     edgeFile = "Interface\\Buttons\\WHITE8x8",
     edgeSize = 2,
   })
   f.border:SetBackdropBorderColor(0, 0, 0, 1)
 
-  -- Mouseover
+  -- Mouseover border (on edge, above base)
   f.mouseoverBorder = CreateFrame("Frame", nil, f, "BackdropTemplate")
-  f.mouseoverBorder:SetAllPoints(f)
+  f.mouseoverBorder:SetPoint("TOPLEFT", inset, -inset)
+  f.mouseoverBorder:SetPoint("BOTTOMRIGHT", -inset, inset)
   f.mouseoverBorder:SetBackdrop({
     edgeFile = "Interface\\Buttons\\WHITE8x8",
     edgeSize = 2,
@@ -180,6 +186,29 @@ function MV.CreateUnitFrame(params)
   f.mouseoverBorder:SetBackdropBorderColor(0.694, 0.372, 0.98, 1)
   f.mouseoverBorder:SetFrameLevel(f.border:GetFrameLevel() + 1)
   f.mouseoverBorder:Hide()
+
+  -- Inner border
+  f.innerBorder = CreateFrame("Frame", nil, f, "BackdropTemplate")
+  f.innerBorder:SetPoint("TOPLEFT", innerInset, -innerInset)
+  f.innerBorder:SetPoint("BOTTOMRIGHT", -innerInset, innerInset)
+  f.innerBorder:SetBackdrop({
+    edgeFile = "Interface\\Buttons\\WHITE8x8",
+    edgeSize = 2,
+  })
+  f.innerBorder:SetBackdropBorderColor(0.2, 0.8, 0.2, 1)
+  f.innerBorder:Hide()
+
+  -- Outer border
+  f.outerBorder = CreateFrame("Frame", nil, f, "BackdropTemplate")
+  f.outerBorder:SetPoint("TOPLEFT", outerInset, -outerInset)
+  f.outerBorder:SetPoint("BOTTOMRIGHT", -outerInset, outerInset)
+  f.outerBorder:SetBackdrop({
+    edgeFile = "Interface\\Buttons\\WHITE8x8",
+    edgeSize = 2,
+  })
+  f.outerBorder:SetBackdropBorderColor(0.8, 0.2, 0.2, 1)
+  f.outerBorder:SetFrameLevel(f.border:GetFrameLevel() - 1)
+  f.outerBorder:Hide()
 
   -- Health bar
   f.health = CreateFrame("StatusBar", name .. "Health", f)
@@ -191,7 +220,7 @@ function MV.CreateUnitFrame(params)
   end
   f.health:SetRotatesTexture(true)
   f.health:SetFrameStrata("MEDIUM")
-  f.health:SetStatusBarColor(0.2, 0.6, 1, 0.2)
+  f.health:SetStatusBarColor(0.25, 0.88, 0.82, 0.8)
   f.health:SetFrameLevel(f:GetFrameLevel() + 1)
 
   f:SetScript("OnEnter", function(self)

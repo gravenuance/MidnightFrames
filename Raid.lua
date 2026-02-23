@@ -90,6 +90,7 @@ local function CreateRaidFrame(index)
   raidFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
   raidFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
   raidFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
+  raidFrame:RegisterEvent("UNIT_TARGET")
 
   raidFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"
@@ -126,6 +127,8 @@ local function CreateRaidFrame(index)
       if arg1 == unit then
         MV.UpdateTrinket(raidFrame, true)
       end
+    elseif event == "UNIT_TARGET" then
+      MV.CountTargetUnits(raidFrame)
     end
   end)
   RaidFrames[index] = raidFrame

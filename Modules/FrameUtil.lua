@@ -54,3 +54,8 @@ function MV.UpdatePowerLabel(frame)
   end
   frame.power:SetText(string.format("%.0f", power))
 end
+
+function MV.InInstance()
+  local _, instanceType = IsInInstance()
+  return instanceType == "party" or instanceType == "raid"
+end

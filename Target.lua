@@ -40,6 +40,7 @@ targetFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 targetFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
 targetFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
 targetFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+targetFrame:RegisterEvent("UNIT_TARGET")
 
 targetFrame:SetScript("OnEvent", function(_, event, arg1)
   if (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
@@ -61,5 +62,7 @@ targetFrame:SetScript("OnEvent", function(_, event, arg1)
     MV.SetRangeAlpha(targetFrame)
   elseif event == "UNIT_AURA" then
     MV.UpdateAuras(targetFrame)
+  elseif event == "UNIT_TARGET" then
+    MV.CountTargetUnits(targetFrame)
   end
 end)

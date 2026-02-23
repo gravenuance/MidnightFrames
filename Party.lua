@@ -55,6 +55,7 @@ local function CreatePartyFrame(index)
   partyFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
   partyFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
   partyFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
+  partyFrame:RegisterEvent("UNIT_TARGET")
 
   partyFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"
@@ -88,6 +89,8 @@ local function CreatePartyFrame(index)
       if arg1 == unit then
         MV.UpdateTrinket(partyFrame, true)
       end
+    elseif event == "UNIT_TARGET" then
+      MV.CountTargetUnits(partyFrame)
     end
   end)
 end

@@ -12,6 +12,7 @@ Modules/Setup.lua
 Modules/AuraUtil.lua
 Modules/DRUtil.lua
 Modules/FrameUtil.lua
+Modules/TargetIndicator.lua
 Modules/HealthFrameUtil.lua
 Modules/HighlightUtil.lua
 Modules/RangeUtil.lua

@@ -59,6 +59,7 @@ playerFrame:RegisterUnitEvent("UNIT_PET", playerFrame.unit)
 playerFrame:RegisterEvent("PLAYER_DEAD")
 playerFrame:RegisterEvent("PLAYER_UNGHOST")
 playerFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+playerFrame:RegisterEvent("UNIT_TARGET")
 
 
 playerFrame:SetScript("OnEvent", function(_, event, arg1)
@@ -92,5 +93,7 @@ playerFrame:SetScript("OnEvent", function(_, event, arg1)
     MV.UpdateTargetHighlight(petFrame, false)
   elseif event == "SPELL_RANGE_CHECK_UPDATE" then
     MV.RegisterRangeSpell(arg1)
+  elseif event == "UNIT_TARGET" then
+    MV.CountTargetUnits(playerFrame)
   end
 end)

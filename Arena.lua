@@ -221,6 +221,8 @@ local function SetArenaFrame(index)
 
   arenaFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit)
 
+  arenaFrame:RegisterEvent("UNIT_TARGET")
+
 
 
 
@@ -262,8 +264,8 @@ local function SetArenaFrame(index)
       if arg1 == unit then
         MV.UpdateTrinket(arenaFrame, true)
       end
-    elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
-      --MV.TryAndUpdateDRState(arenaFrame, arg2)
+    elseif event == "UNIT_TARGET" then
+      MV.CountTargetUnits(arenaFrame)
     end
   end)
 end

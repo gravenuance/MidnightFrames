@@ -9,11 +9,6 @@ local MAX_AURAS = 4
 local blizzContainerName = "BossTargetFrameContainer"
 local blizzFrameBase = "Boss"
 
-function InInstance()
-  local _, instanceType = IsInInstance()
-  return instanceType == "party" or instanceType == "raid"
-end
-
 ------------------------------------------------------------------------
 -- Boss frame creation
 ------------------------------------------------------------------------
@@ -37,7 +32,7 @@ local function SetBossFrame(index)
   local function UpdateVisibility()
     local hasUnit = MV.UnitExists(unit)
 
-    if not InInstance() or not hasUnit or MV_BossTestMode then
+    if not MV.InInstance() or not hasUnit or MV_BossTestMode then
       if HAS_REGISTERED_WATCH and not InCombatLockdown() then
         UnregisterUnitWatch(bossFrame)
         HAS_REGISTERED_WATCH = false
@@ -111,6 +106,7 @@ local function SetBossFrame(index)
   bossFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
   bossFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   bossFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+  bossFrame:RegisterEvent("UNIT_TARGET")
 
   bossFrame:SetScript("OnEvent", function(self, event)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
@@ -118,7 +114,7 @@ local function SetBossFrame(index)
       UpdateVisibility()
       SetupBossHooks()
     end
-    if not InInstance() then return end
+    if not MV.InInstance() then return end
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
       MV.UpdateHealthBar(bossFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
@@ -129,6 +125,8 @@ local function SetBossFrame(index)
       MV.ApplyClassColor(bossFrame)
     elseif event == "UNIT_AURA" then
       MV.UpdateAuras(bossFrame)
+    elseif event == "UNIT_TARGET" then
+      MV.CountTargetUnits(bossFrame)
     end
   end)
 end

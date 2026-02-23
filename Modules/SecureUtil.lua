@@ -177,3 +177,12 @@ function MV.GetField(obj, key)
   local ok, value = pcall(function() return obj[key] end)
   return ok, value
 end
+
+function MV.IsUnitUnit(unit, otherUnit)
+  if MV.IsString(unit) and MV.IsString(otherUnit) then
+    if not issecretvalue(unit) and not issecretvalue(otherUnit) then
+      if unit == otherUnit then return true end
+    end
+  end
+  return false
+end
