@@ -19,7 +19,7 @@ local CATEGORY_ICON = {
   root = "Interface\\Icons\\Spell_Nature_StrangleVines",
 }
 
-local function SetTrayButton(button, candidate)
+local function SetTrayButtonIcon(button, candidate)
   button:ClearAllPoints()
   button:SetPoint("CENTER", candidate, "CENTER", 0, 0)
   button:SetSize(MV.DefaultSize, MV.DefaultSize)
@@ -46,7 +46,7 @@ local function SetTrayButtons(button, frame)
       candidate:Show()
       candidate.categoryTable = button
       button.MV_Button = candidate
-      SetTrayButton(button, candidate)
+      SetTrayButtonIcon(button, candidate)
       return
     end
   end
