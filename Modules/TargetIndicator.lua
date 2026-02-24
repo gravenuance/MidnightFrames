@@ -1,23 +1,23 @@
 local _, MV = ...
 
-local arenaTargetUnits = {}
+local arenaUnits = {}
 for i = 1, 5 do
-  arenaTargetUnits[i] = "arena" .. i
+  arenaUnits[i] = "arena" .. i
 end
 
-local partyTargetUnits = {}
+local partyUnits = {}
 for i = 1, 4 do
-  partyTargetUnits[i] = "party" .. i
+  partyUnits[i] = "party" .. i
 end
 
-local raidTargetUnits = {}
+local raidUnits = {}
 for i = 1, 40 do
-  raidTargetUnits[i] = "raid" .. i
+  raidUnits[i] = "raid" .. i
 end
 
-local bossTargetUnits = {}
+local bossUnits = {}
 for i = 1, 5 do
-  bossTargetUnits[i] = "boss" .. i
+  bossUnits[i] = "boss" .. i
 end
 
 local function CheckUnits(unit, otherUnit)
@@ -30,38 +30,27 @@ local function CheckUnits(unit, otherUnit)
 end
 
 local function GetTargetUnit(frame)
-  local playerTarget = "playertarget"
+  if CheckUnits(frame.unit, "player") then
+    return false
+  end
   local targetUnit = frame.unit .. "target"
   if not MV.IsString(targetUnit) then return end
   local tempUnit
-  if _G.IsInRaid() then
-    local _, numGroup = MV.CallExternalFunction({
-      functionName = "GetNumGroupMembers"
-    })
-    if MV.IsNumber(numGroup) then
-      for index = 1, numGroup do
-        if MV.IsUnitUnit(tempUnit, playerTarget) then
-          break
-        end
-        tempUnit = raidTargetUnits[index]
-        if CheckUnits(tempUnit, targetUnit) then
-          return tempUnit
-        end
+  local _, numGroup = MV.CallExternalFunction({
+    functionName = "GetNumGroupMembers"
+  })
+  if MV.IsNumber(numGroup) and numGroup > 5 then
+    for index = 1, numGroup do
+      tempUnit = raidUnits[index]
+      if CheckUnits(tempUnit, targetUnit) then
+        return tempUnit
       end
     end
-  elseif _G.IsInGroup() then
-    local _, numGroup = MV.CallExternalFunction({
-      functionName = "GetNumGroupMembers"
-    })
-    if MV.IsNumber(numGroup) then
-      for index = 1, numGroup - 1 do
-        if MV.IsUnitUnit(tempUnit, playerTarget) then
-          break
-        end
-        tempUnit = partyTargetUnits[index]
-        if CheckUnits(tempUnit, targetUnit) then
-          return tempUnit
-        end
+  elseif MV.IsNumber(numGroup) and numGroup <= 5 then
+    for index = 1, numGroup - 1 do
+      tempUnit = partyUnits[index]
+      if CheckUnits(tempUnit, targetUnit) then
+        return tempUnit
       end
     end
   end
@@ -69,7 +58,7 @@ local function GetTargetUnit(frame)
     local arenaSize = MV.GetArenaSize()
     if arenaSize > 0 then
       for index = 1, arenaSize do
-        tempUnit = arenaTargetUnits[index]
+        tempUnit = arenaUnits[index]
         if CheckUnits(tempUnit, targetUnit) then
           return tempUnit
         end
@@ -78,13 +67,13 @@ local function GetTargetUnit(frame)
   end
   if MV.InInstance() then
     for index = 1, 5 do
-      tempUnit = bossTargetUnits[index]
+      tempUnit = bossUnits[index]
       if CheckUnits(tempUnit, targetUnit) then
         return tempUnit
       end
     end
   end
-  return false
+  return CheckUnits("player", targetUnit) and "player" or nil
 end
 
 local function GetTargetByUnit(unit)
@@ -98,27 +87,34 @@ end
 
 function MV.UpdateTargetIndicator(frame)
   if not frame or not frame.unit then return end
+
   local targetUnit = GetTargetUnit(frame)
-  if not MV.IsString(targetUnit) then return end
-  local targetFrame = GetTargetByUnit(targetUnit)
-  if targetFrame then
-    if targetFrame.targeted then
-      targetFrame.targeted[frame.unit] = true
-    else
-      targetFrame.targeted = { [frame.unit] = true }
-    end
-    if frame.targetFrame then
-      frame.targetFrame.targeted[frame.unit] = nil
-      if #frame.targetFrame.targeted == 0 then
-        frame.targetFrame.innerBorder:SetShown(false)
-      end
-    end
-    frame.targetFrame = targetFrame
-    frame.innerBorder:SetShown(true)
+  if not MV.IsString(targetUnit) then
+    MV.ResetTargetIndicator(frame)
+    return
   end
+  local targetFrame = GetTargetByUnit(targetUnit)
+  if not targetFrame then return end
+  targetFrame.targeted = targetFrame.targeted or {}
+  targetFrame.targeted[frame.unit] = true
+  targetFrame.innerBorder:SetShown(true)
+
+  if frame.targetFrame and frame.targetFrame ~= targetFrame then
+    frame.targetFrame.targeted[frame.unit] = nil
+    if not next(frame.targetFrame.targeted) then
+      frame.targetFrame.innerBorder:SetShown(false)
+    end
+  end
+
+  frame.targetFrame = targetFrame
 end
 
 function MV.ResetTargetIndicator(frame)
-  --frame.outerBorder:SetShown(false)
-  frame.innerBorder:SetShown(false)
+  if frame.targetFrame and frame.targetFrame.targeted then
+    frame.targetFrame.targeted[frame.unit] = nil
+    if not next(frame.targetFrame.targeted) then
+      frame.targetFrame.innerBorder:SetShown(false)
+    end
+  end
+  frame.targetFrame = nil
 end
