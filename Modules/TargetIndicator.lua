@@ -36,6 +36,7 @@ local function CheckUnits(unit, otherUnit, sourceHostile, targets)
       return targets
     end
   end
+  return targets
 end
 
 function MV.CountTargetUnits(frame)
@@ -94,4 +95,9 @@ function MV.CountTargetUnits(frame)
   end
   frame.outerBorder:SetShown(targets.enemies > 0)
   frame.innerBorder:SetShown(targets.friendly > 0)
+end
+
+function MV.ResetTargetIndicator(frame)
+  frame.outerBorder:SetShown(false)
+  frame.innerBorder:SetShown(false)
 end

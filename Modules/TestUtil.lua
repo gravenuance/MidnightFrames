@@ -10,6 +10,8 @@ local function SetTestIcons(frame, test)
     frame.otherContainer.icons[1]:SetShown(test)
     frame.otherContainer.icons[1].icon:SetTexture(testTrinket)
   end
+  frame.innerBorder:SetShown(test)
+  frame.outerBorder:SetShown(test)
 end
 
 function MV.ToggleTestMode(kind, on)

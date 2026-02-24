@@ -107,6 +107,7 @@ local function CreateRaidFrame(index)
         MV.UpdateAuras(raidFrame)
         MV.ResetDR(raidFrame)
         MV.UpdateTrinket(raidFrame)
+        MV.ResetTargetIndicator(raidFrame)
       end
       if raidFrame.unit == "raid1" then
         LayoutRaidFrames()

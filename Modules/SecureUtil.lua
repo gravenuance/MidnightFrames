@@ -1,6 +1,21 @@
 local _, MV = ...
 
+local function IsSecretSafe(value)
+  if not issecretvalue then
+    return false
+  end
+
+  local ok, result = pcall(issecretvalue, value)
+  if not ok then
+    return false
+  end
+  return result == true
+end
+
 function MV.IsNil(value)
+  if IsSecretSafe(value) then
+    return false
+  end
   return value == nil
 end
 
@@ -48,10 +63,10 @@ function MV.CallExternalFunction(params)
   local argumentValidators = params.argumentValidators
   local args = params.args or {}
 
-  if namespace == nil then
+  if MV.IsNil(namespace) then
     namespace = _G
   end
-  if params.functionName == nil then
+  if MV.IsNil(params.functionName) then
     return false, ("Function cannot be nil.")
   end
 
@@ -180,9 +195,11 @@ end
 
 function MV.IsUnitUnit(unit, otherUnit)
   if MV.IsString(unit) and MV.IsString(otherUnit) then
-    if not issecretvalue(unit) and not issecretvalue(otherUnit) then
-      if unit == otherUnit then return true end
-    end
+    local ok, result = MV.CallExternalFunction({
+      functionName = "UnitIsUnit",
+      args = { unit, otherUnit },
+    })
+    return ok and result
   end
   return false
 end

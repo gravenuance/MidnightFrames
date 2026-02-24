@@ -74,6 +74,7 @@ playerFrame:SetScript("OnEvent", function(_, event, arg1)
     MV.UpdateTargetHighlight(playerFrame, false)
     MV.UpdateTargetHighlight(petFrame, false)
     MV.UpdatePowerLabel(playerFrame)
+    MV.ResetTargetIndicator(playerFrame)
   elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
     if arg1 == playerFrame.unit then
       UpdateHealthBar()

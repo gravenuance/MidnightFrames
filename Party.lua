@@ -72,6 +72,7 @@ local function CreatePartyFrame(index)
         MV.UpdateAuras(partyFrame)
         MV.ResetDR(partyFrame)
         MV.UpdateTrinket(partyFrame)
+        MV.ResetTargetIndicator(partyFrame)
       end
     end
     if MV_PartyTestMode then return end

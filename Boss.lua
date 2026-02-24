@@ -113,6 +113,7 @@ local function SetBossFrame(index)
       MV_BossTestMode = false
       UpdateVisibility()
       SetupBossHooks()
+      MV.ResetTargetIndicator(bossFrame)
     end
     if not MV.InInstance() then return end
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
