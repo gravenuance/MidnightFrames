@@ -203,6 +203,7 @@ local function SetButtons(frame)
       frame.categories[category] = nil
     else
       if button then
+        button.expiration = expires
         SetButtonIcon(button, icon, expires, now, showCountdown, isImmune)
       else
         for i = 2, 5 do
@@ -211,6 +212,7 @@ local function SetButtons(frame)
             button = candidate
             categoryTable.button = button
             button.categoryTable = categoryTable
+            button.expiration = expires
             SetButtonIcon(button, icon, expires, now, showCountdown, isImmune)
             break
           end
@@ -289,8 +291,8 @@ local function SetDRInfo(frame, trackerInfo)
     return
   end
 
-  local startTime = GetAndInterpretField(trackerInfo, "startTime")
-  local duration = GetAndInterpretField(trackerInfo, "duration")
+  local startTime = GetTime()
+  local duration = 16
   local iconTexture = GetAndInterpretField(trackerInfo, "iconTexture")
 
   local expires = nil
@@ -315,8 +317,20 @@ local function SetDRInfo(frame, trackerInfo)
   SetButtons(frame)
 end
 
+local function ResetInactive(frame)
+  local now = GetTime()
+  for index = 2, 5 do
+    local candidate = frame.otherContainer.icons and frame.otherContainer.icons[index]
+    if candidate and candidate.expiration and candidate.expiration <= now then
+      candidate:Hide()
+      candidate.categoryTable = nil
+    end
+  end
+end
+
 function MV.TryAndUpdateDRStateLOC(frame)
   if not frame or not frame.unit then return end
+  ResetInactive(frame)
   local ok, count = MV.CallExternalFunction({
     namespace = _G.C_LossOfControl,
     functionName = "GetActiveLossOfControlDataCountByUnit",
