@@ -273,3 +273,73 @@ function MV.TryAndUpdateDRState(frame, trackerInfo)
   end
   SetButtons(frame)
 end
+
+local function SetDRInfo(frame, trackerInfo)
+  if not MV.IsTable(trackerInfo) and not MV.IsUserData(trackerInfo) then
+    return
+  end
+  local displayType = GetAndInterpretField(trackerInfo, "displayType")
+  if not MV.IsNumber(displayType) or displayType ~= 2 then
+    return
+  end
+  local category = GetAndInterpretField(trackerInfo, "locType")
+  local ok, info = MV.IsString(category)
+  if not ok then
+    print(ok, info)
+    return
+  end
+
+  local startTime = GetAndInterpretField(trackerInfo, "startTime")
+  local duration = GetAndInterpretField(trackerInfo, "duration")
+  local iconTexture = GetAndInterpretField(trackerInfo, "iconTexture")
+
+  local expires = nil
+  if MV.IsNumber(startTime) and MV.IsNumber(duration) then
+    if duration > 0 then
+      expires = startTime + duration
+    end
+  end
+  if MV.IsNumber(expires) then
+    if frame.categories[category] and frame.categories[category].expiration > expires then
+      frame.categories[category].isImmune = true
+      frame.categories[category].expiration = expires
+    else
+      frame.categories[category] = {
+        expiration = expires,
+        icon = iconTexture,
+        isImmune = false,
+        showCountdown = true,
+      }
+    end
+  end
+  SetButtons(frame)
+end
+
+function MV.TryAndUpdateDRStateLOC(frame)
+  if not frame or not frame.unit then return end
+  local ok, count = MV.CallExternalFunction({
+    namespace = _G.C_LossOfControl,
+    functionName = "GetActiveLossOfControlDataCountByUnit",
+    args = { frame.unit },
+    argumentValidators = { MV.IsString }
+  })
+  if not ok then
+    print(ok, "Result:", count)
+    return
+  end
+  if MV.IsNumber(count) and count > 0 then
+    for index = 1, count do
+      local ok2, trackerInfo = MV.CallExternalFunction({
+        namespace = _G.C_LossOfControl,
+        functionName = "GetActiveLossOfControlDataByUnit",
+        args = { frame.unit, index },
+        argumentValidators = { MV.IsString, MV.IsNumber }
+      })
+      if ok2 then
+        SetDRInfo(frame, trackerInfo)
+      else
+        print(ok2, "Result:", trackerInfo)
+      end
+    end
+  end
+end

@@ -113,7 +113,13 @@ function MV.UnitExists(unit)
     args = { unit },
     argumentValidators = { MV.IsString },
   })
-  return ok and result
+  if not ok then
+    return false
+  end
+  if IsSecretSafe(result) then
+    return false
+  end
+  return result == true
 end
 
 function MV.UnitIsDeadOrGhost(unit)
@@ -179,7 +185,14 @@ function MV.UnitCanAttack(unit)
       argumentValidators = { MV.IsString, MV.IsString }
     }
   )
-  return ok, result
+  if not ok then
+    return false, result
+  end
+  if IsSecretSafe(result) then
+    return false, "UnitCanAttack returned a secret value"
+  end
+
+  return true, (result == true)
 end
 
 function MV.UnitClass(unit)
@@ -205,14 +218,20 @@ function MV.IsUnitUnit(unit, otherUnit)
   if IsSecretUnit(unit) or IsSecretUnit(otherUnit) then
     return false
   end
-
-  if MV.IsString(unit) and MV.IsString(otherUnit) then
-    local ok, result = MV.CallExternalFunction({
-      functionName = "UnitIsUnit",
-      args = { unit, otherUnit },
-    })
-    return ok and result
+  if not (MV.IsString(unit) and MV.IsString(otherUnit)) then
+    return false
   end
 
-  return false
+  local ok, result = MV.CallExternalFunction({
+    functionName = "UnitIsUnit",
+    args = { unit, otherUnit },
+  })
+
+  if not ok then
+    return false
+  end
+  if IsSecretSafe(result) then
+    return false
+  end
+  return result == true
 end

@@ -45,6 +45,7 @@ function MV.CountTargetUnits(frame)
     print(result)
     return
   end
+  local playerTarget = "playertarget"
   local targets = {
     enemies = 0,
     friendly = 0,
@@ -56,6 +57,9 @@ function MV.CountTargetUnits(frame)
     })
     if MV.IsNumber(numGroup) then
       for index = 1, numGroup do
+        if MV.IsUnitUnit(tempUnit, playerTarget) then
+          break
+        end
         tempUnit = raidTargetUnits[index]
         targets = CheckUnits(tempUnit, frame.unit, result, targets)
       end
@@ -66,10 +70,17 @@ function MV.CountTargetUnits(frame)
     })
     if MV.IsNumber(numGroup) then
       for index = 1, numGroup - 1 do
+        if MV.IsUnitUnit(tempUnit, playerTarget) then
+          break
+        end
         tempUnit = partyTargetUnits[index]
         targets = CheckUnits(tempUnit, frame.unit, result, targets)
       end
     end
+  end
+  for index = 1, 40 do
+    tempUnit = nameplateTargetUnits[index]
+    targets = CheckUnits(tempUnit, frame.unit, result, targets)
   end
   if MV.IsArenaInProgress() then
     local arenaSize = MV.GetArenaSize()
