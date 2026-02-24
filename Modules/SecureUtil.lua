@@ -12,7 +12,13 @@ local function IsSecretSafe(value)
   return result == true
 end
 
+-- Optional: stricter guard just for unit tokens
+local function IsSecretUnit(unit)
+  return type(unit) == "string" and IsSecretSafe(unit)
+end
+
 function MV.IsNil(value)
+  -- Secret values are considered non-nil but "hands off"
   if IsSecretSafe(value) then
     return false
   end
@@ -98,13 +104,15 @@ function MV.CallExternalFunction(params)
 end
 
 function MV.UnitExists(unit)
-  local ok, result = MV.CallExternalFunction(
-    {
-      functionName = "UnitExists",
-      args = { unit },
-      argumentValidators = { MV.IsString }
-    }
-  )
+  if IsSecretUnit(unit) then
+    return false
+  end
+
+  local ok, result = MV.CallExternalFunction({
+    functionName = "UnitExists",
+    args = { unit },
+    argumentValidators = { MV.IsString },
+  })
   return ok and result
 end
 
@@ -194,6 +202,10 @@ function MV.GetField(obj, key)
 end
 
 function MV.IsUnitUnit(unit, otherUnit)
+  if IsSecretUnit(unit) or IsSecretUnit(otherUnit) then
+    return false
+  end
+
   if MV.IsString(unit) and MV.IsString(otherUnit) then
     local ok, result = MV.CallExternalFunction({
       functionName = "UnitIsUnit",
@@ -201,5 +213,6 @@ function MV.IsUnitUnit(unit, otherUnit)
     })
     return ok and result
   end
+
   return false
 end
