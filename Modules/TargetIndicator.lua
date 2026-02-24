@@ -50,10 +50,7 @@ function MV.CountTargetUnits(frame)
     friendly = 0,
   }
   local tempUnit
-  local _, raid = MV.CallExternalFunction({
-    functionName = "IsInRaid"
-  })
-  if raid then
+  if _G.IsInRaid() then
     local _, numGroup = MV.CallExternalFunction({
       functionName = "GetNumGroupMembers"
     })
@@ -63,11 +60,7 @@ function MV.CountTargetUnits(frame)
         targets = CheckUnits(tempUnit, frame.unit, result, targets)
       end
     end
-  end
-  local _, group = MV.CallExternalFunction({
-    functionName = "IsInGroup"
-  })
-  if group then
+  elseif _G.IsInGroup() then
     local _, numGroup = MV.CallExternalFunction({
       functionName = "GetNumGroupMembers"
     })
