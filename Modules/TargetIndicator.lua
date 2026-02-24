@@ -33,6 +33,7 @@ local function CheckUnits(unit, otherUnit, sourceHostile, targets)
       else
         targets.friendly = targets.friendly + 1
       end
+      return targets
     end
   end
 end
@@ -58,7 +59,7 @@ function MV.CountTargetUnits(frame)
     if MV.IsNumber(numGroup) then
       for index = 1, numGroup do
         tempUnit = raidTargetUnits[index]
-        CheckUnits(tempUnit, frame.unit, result, targets)
+        targets = CheckUnits(tempUnit, frame.unit, result, targets)
       end
     end
   end
@@ -72,7 +73,7 @@ function MV.CountTargetUnits(frame)
     if MV.IsNumber(numGroup) then
       for index = 1, numGroup - 1 do
         tempUnit = partyTargetUnits[index]
-        CheckUnits(tempUnit, frame.unit, result, targets)
+        targets = CheckUnits(tempUnit, frame.unit, result, targets)
       end
     end
   end
@@ -81,14 +82,14 @@ function MV.CountTargetUnits(frame)
     if arenaSize > 0 then
       for index = 1, arenaSize do
         tempUnit = arenaTargetUnits[index]
-        CheckUnits(tempUnit, frame.unit, not result, targets)
+        targets = CheckUnits(tempUnit, frame.unit, not result, targets)
       end
     end
   end
   if MV.InInstance() then
     for index = 1, 5 do
       tempUnit = bossTargetUnits[index]
-      CheckUnits(tempUnit, frame.unit, not result, targets)
+      targets = CheckUnits(tempUnit, frame.unit, not result, targets)
     end
   end
   frame.outerBorder:SetShown(targets.enemies > 0)
