@@ -1,6 +1,6 @@
 local _, MV       = ...
 
-local baseName    = "MV_RaidFrame"
+local baseName    = "MV_Raid"
 
 MV_RaidTestMode   = false
 MV.MaxRaidMembers = 20
@@ -86,8 +86,9 @@ local function CreateRaidFrame(index)
   raidFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
   raidFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
   raidFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
-  raidFrame:RegisterEvent("UNIT_TARGET")
-  raidFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit)
+  raidFrame:RegisterUnitEvent("UNIT_TARGET", unit)
+  raidFrame:RegisterEvent("LOSS_OF_CONTROL_ADDED")
+  raidFrame:RegisterEvent("LOSS_OF_CONTROL_UPDATE")
 
   raidFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"
@@ -126,9 +127,11 @@ local function CreateRaidFrame(index)
         MV.UpdateTrinket(raidFrame, true)
       end
     elseif event == "UNIT_TARGET" then
-      MV.CountTargetUnits(raidFrame)
-    elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
-      MV.TryAndUpdateDRStateFromLOC(raidFrame)
+      MV.UpdateTargetIndicator(raidFrame)
+    elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATE" then
+      if arg1 == unit then
+        MV.TryAndUpdateDRStateFromLOC(raidFrame)
+      end
     end
   end)
   RaidFrames[index] = raidFrame

@@ -17,7 +17,7 @@ end
 function MV.ToggleTestMode(kind, on)
   if kind == "target" then
     MV_TargetTestMode = on
-    local f           = _G["MV_TargetFrame"]
+    local f           = _G["MV_Target"]
     if f then
       if f.UpdateVisibility then f:UpdateVisibility() end
       SetTestIcons(f, MV_TargetTestMode)
@@ -25,7 +25,7 @@ function MV.ToggleTestMode(kind, on)
   elseif kind == "party" then
     MV_PartyTestMode = on
     for i = 1, 4 do
-      local f = _G["MV_PartyFrame" .. i]
+      local f = _G["MV_Party" .. i]
       if f then
         if f.UpdateVisibility then f:UpdateVisibility() end
         SetTestIcons(f, MV_PartyTestMode)
@@ -34,7 +34,7 @@ function MV.ToggleTestMode(kind, on)
   elseif kind == "arena" then
     MV_ArenaTestMode = on
     for i = 1, 3 do
-      local f = _G["MV_ArenaFrame" .. i]
+      local f = _G["MV_Arena" .. i]
       if f then
         if f.UpdateVisibility then f:UpdateVisibility() end
         SetTestIcons(f, MV_ArenaTestMode)
@@ -43,7 +43,7 @@ function MV.ToggleTestMode(kind, on)
   elseif kind == "boss" then
     MV_BossTestMode = on
     for i = 1, 5 do
-      local f = _G["MV_BossFrame" .. i]
+      local f = _G["MV_Boss" .. i]
       if f then
         if f.UpdateVisibility then f:UpdateVisibility() end
         SetTestIcons(f, MV_BossTestMode)
@@ -52,7 +52,7 @@ function MV.ToggleTestMode(kind, on)
   elseif kind == "raid" then
     MV_RaidTestMode = on
     for i = 1, MV.MaxRaidMembers do
-      local f = _G["MV_RaidFrame" .. i]
+      local f = _G["MV_Raid" .. i]
       if f then
         if f.UpdateVisibility then f:UpdateVisibility() end
         SetTestIcons(f, MV_RaidTestMode)

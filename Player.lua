@@ -3,7 +3,7 @@ local _, MV = ...
 local MAX_AURAS = 4
 
 local playerFrame = MV.CreateUnitFrame({
-  name = "MV_PlayerFrame",
+  name = "MV_Player",
   unit = "player",
   unitKey = "player",
   point = { "CENTER", UIParent, "CENTER", -MV.FrameXAlt, 0 },
@@ -59,10 +59,9 @@ playerFrame:RegisterUnitEvent("UNIT_PET", playerFrame.unit)
 playerFrame:RegisterEvent("PLAYER_DEAD")
 playerFrame:RegisterEvent("PLAYER_UNGHOST")
 playerFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
-playerFrame:RegisterEvent("UNIT_TARGET")
 
 
-playerFrame:SetScript("OnEvent", function(_, event, arg1)
+playerFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
   if event == "PLAYER_LOGIN"
       or event == "PLAYER_ENTERING_WORLD"
       or event == "PLAYER_ALIVE"
@@ -94,7 +93,5 @@ playerFrame:SetScript("OnEvent", function(_, event, arg1)
     MV.UpdateTargetHighlight(petFrame, false)
   elseif event == "SPELL_RANGE_CHECK_UPDATE" then
     MV.RegisterRangeSpell(arg1)
-  elseif event == "UNIT_TARGET" then
-    MV.CountTargetUnits(playerFrame)
   end
 end)

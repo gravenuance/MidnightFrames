@@ -86,20 +86,18 @@ local function SetButtonIcon(button, icon, showCountdown, isImmune)
   end
 
   if button.duration and button.duration > 0 then
-    print("Setting cooldown for button:", button:GetName(), "Start:", button.startTime, "Duration:", button.duration)
     local ok, result = MV.CallExternalFunction({
       namespace = button.cooldown,
       functionName = "SetCooldown",
       args = { button.cooldown, button.startTime, button.duration },
-      argumentValidators = { MV.IsUserData, MV.IsNumber, MV.IsNumber }
+      argumentValidators = { MV.IsTable, MV.IsNumber, MV.IsNumber }
     })
     if ok then
-      print("Set cooldown for button:", button:GetName(), "Start:", button.startTime, "Duration:", button.duration)
       MV.CallExternalFunction({
         namespace = button.cooldown,
         functionName = "SetShowCountdownNumbers",
         args = { button.cooldown, showCountdown },
-        argumentValidators = { MV.IsUserData, MV.IsBoolean }
+        argumentValidators = { MV.IsTable, MV.IsBoolean }
       })
       button:Show()
     else
@@ -129,27 +127,21 @@ local function SetButtons(frame)
         button.categoryTable = nil
       end
       frame.categories[category] = nil
-      print("Invalid DR info for category:", category, "Start:", startTime, "Duration:", duration)
     elseif startTime + duration <= now then
       if button then
         button:Hide()
         button.categoryTable = nil
       end
       frame.categories[category] = nil
-      print("Expired DR info for category:", category, "Start:", startTime, "Duration:", duration)
     else
       if button then
         button.startTime = startTime
         button.duration = duration
-        print("Updating button for category:", category, "Start:", startTime, "Duration:", duration, "Is Immune:",
-          isImmune)
         SetButtonIcon(button, icon, showCountdown, isImmune)
       else
         for i = 2, 5 do
           local candidate = frame.otherContainer.icons[i]
           if not candidate.categoryTable then
-            print("Assigning button for category:", category, "Start:", startTime, "Duration:", duration, "Is Immune:",
-              isImmune)
             button = candidate
             categoryTable.button = button
             button.categoryTable = categoryTable
@@ -181,21 +173,6 @@ function MV.ResetDR(frame)
           candidate.categoryTable = nil
           candidate:Hide()
         end
-      end
-    end
-  end
-end
-
-local function ResetInactive(frame)
-  local now = GetTime()
-  for index = 2, 5 do
-    local candidate = frame.otherContainer.icons and frame.otherContainer.icons[index]
-    if candidate then
-      local expiration = candidate.startTime and candidate.duration
-          and candidate.startTime + candidate.duration or 0
-      if expiration <= now then
-        candidate:Hide()
-        candidate.categoryTable = nil
       end
     end
   end
@@ -284,8 +261,6 @@ local function SetDRInfoFromLOC(frame, trackerInfo)
   end
   frame.categories[category].duration = duration
   frame.categories[category].startTime = startTime
-  print("Updated DR info from LOC:", category, "Start:", startTime, "Duration:", duration, "Is Immune:",
-    frame.categories[category].isImmune)
   SetButtons(frame)
 end
 
@@ -315,6 +290,18 @@ function MV.TryAndUpdateDRStateFromLOC(frame)
       else
         print(ok2, "Result:", trackerInfo)
       end
+    end
+  end
+end
+
+function MV.HideButton(button)
+  if button then
+    button:Hide()
+    if button.categoryTable then
+      button.categoryTable.startTime = nil
+      button.categoryTable.duration = nil
+      button.categoryTable.button = nil
+      button.categoryTable = nil
     end
   end
 end

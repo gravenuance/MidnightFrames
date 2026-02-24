@@ -7,7 +7,7 @@ local IsDriverRegistered = false
 local MAX_AURAS = 4
 
 local targetFrame = MV.CreateUnitFrame({
-  name     = "MV_TargetFrame",
+  name     = "MV_Target",
   unit     = "target",
   unitKey  = "target",
   point    = { "CENTER", UIParent, "CENTER", MV.FrameXAlt, 0 },

@@ -1,6 +1,6 @@
 local _, MV           = ...
 
-local baseName        = "MV_PartyFrame"
+local baseName        = "MV_Party"
 
 MV_PartyTestMode      = false
 
@@ -55,8 +55,9 @@ local function CreatePartyFrame(index)
   partyFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
   partyFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
   partyFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
-  partyFrame:RegisterEvent("UNIT_TARGET")
-  partyFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit)
+  partyFrame:RegisterUnitEvent("UNIT_TARGET", unit)
+  partyFrame:RegisterEvent("LOSS_OF_CONTROL_ADDED")
+  partyFrame:RegisterEvent("LOSS_OF_CONTROL_UPDATE")
 
   partyFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"
@@ -93,9 +94,11 @@ local function CreatePartyFrame(index)
         MV.UpdateTrinket(partyFrame, true)
       end
     elseif event == "UNIT_TARGET" then
-      MV.CountTargetUnits(partyFrame)
-    elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
-      MV.TryAndUpdateDRStateFromLOC(partyFrame)
+      MV.UpdateTargetIndicator(partyFrame)
+    elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATED" then
+      if arg1 == unit then
+        MV.TryAndUpdateDRStateFromLOC(partyFrame)
+      end
     end
   end)
 end

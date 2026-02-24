@@ -1,5 +1,5 @@
 local _, MV = ...
-local baseName = "MV_BossFrame"
+local baseName = "MV_Boss"
 
 MV_BossTestMode = false
 
@@ -106,7 +106,6 @@ local function SetBossFrame(index)
   bossFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
   bossFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   bossFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
-  bossFrame:RegisterEvent("UNIT_TARGET")
 
   bossFrame:SetScript("OnEvent", function(self, event)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
@@ -126,8 +125,6 @@ local function SetBossFrame(index)
       MV.ApplyClassColor(bossFrame)
     elseif event == "UNIT_AURA" then
       MV.UpdateAuras(bossFrame)
-    elseif event == "UNIT_TARGET" then
-      MV.CountTargetUnits(bossFrame)
     end
   end)
 end

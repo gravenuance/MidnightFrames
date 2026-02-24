@@ -2,54 +2,37 @@ local _, MV = ...
 
 local arenaTargetUnits = {}
 for i = 1, 5 do
-  arenaTargetUnits[i] = "arena" .. i .. "target"
+  arenaTargetUnits[i] = "arena" .. i
 end
 
 local partyTargetUnits = {}
 for i = 1, 4 do
-  partyTargetUnits[i] = "party" .. i .. "target"
+  partyTargetUnits[i] = "party" .. i
 end
 
 local raidTargetUnits = {}
 for i = 1, 40 do
-  raidTargetUnits[i] = "raid" .. i .. "target"
-end
-
-local nameplateTargetUnits = {}
-for i = 1, 40 do
-  nameplateTargetUnits[i] = "nameplate" .. i .. "target"
+  raidTargetUnits[i] = "raid" .. i
 end
 
 local bossTargetUnits = {}
 for i = 1, 5 do
-  bossTargetUnits[i] = "boss" .. i .. "target"
+  bossTargetUnits[i] = "boss" .. i
 end
 
-local function CheckUnits(unit, otherUnit, sourceHostile, targets)
+local function CheckUnits(unit, otherUnit)
   if MV.UnitExists(unit) then
     if MV.IsUnitUnit(unit, otherUnit) then
-      if sourceHostile then
-        targets.enemies = targets.enemies + 1
-      else
-        targets.friendly = targets.friendly + 1
-      end
-      return targets
+      return true
     end
   end
-  return targets
+  return false
 end
 
-function MV.CountTargetUnits(frame)
-  local ok, result = MV.UnitCanAttack(frame.unit)
-  if not ok then
-    print(result)
-    return
-  end
+local function GetTargetUnit(frame)
   local playerTarget = "playertarget"
-  local targets = {
-    enemies = 0,
-    friendly = 0,
-  }
+  local targetUnit = frame.unit .. "target"
+  if not MV.IsString(targetUnit) then return end
   local tempUnit
   if _G.IsInRaid() then
     local _, numGroup = MV.CallExternalFunction({
@@ -61,7 +44,9 @@ function MV.CountTargetUnits(frame)
           break
         end
         tempUnit = raidTargetUnits[index]
-        targets = CheckUnits(tempUnit, frame.unit, result, targets)
+        if CheckUnits(tempUnit, targetUnit) then
+          return tempUnit
+        end
       end
     end
   elseif _G.IsInGroup() then
@@ -74,34 +59,66 @@ function MV.CountTargetUnits(frame)
           break
         end
         tempUnit = partyTargetUnits[index]
-        targets = CheckUnits(tempUnit, frame.unit, result, targets)
+        if CheckUnits(tempUnit, targetUnit) then
+          return tempUnit
+        end
       end
     end
-  end
-  for index = 1, 40 do
-    tempUnit = nameplateTargetUnits[index]
-    targets = CheckUnits(tempUnit, frame.unit, result, targets)
   end
   if MV.IsArenaInProgress() then
     local arenaSize = MV.GetArenaSize()
     if arenaSize > 0 then
       for index = 1, arenaSize do
         tempUnit = arenaTargetUnits[index]
-        targets = CheckUnits(tempUnit, frame.unit, not result, targets)
+        if CheckUnits(tempUnit, targetUnit) then
+          return tempUnit
+        end
       end
     end
   end
   if MV.InInstance() then
     for index = 1, 5 do
       tempUnit = bossTargetUnits[index]
-      targets = CheckUnits(tempUnit, frame.unit, not result, targets)
+      if CheckUnits(tempUnit, targetUnit) then
+        return tempUnit
+      end
     end
   end
-  frame.outerBorder:SetShown(targets.enemies > 0)
-  frame.innerBorder:SetShown(targets.friendly > 0)
+  return false
+end
+
+local function GetTargetByUnit(unit)
+  unit = unit:gsub("^%l", string.upper)
+  local f = _G["MV_" .. unit]
+  if f then
+    return f
+  end
+  return nil
+end
+
+function MV.UpdateTargetIndicator(frame)
+  if not frame or not frame.unit then return end
+  local targetUnit = GetTargetUnit(frame)
+  if not MV.IsString(targetUnit) then return end
+  local targetFrame = GetTargetByUnit(targetUnit)
+  if targetFrame then
+    if targetFrame.targeted then
+      targetFrame.targeted[frame.unit] = true
+    else
+      targetFrame.targeted = { [frame.unit] = true }
+    end
+    if frame.targetFrame then
+      frame.targetFrame.targeted[frame.unit] = nil
+      if #frame.targetFrame.targeted == 0 then
+        frame.targetFrame.innerBorder:SetShown(false)
+      end
+    end
+    frame.targetFrame = targetFrame
+    frame.innerBorder:SetShown(true)
+  end
 end
 
 function MV.ResetTargetIndicator(frame)
-  frame.outerBorder:SetShown(false)
+  --frame.outerBorder:SetShown(false)
   frame.innerBorder:SetShown(false)
 end

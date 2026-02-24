@@ -1,5 +1,5 @@
 local _, MV = ...
-local baseName = "MV_ArenaFrame"
+local baseName = "MV_Arena"
 local SOLID_TEXTURE = "Interface\\Buttons\\WHITE8x8"
 
 MV_ArenaTestMode = false
@@ -222,8 +222,6 @@ local function SetArenaFrame(index)
 
   arenaFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit)
 
-  arenaFrame:RegisterEvent("UNIT_TARGET")
-
 
 
   arenaFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
@@ -264,8 +262,6 @@ local function SetArenaFrame(index)
       if arg1 == unit then
         MV.UpdateTrinket(arenaFrame, true)
       end
-    elseif event == "UNIT_TARGET" then
-      MV.CountTargetUnits(arenaFrame)
     elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
       if not MV.DRFallback then
         MV.TryAndUpdateDRStateFromLOC(arenaFrame)

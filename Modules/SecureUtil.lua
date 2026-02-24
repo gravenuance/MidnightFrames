@@ -218,13 +218,11 @@ function MV.IsUnitUnit(unit, otherUnit)
   if IsSecretUnit(unit) or IsSecretUnit(otherUnit) then
     return false
   end
-  if not (MV.IsString(unit) and MV.IsString(otherUnit)) then
-    return false
-  end
 
   local ok, result = MV.CallExternalFunction({
     functionName = "UnitIsUnit",
     args = { unit, otherUnit },
+    argumentValidators = { MV.IsString, MV.IsString }
   })
 
   if not ok then
