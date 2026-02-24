@@ -10,6 +10,8 @@ local ENEMY_DR_ORDER = {
   [0] = "root",
 }
 
+MV.DRFallback = false
+
 local CATEGORY_ICON = {
   stun = "Interface\\Icons\\Ability_Rogue_CheapShot",
   incap = "Interface\\Icons\\Ability_Rogue_Sap",
@@ -84,13 +86,15 @@ local function SetButtonIcon(button, icon, showCountdown, isImmune)
   end
 
   if button.duration and button.duration > 0 then
-    local ok = MV.CallExternalFunction({
+    print("Setting cooldown for button:", button:GetName(), "Start:", button.startTime, "Duration:", button.duration)
+    local ok, result = MV.CallExternalFunction({
       namespace = button.cooldown,
       functionName = "SetCooldown",
       args = { button.cooldown, button.startTime, button.duration },
       argumentValidators = { MV.IsUserData, MV.IsNumber, MV.IsNumber }
     })
     if ok then
+      print("Set cooldown for button:", button:GetName(), "Start:", button.startTime, "Duration:", button.duration)
       MV.CallExternalFunction({
         namespace = button.cooldown,
         functionName = "SetShowCountdownNumbers",
@@ -98,6 +102,8 @@ local function SetButtonIcon(button, icon, showCountdown, isImmune)
         argumentValidators = { MV.IsUserData, MV.IsBoolean }
       })
       button:Show()
+    else
+      print(ok, "Result:", result)
     end
   end
 end
@@ -123,21 +129,27 @@ local function SetButtons(frame)
         button.categoryTable = nil
       end
       frame.categories[category] = nil
+      print("Invalid DR info for category:", category, "Start:", startTime, "Duration:", duration)
     elseif startTime + duration <= now then
       if button then
         button:Hide()
         button.categoryTable = nil
       end
       frame.categories[category] = nil
+      print("Expired DR info for category:", category, "Start:", startTime, "Duration:", duration)
     else
       if button then
         button.startTime = startTime
         button.duration = duration
+        print("Updating button for category:", category, "Start:", startTime, "Duration:", duration, "Is Immune:",
+          isImmune)
         SetButtonIcon(button, icon, showCountdown, isImmune)
       else
         for i = 2, 5 do
           local candidate = frame.otherContainer.icons[i]
           if not candidate.categoryTable then
+            print("Assigning button for category:", category, "Start:", startTime, "Duration:", duration, "Is Immune:",
+              isImmune)
             button = candidate
             categoryTable.button = button
             button.categoryTable = categoryTable
@@ -210,7 +222,7 @@ function MV.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
     return
   end
   if not frame or not frame.unit then return end
-  ResetInactive(frame)
+  --ResetInactive(frame)
   local category = GetAndInterpretField(trackerInfo, "category")
   local ok, info = MV.IsNumber(category)
   if not ok then
@@ -272,12 +284,14 @@ local function SetDRInfoFromLOC(frame, trackerInfo)
   end
   frame.categories[category].duration = duration
   frame.categories[category].startTime = startTime
+  print("Updated DR info from LOC:", category, "Start:", startTime, "Duration:", duration, "Is Immune:",
+    frame.categories[category].isImmune)
   SetButtons(frame)
 end
 
 function MV.TryAndUpdateDRStateFromLOC(frame)
   if not frame or not frame.unit then return end
-  ResetInactive(frame)
+  --ResetInactive(frame)
   local ok, count = MV.CallExternalFunction({
     namespace = _G.C_LossOfControl,
     functionName = "GetActiveLossOfControlDataCountByUnit",

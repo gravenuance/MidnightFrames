@@ -90,7 +90,7 @@ function MV.CallExternalFunction(params)
       if validator then
         local ok, _ = validator(args[index])
         if not ok then
-          return false, ("Argument not invalid.")
+          return false, ("Argument " .. index .. " is not valid.")
         end
       end
     end

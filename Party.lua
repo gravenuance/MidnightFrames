@@ -1,10 +1,11 @@
-local _, MV      = ...
+local _, MV           = ...
 
-local baseName   = "MV_PartyFrame"
+local baseName        = "MV_PartyFrame"
 
-MV_PartyTestMode = false
+MV_PartyTestMode      = false
 
-local MAX_AURAS  = 3
+local MAX_AURAS       = 3
+local numGroupMembers = 0
 
 local function CreatePartyFrame(index)
   local unit = "party" .. index
@@ -24,12 +25,11 @@ local function CreatePartyFrame(index)
   partyFrame.IsDriverRegistered = false
 
   local function UpdateVisibility()
-    local numGroup = GetNumGroupMembers() or 0
     if MV_PartyTestMode then
       UnregisterUnitWatch(partyFrame)
       partyFrame.IsDriverRegistered = false
       partyFrame:Show()
-    elseif (numGroup > 5 or numGroup == 0) and not InCombatLockdown() then
+    elseif (MV.NumGroupMembers > 5 or MV.NumGroupMembers == 0) and not InCombatLockdown() then
       UnregisterUnitWatch(partyFrame)
       partyFrame.IsDriverRegistered = false
       partyFrame:Hide()
@@ -56,6 +56,7 @@ local function CreatePartyFrame(index)
   partyFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
   partyFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
   partyFrame:RegisterEvent("UNIT_TARGET")
+  partyFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit)
 
   partyFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"
@@ -63,6 +64,7 @@ local function CreatePartyFrame(index)
         or event == "ZONE_CHANGED_NEW_AREA"
         or event == "UNIT_OTHER_PARTY_CHANGED"
     then
+      MV.NumGroupMembers = GetNumGroupMembers() or 0
       MV_PartyTestMode = false
       UpdateVisibility()
       if MV.UnitExists(unit) then
@@ -70,12 +72,12 @@ local function CreatePartyFrame(index)
         MV.ApplyClassColor(partyFrame)
         MV.UpdateHealthBar(partyFrame)
         MV.UpdateAuras(partyFrame)
-        MV.ResetDR(partyFrame)
         MV.UpdateTrinket(partyFrame)
+        MV.ResetDR(partyFrame)
         MV.ResetTargetIndicator(partyFrame)
       end
     end
-    if MV_PartyTestMode then return end
+    if MV_PartyTestMode or (MV.NumGroupMembers > 5 or MV.NumGroupMembers == 0) then return end
     if event == "PLAYER_TARGET_CHANGED" then
       MV.UpdateTargetHighlight(partyFrame)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
@@ -92,6 +94,8 @@ local function CreatePartyFrame(index)
       end
     elseif event == "UNIT_TARGET" then
       MV.CountTargetUnits(partyFrame)
+    elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
+      MV.TryAndUpdateDRStateFromLOC(partyFrame)
     end
   end)
 end

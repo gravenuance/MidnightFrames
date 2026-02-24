@@ -226,7 +226,6 @@ local function SetArenaFrame(index)
 
 
 
-  local shouldHookDR = false
   arenaFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
       MV_ArenaTestMode = false
@@ -257,7 +256,7 @@ local function SetArenaFrame(index)
       if arg1 == unit then
         SetMemberFrame(index)
         MV.UpdateTrinket(arenaFrame)
-        HookDR(arenaFrame, shouldHookDR)
+        HookDR(arenaFrame, MV.DRFallback)
       end
     elseif event == "UNIT_AURA" then
       MV.UpdateAuras(arenaFrame)
@@ -268,7 +267,7 @@ local function SetArenaFrame(index)
     elseif event == "UNIT_TARGET" then
       MV.CountTargetUnits(arenaFrame)
     elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
-      if not shouldHookDR then
+      if not MV.DRFallback then
         MV.TryAndUpdateDRStateFromLOC(arenaFrame)
       end
     end

@@ -53,10 +53,6 @@ local function CreateRaidFrame(index)
   raidFrame.IsDriverRegistered = false
 
   local function UpdateVisibility()
-    local ok, numRaid = MV.CallExternalFunction({
-      functionName = "GetNumGroupMembers"
-    })
-    if not ok then numRaid = 0 end
     if MV_RaidTestMode then
       UnregisterUnitWatch(raidFrame)
       raidFrame.IsDriverRegistered = false
@@ -64,7 +60,7 @@ local function CreateRaidFrame(index)
       if raidFrame.unit == "raid1" then
         LayoutRaidFrames()
       end
-    elseif (numRaid < 6 or numRaid == 0) and not InCombatLockdown() then
+    elseif (MV.NumGroupMembers < 6 or MV.NumGroupMembers == 0) and not InCombatLockdown() then
       UnregisterUnitWatch(raidFrame)
       raidFrame.IsDriverRegistered = false
       raidFrame:Hide()
@@ -91,6 +87,7 @@ local function CreateRaidFrame(index)
   raidFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
   raidFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
   raidFrame:RegisterEvent("UNIT_TARGET")
+  raidFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit)
 
   raidFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"
@@ -113,7 +110,7 @@ local function CreateRaidFrame(index)
         LayoutRaidFrames()
       end
     end
-    if MV_RaidTestMode then return end
+    if MV_RaidTestMode or (MV.NumGroupMembers < 6 or MV.NumGroupMembers == 0) then return end
     if event == "PLAYER_TARGET_CHANGED" then
       MV.UpdateTargetHighlight(raidFrame)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
@@ -130,6 +127,8 @@ local function CreateRaidFrame(index)
       end
     elseif event == "UNIT_TARGET" then
       MV.CountTargetUnits(raidFrame)
+    elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
+      MV.TryAndUpdateDRStateFromLOC(raidFrame)
     end
   end)
   RaidFrames[index] = raidFrame
