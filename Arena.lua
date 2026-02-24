@@ -169,22 +169,22 @@ local function SetArenaFrame(index)
       local tray = member.SpellDiminishStatusTray
       tray.MV_Hooked = true
       hooksecurefunc(member.SpellDiminishStatusTray, "TryUpdateOrAddTrayItem", function(self)
-        MV.UpdateBlizzardDRBackup(self, frame)
+        MV.TryAndUpdateDRStateFromHooks(self, frame)
       end)
       hooksecurefunc(member.SpellDiminishStatusTray, "UpdateOrAddTrayItem", function(self)
-        MV.UpdateBlizzardDRBackup(self, frame)
+        MV.TryAndUpdateDRStateFromHooks(self, frame)
       end)
       hooksecurefunc(member.SpellDiminishStatusTray, "RefreshTrayLayout", function(self)
-        MV.UpdateBlizzardDRBackup(self, frame)
+        MV.TryAndUpdateDRStateFromHooks(self, frame)
       end)
       hooksecurefunc(member.SpellDiminishStatusTray, "AddNewItemToTray", function(self)
-        MV.UpdateBlizzardDRBackup(self, frame)
+        MV.TryAndUpdateDRStateFromHooks(self, frame)
       end)
       hooksecurefunc(member.SpellDiminishStatusTray, "RemoveCategoryFromOrder", function()
-        MV.ResetTray(frame)
+        MV.ResetDR(frame)
       end)
       hooksecurefunc(member.SpellDiminishStatusTray, "OnTrayItemCooldownDone", function()
-        MV.ResetTray(frame)
+        MV.ResetDR(frame)
       end)
     end
   end
@@ -234,11 +234,7 @@ local function SetArenaFrame(index)
       MV.UpdateHealthBar(arenaFrame)
       MV.UpdateTargetHighlight(arenaFrame, MV_ArenaTestMode)
       MV.UpdateAuras(arenaFrame)
-      if shouldHookDR then
-        MV.ResetDRButtons(arenaFrame)
-      else
-        MV.ResetDR(arenaFrame)
-      end
+      MV.ResetDR(arenaFrame)
       MV.ResetTargetIndicator(arenaFrame)
       MV.UpdateTrinket(arenaFrame)
     end
@@ -273,7 +269,7 @@ local function SetArenaFrame(index)
       MV.CountTargetUnits(arenaFrame)
     elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
       if not shouldHookDR then
-        MV.TryAndUpdateDRStateLOC(arenaFrame)
+        MV.TryAndUpdateDRStateFromLOC(arenaFrame)
       end
     end
   end)
