@@ -121,6 +121,7 @@ local function LayoutPvPButtons(container, horizontal)
       else
         local prev = container.icons[i - 1]
         btn:SetPoint("RIGHT", prev, "LEFT", -4, 0)
+        btn.cooldown:SetScript("OnHide", function() MV.HideButton(btn) end)
       end
     else
       if i == 1 then
