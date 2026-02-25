@@ -93,7 +93,13 @@ function MV.UpdateTargetIndicator(frame)
     MV.ResetTargetIndicator(frame)
     return
   end
-  local targetFrame = GetTargetByUnit(targetUnit)
+
+  local targetFrame
+  if MV.IsUnitUnit(targetUnit, "player") then
+    targetFrame = GetTargetByUnit("player")
+  else
+    targetFrame = GetTargetByUnit(targetUnit)
+  end
   if not targetFrame then return end
   targetFrame.targeted = targetFrame.targeted or {}
   targetFrame.targeted[frame.unit] = true

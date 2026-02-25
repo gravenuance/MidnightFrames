@@ -75,7 +75,7 @@ local function CreatePartyFrame(index)
         MV.UpdateAuras(partyFrame)
         MV.UpdateTrinket(partyFrame)
         MV.ResetDR(partyFrame)
-        MV.ResetTargetIndicator(partyFrame)
+        MV.UpdateTargetIndicator(partyFrame)
       end
     end
     if MV_PartyTestMode or (MV.NumGroupMembers > 5 or MV.NumGroupMembers == 0) then return end

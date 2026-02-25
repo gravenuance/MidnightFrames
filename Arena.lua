@@ -232,7 +232,6 @@ local function SetArenaFrame(index)
       MV.UpdateTargetHighlight(arenaFrame, MV_ArenaTestMode)
       MV.UpdateAuras(arenaFrame)
       MV.ResetDR(arenaFrame)
-      MV.ResetTargetIndicator(arenaFrame)
       MV.UpdateTrinket(arenaFrame)
     end
     if not MV.IsInArena() then return end
