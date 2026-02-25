@@ -1,5 +1,8 @@
 local _, MV = ...
 
+MV.frameByGUID = {}
+MV.GUIDByFrame = {}
+
 local arenaUnits = {}
 for i = 1, 5 do
   arenaUnits[i] = "arena" .. i
@@ -30,11 +33,10 @@ local function CheckUnits(unit, otherUnit)
 end
 
 local function GetTargetUnit(frame)
-  if CheckUnits(frame.unit, "player") then
-    return false
+  if frame.unit == "player" then
+    return
   end
   local targetUnit = frame.unit .. "target"
-  if not MV.IsString(targetUnit) then return end
   local tempUnit
   local _, numGroup = MV.CallExternalFunction({
     functionName = "GetNumGroupMembers"
@@ -113,6 +115,49 @@ function MV.UpdateTargetIndicator(frame)
   end
 
   frame.targetFrame = targetFrame
+end
+
+function MV.UpdateTargetIndicatorByGUID(frame)
+  if frame.unit == "player" then
+    return
+  end
+  MV.ResetTargetIndicator(frame)
+  local targetUnit = frame.unit .. "target"
+  local ok, targetGUID = MV.CallExternalFunction({
+    functionName = "UnitGUID",
+    args = { targetUnit },
+  })
+  if not ok then
+    print(ok, targetGUID)
+  end
+  local targetFrame
+  if MV.IsUnitUnit(targetUnit, "player") then
+    targetFrame = GetTargetByUnit("player")
+  else
+    targetFrame = MV.frameByGUID[targetGUID]
+  end
+  if not targetFrame then
+    return
+  end
+  targetFrame.targeted = targetFrame.targeted or {}
+  targetFrame.targeted[frame.unit] = true
+  targetFrame.innerBorder:SetShown(true)
+
+  frame.targetFrame = targetFrame
+end
+
+function MV.SetUnitGUID(frame)
+  if MV.UnitExists(frame.unit) then
+    local ok, unitGUID = MV.CallExternalFunction({
+      functionName = "UnitGUID",
+      args = { frame.unit },
+    })
+    if not ok then
+      print(ok, unitGUID)
+      return
+    end
+    MV.frameByGUID[unitGUID] = frame
+  end
 end
 
 function MV.ResetTargetIndicator(frame)

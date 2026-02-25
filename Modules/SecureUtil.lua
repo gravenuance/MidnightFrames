@@ -105,6 +105,7 @@ end
 
 function MV.UnitExists(unit)
   if IsSecretUnit(unit) then
+    print("Warning: Attempted to check existence of a secret unit. This is not allowed for security reasons.")
     return false
   end
 
@@ -216,6 +217,7 @@ end
 
 function MV.IsUnitUnit(unit, otherUnit)
   if IsSecretUnit(unit) or IsSecretUnit(otherUnit) then
+    print("Warning: Attempted to compare a secret unit. This is not allowed for security reasons.")
     return false
   end
 

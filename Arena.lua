@@ -254,6 +254,7 @@ local function SetArenaFrame(index)
         SetMemberFrame(index)
         MV.UpdateTrinket(arenaFrame)
         HookDR(arenaFrame, MV.DRFallback)
+        --MV.SetUnitGUID(arenaFrame)
       end
     elseif event == "UNIT_AURA" then
       MV.UpdateAuras(arenaFrame)

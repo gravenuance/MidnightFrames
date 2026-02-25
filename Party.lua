@@ -76,6 +76,8 @@ local function CreatePartyFrame(index)
         MV.UpdateTrinket(partyFrame)
         MV.ResetDR(partyFrame)
         MV.UpdateTargetIndicator(partyFrame)
+        --MV.SetUnitGUID(partyFrame)
+        --MV.UpdateTargetIndicatorByGUID(partyFrame)
       end
     end
     if MV_PartyTestMode or (MV.NumGroupMembers > 5 or MV.NumGroupMembers == 0) then return end
@@ -95,6 +97,7 @@ local function CreatePartyFrame(index)
       end
     elseif event == "UNIT_TARGET" then
       MV.UpdateTargetIndicator(partyFrame)
+      --MV.UpdateTargetIndicatorByGUID(partyFrame)
     elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATED" then
       if arg1 == unit then
         MV.TryAndUpdateDRStateFromLOC(partyFrame)

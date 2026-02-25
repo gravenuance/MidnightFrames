@@ -106,6 +106,8 @@ local function CreateRaidFrame(index)
         MV.ResetDR(raidFrame)
         MV.UpdateTrinket(raidFrame)
         MV.UpdateTargetIndicator(raidFrame)
+        --MV.SetUnitGUID(raidFrame)
+        --MV.UpdateTargetIndicatorByGUID(raidFrame)
       end
       if raidFrame.unit == "raid1" then
         LayoutRaidFrames()
@@ -128,6 +130,7 @@ local function CreateRaidFrame(index)
       end
     elseif event == "UNIT_TARGET" then
       MV.UpdateTargetIndicator(raidFrame)
+      --MV.UpdateTargetIndicatorByGUID(raidFrame)
     elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATE" then
       if arg1 == unit then
         MV.TryAndUpdateDRStateFromLOC(raidFrame)
