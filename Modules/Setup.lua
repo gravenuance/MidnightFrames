@@ -225,6 +225,20 @@ function MV.CreateUnitFrame(params)
   f.health:SetStatusBarColor(0.25, 0.88, 0.82, 0.8)
   f.health:SetFrameLevel(f:GetFrameLevel() + 1)
 
+  f.absorb = CreateFrame("StatusBar", name .. "Absorb", f)
+  f.absorb:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 4, 4)
+  f.absorb:SetPoint("TOPRIGHT", f, "TOPRIGHT", -4, -4)
+  f.absorb:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
+  if not horizontal then
+    f.absorb:SetOrientation("VERTICAL")
+  end
+  f.absorb:SetRotatesTexture(true)
+  f.absorb:SetFrameStrata("MEDIUM")
+  f.absorb:SetStatusBarColor(0.2, 0.45, 0.85, 0.6)
+  f.absorb:SetFrameLevel(f:GetFrameLevel() + 2)
+  f.absorb:SetMinMaxValues(0, 1)
+  f.absorb:SetValue(0)
+
   f:SetScript("OnEnter", function(self)
     self.mouseoverBorder:Show()
   end)

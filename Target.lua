@@ -40,6 +40,7 @@ targetFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 targetFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
 targetFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
 targetFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+targetFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", targetFrame.unit)
 
 targetFrame:SetScript("OnEvent", function(_, event, arg1)
   if (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
@@ -57,6 +58,8 @@ targetFrame:SetScript("OnEvent", function(_, event, arg1)
     end
   elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
     MV.UpdateHealthBar(targetFrame)
+  elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
+    MV.UpdateAbsorbBar(targetFrame)
   elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
     MV.SetRangeAlpha(targetFrame)
   elseif event == "UNIT_AURA" then

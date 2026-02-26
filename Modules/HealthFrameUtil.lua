@@ -87,3 +87,10 @@ function MV.UpdateHealthBar(frame)
   frame.health:SetMinMaxValues(0, maxHealth)
   frame.health:SetValue(curHealth)
 end
+
+function MV.UpdateAbsorbBar(frame)
+  local maxHealth = UnitHealthMax(frame.unit)
+  local total = UnitGetTotalAbsorbs(frame.unit)
+  frame.absorb:SetMinMaxValues(0, maxHealth)
+  frame.absorb:SetValue(total)
+end

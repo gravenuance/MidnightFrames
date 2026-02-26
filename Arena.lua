@@ -202,6 +202,7 @@ local function SetArenaFrame(index)
   arenaFrame:RegisterUnitEvent("UNIT_HEALTH", unit)
   arenaFrame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
   arenaFrame:RegisterUnitEvent("UNIT_AURA", unit)
+  arenaFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
 
   --HIGHLIGHT
   arenaFrame:RegisterEvent("PLAYER_TARGET_CHANGED") -- Target highlight
@@ -237,6 +238,8 @@ local function SetArenaFrame(index)
     if not MV.IsInArena() then return end
     if (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
       MV.UpdateHealthBar(arenaFrame)
+    elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
+      MV.UpdateAbsorbBar(arenaFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
       MV.SetRangeAlpha(arenaFrame)
     elseif event == "PLAYER_TARGET_CHANGED" then

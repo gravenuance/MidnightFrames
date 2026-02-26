@@ -59,6 +59,7 @@ playerFrame:RegisterUnitEvent("UNIT_PET", playerFrame.unit)
 playerFrame:RegisterEvent("PLAYER_DEAD")
 playerFrame:RegisterEvent("PLAYER_UNGHOST")
 playerFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+playerFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", playerFrame.unit)
 
 
 playerFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
@@ -80,6 +81,8 @@ playerFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     elseif arg1 == petFrame.unit then
       UpdatePetHealthBar()
     end
+  elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
+    MV.UpdateAbsorbBar(playerFrame)
   elseif event == "UNIT_PET" then
     UpdatePetHealthBar()
   elseif event == "PLAYER_DEAD" or event == "PLAYER_UNGHOST" then

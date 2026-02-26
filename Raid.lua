@@ -89,6 +89,7 @@ local function CreateRaidFrame(index)
   raidFrame:RegisterUnitEvent("UNIT_TARGET", unit)
   raidFrame:RegisterEvent("LOSS_OF_CONTROL_ADDED")
   raidFrame:RegisterEvent("LOSS_OF_CONTROL_UPDATE")
+  raidFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
 
   raidFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"
@@ -118,6 +119,8 @@ local function CreateRaidFrame(index)
       MV.UpdateTargetHighlight(raidFrame)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
       MV.UpdateHealthBar(raidFrame)
+    elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
+      MV.UpdateAbsorbBar(raidFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
       MV.UpdateHealthBar(raidFrame)
     elseif event == "UNIT_NAME_UPDATE" then

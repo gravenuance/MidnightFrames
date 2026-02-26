@@ -106,6 +106,7 @@ local function SetBossFrame(index)
   bossFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
   bossFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   bossFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+  bossFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
 
   bossFrame:SetScript("OnEvent", function(self, event)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
@@ -117,6 +118,8 @@ local function SetBossFrame(index)
     if not MV.InInstance() then return end
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
       MV.UpdateHealthBar(bossFrame)
+    elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
+      MV.UpdateAbsorbBar(bossFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
       MV.SetRangeAlpha(bossFrame)
     elseif event == "PLAYER_TARGET_CHANGED" then
