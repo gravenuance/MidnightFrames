@@ -55,6 +55,7 @@ targetFrame:SetScript("OnEvent", function(_, event, arg1)
       MV.ApplyClassColor(targetFrame)
       MV.UpdateHealthBar(targetFrame)
       MV.UpdateAuras(targetFrame)
+      MV.SetRangeAlpha(targetFrame)
     end
   elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
     MV.UpdateHealthBar(targetFrame)

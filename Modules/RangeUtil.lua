@@ -6,6 +6,7 @@ MV.OtherAlpha         = 0.4
 
 local RangeSpells     = {}
 local RangeSpellsSize = 0
+local RangeThreshold  = 0
 
 function MV.RegisterRangeSpell(id)
   if RangeSpells and RangeSpells[id] then return end
@@ -28,41 +29,72 @@ function MV.RegisterRangeSpell(id)
   if ok then
     RangeSpells[id].range = helpful
   end
+  ok, helpful = MV.CallExternalFunction(
+    {
+      namespace = C_Spell,
+      functionName = "IsSpellInRange",
+      args = { id, "player" },
+      argumentValidators = { MV.IsNumber, MV.IsString },
+    }
+  )
+  if ok then
+    if helpful then
+      RangeThreshold = RangeThreshold + 1
+    end
+  end
   RangeSpellsSize = RangeSpellsSize + 1
 end
 
 local function CheckMultiSpellRange(unit)
+  if not MV.UnitExists(unit) then return end
   local count = 0
   local totalRangeCount = 0
   local okay, canAttack = MV.UnitCanAttack(unit)
-  if RangeSpellsSize == 0 then return true end
+  if RangeSpellsSize == 0 then
+    return true
+  end
   for spellId, spell in pairs(RangeSpells) do
+    local shouldCheck = true
+
     if okay then
-      if not MV.IsNil(spell.range) then
-        if not spell.range then return end
+      if spell.range == false then
+        shouldCheck = false
       end
-      if not MV.IsNil(spell.helpful) then
-        if canAttack and spell.helpful then break end
-        if not canAttack and not spell.helpful then break end
+
+      if shouldCheck and not MV.IsNil(spell.helpful) then
+        if canAttack and spell.helpful == true then
+          shouldCheck = false
+        elseif (not canAttack) and spell.helpful == false then
+          shouldCheck = false
+        end
       end
     end
-    local ok, range = MV.CallExternalFunction(
-      {
+
+    if shouldCheck then
+      local ok, range = MV.CallExternalFunction({
         namespace = C_Spell,
         functionName = "IsSpellInRange",
         args = { spellId, unit },
         argumentValidators = { MV.IsNumber, MV.IsString },
-      }
-    )
-    if ok then
-      if range == true then
-        count = count + 1
+      })
+
+      if ok then
+        if range == true then
+          count = count + 1
+        end
+        totalRangeCount = totalRangeCount + 1
       end
-      totalRangeCount = totalRangeCount + 1
     end
   end
-  local result = totalRangeCount > 0 and count > math.floor(totalRangeCount * MV.errorMargin)
-  --print(result)
+  if totalRangeCount == 0 then
+    return false
+  end
+  local result
+  if canAttack then
+    result = count > math.floor((RangeSpellsSize - RangeThreshold) * MV.errorMargin)
+  else
+    result = RangeThreshold > 0 and count > math.floor(RangeThreshold * MV.errorMargin) or false
+  end
   return result
 end
 
