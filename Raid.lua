@@ -25,11 +25,16 @@ local function LayoutRaidFrames()
     local unit = frame.unit
     if MV.UnitExists(unit) or MV_RaidTestMode then
       shown = shown + 1
-      frame:ClearAllPoints()
+      MV.CallExternalFunction({
+        namespace = frame,
+        functionName = "ClearAllPoints",
+        args = {
+          frame,
+        },
+      })
       frame:SetPoint("CENTER", UIParent, "CENTER",
         -MV.FrameX * 1.5,
         startY - (shown - 1) * spacingY)
-      --print(index .. ": " .. tostring(startY - (shown - 1) * spacingY))
     end
   end
 end
@@ -136,7 +141,7 @@ local function CreateRaidFrame(index)
       --MV.UpdateTargetIndicatorByGUID(raidFrame)
     elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATE" then
       if arg1 == unit then
-        MV.TryAndUpdateDRStateFromLOC(raidFrame)
+        MV.TryAndUpdateDRStateFromLOC(raidFrame, arg2)
       end
     end
   end)

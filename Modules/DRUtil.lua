@@ -234,6 +234,9 @@ local function SetDRInfoFromLOC(frame, trackerInfo)
     return
   end
   local category = GetAndInterpretField(trackerInfo, "locType")
+  if MV.IsString(category) and issecretvalue(category) then
+    return
+  end
   local ok, info = MV.IsString(category)
   if not ok then
     print(ok, info)

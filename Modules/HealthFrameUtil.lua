@@ -37,7 +37,12 @@ local function GetNPCReactionColor(unit)
 end
 
 local function GetClassColor(unit, fr, fg, fb)
-  if MV.UnitIsPlayer(unit) then
+  local okay, inGroup = MV.CallExternalFunction({
+    functionName = "UnitInParty",
+    args = { unit },
+    argumentValidators = { MV.IsString },
+  })
+  if MV.UnitIsPlayer(unit) or (okay and inGroup) then
     local ok, _, class = MV.UnitClass(unit)
     if ok then
       local c = class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]

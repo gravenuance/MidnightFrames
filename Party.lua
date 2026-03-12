@@ -103,7 +103,7 @@ local function CreatePartyFrame(index)
       --MV.UpdateTargetIndicatorByGUID(partyFrame)
     elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATED" then
       if arg1 == unit then
-        MV.TryAndUpdateDRStateFromLOC(partyFrame)
+        MV.TryAndUpdateDRStateFromLOC(partyFrame, arg2)
       end
     end
   end)

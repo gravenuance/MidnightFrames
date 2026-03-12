@@ -267,7 +267,7 @@ local function SetArenaFrame(index)
       end
     elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
       if not MV.DRFallback then
-        MV.TryAndUpdateDRStateFromLOC(arenaFrame)
+        MV.TryAndUpdateDRStateFromLOC(arenaFrame, arg2)
       end
     end
   end)

@@ -7,6 +7,9 @@ function MV.UpdateTrinket(frame, timer)
     local btn = frame.otherContainer.icons[1]
     if btn then
       btn:Hide()
+      if MV.InInstance() then
+        return
+      end
       if MV.UnitExists(frame.unit) then
         local ok, spellId = MV.CallExternalFunction(
           {
