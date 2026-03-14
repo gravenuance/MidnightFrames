@@ -230,10 +230,12 @@ local function SetArenaFrame(index)
       MV_ArenaTestMode = false
       UpdateVisibility()
       MV.UpdateHealthBar(arenaFrame)
-      MV.UpdateTargetHighlight(arenaFrame, MV_ArenaTestMode)
+      MV.UpdateAbsorbBar(arenaFrame)
       MV.UpdateAuras(arenaFrame)
-      MV.ResetDR(arenaFrame)
       MV.UpdateTrinket(arenaFrame)
+      MV.UpdateTargetHighlight(arenaFrame, MV_ArenaTestMode)
+      MV.ResetDR(arenaFrame)
+      MV.SetRangeAlpha(arenaFrame)
     end
     if not MV.IsInArena() then return end
     if (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
@@ -257,7 +259,6 @@ local function SetArenaFrame(index)
         SetMemberFrame(index)
         MV.UpdateTrinket(arenaFrame)
         HookDR(arenaFrame, MV.DRFallback)
-        --MV.SetUnitGUID(arenaFrame)
       end
     elseif event == "UNIT_AURA" then
       MV.UpdateAuras(arenaFrame)

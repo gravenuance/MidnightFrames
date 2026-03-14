@@ -145,6 +145,7 @@ function MV.CreateUnitFrame(params)
   local iconSize   = params.iconSize or 32
   local pvpIcons   = params.pvpIcons or false
   local horizontal = params.horizontal or false
+  local roleIcon   = params.roleIcon or false
 
   local f          = CreateFrame("Button", name, UIParent, "SecureUnitButtonTemplate")
   f:SetSize(size[1], size[2])
@@ -163,9 +164,8 @@ function MV.CreateUnitFrame(params)
   f.bg:SetAllPoints(f)
   f.bg:SetColorTexture(0, 0, 0, 0.6)
 
-  local inset      = 0  -- on the frame edge
-  local innerInset = 2  -- 2px inside
-  local outerInset = -2 -- 2px outside
+  local inset      = 0 -- on the frame edge
+  local innerInset = 2 -- 2px inside
 
   -- Base border (on edge)
   f.border         = CreateFrame("Frame", nil, f, "BackdropTemplate")
@@ -238,6 +238,17 @@ function MV.CreateUnitFrame(params)
   f.absorb:SetFrameLevel(f.health:GetFrameLevel() + 1)
   f.absorb:SetMinMaxValues(0, 1)
   f.absorb:SetValue(0)
+
+  if roleIcon then
+    f.roleIcon = f:CreateFrame("RoleIcon", name .. "RoleIcon", f)
+    f.roleIcon:SetPoint("CENTER", f, "CENTER", 0, 0)
+    f.roleIcon:SetSize(iconSize, iconSize)
+    f.roleIcon:SetFrameStrata("MEDIUM")
+    f.roleIcon:SetFrameLevel(f.absorb:GetFrameLevel() + 1)
+    f.roleIcon.icon = f.roleIcon:CreateTexture(nil, "ARTWORK")
+    f.roleIcon.icon:SetAllPoints(f.roleIcon)
+    f.roleIcon:Hide()
+  end
 
   f:SetScript("OnEnter", function(self)
     self.mouseoverBorder:Show()

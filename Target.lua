@@ -54,6 +54,7 @@ targetFrame:SetScript("OnEvent", function(_, event, arg1)
     if UnitExists(targetFrame.unit) then
       MV.ApplyClassColor(targetFrame)
       MV.UpdateHealthBar(targetFrame)
+      MV.UpdateAbsorbBar(targetFrame)
       MV.UpdateAuras(targetFrame)
       MV.SetRangeAlpha(targetFrame)
     end

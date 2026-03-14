@@ -54,6 +54,7 @@ local function CreateRaidFrame(index)
     iconSize   = MV.DefaultSizeSmall,
     pvpIcons   = true,
     horizontal = true,
+    roleIcon   = true,
   })
   raidFrame.IsDriverRegistered = false
 
@@ -105,15 +106,16 @@ local function CreateRaidFrame(index)
       MV_RaidTestMode = false
       UpdateVisibility()
       if MV.UnitExists(unit) then
-        MV.UpdateTargetHighlight(raidFrame)
         MV.ApplyClassColor(raidFrame)
         MV.UpdateHealthBar(raidFrame)
+        MV.UpdateAbsorbBar(raidFrame)
         MV.UpdateAuras(raidFrame)
-        MV.ResetDR(raidFrame)
         MV.UpdateTrinket(raidFrame)
+        MV.UpdateRoleIcon(raidFrame)
+        MV.UpdateTargetHighlight(raidFrame)
         MV.UpdateTargetIndicator(raidFrame)
-        --MV.SetUnitGUID(raidFrame)
-        --MV.UpdateTargetIndicatorByGUID(raidFrame)
+        MV.ResetDR(raidFrame)
+        MV.SetRangeAlpha(raidFrame)
       end
       if raidFrame.unit == "raid1" then
         LayoutRaidFrames()
@@ -127,7 +129,7 @@ local function CreateRaidFrame(index)
     elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
       MV.UpdateAbsorbBar(raidFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-      MV.UpdateHealthBar(raidFrame)
+      MV.SetRangeAlpha(raidFrame)
     elseif event == "UNIT_NAME_UPDATE" then
       MV.ApplyClassColor(raidFrame)
     elseif event == "UNIT_AURA" then
@@ -138,7 +140,6 @@ local function CreateRaidFrame(index)
       end
     elseif event == "UNIT_TARGET" then
       MV.UpdateTargetIndicator(raidFrame)
-      --MV.UpdateTargetIndicatorByGUID(raidFrame)
     elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATE" then
       if arg1 == unit then
         MV.TryAndUpdateDRStateFromLOC(raidFrame, arg2)

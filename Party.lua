@@ -21,6 +21,7 @@ local function CreatePartyFrame(index)
     maxAuras = MAX_AURAS,
     iconSize = MV.DefaultSize,
     pvpIcons = true,
+    roleIcon = true,
   })
   partyFrame.IsDriverRegistered = false
 
@@ -70,15 +71,16 @@ local function CreatePartyFrame(index)
       MV_PartyTestMode = false
       UpdateVisibility()
       if MV.UnitExists(unit) then
-        MV.UpdateTargetHighlight(partyFrame)
         MV.ApplyClassColor(partyFrame)
         MV.UpdateHealthBar(partyFrame)
+        MV.UpdateAbsorbBar(partyFrame)
         MV.UpdateAuras(partyFrame)
         MV.UpdateTrinket(partyFrame)
-        MV.ResetDR(partyFrame)
+        MV.UpdateRoleIcon(partyFrame)
+        MV.UpdateTargetHighlight(partyFrame)
         MV.UpdateTargetIndicator(partyFrame)
-        --MV.SetUnitGUID(partyFrame)
-        --MV.UpdateTargetIndicatorByGUID(partyFrame)
+        MV.ResetDR(partyFrame)
+        MV.SetRangeAlpha(partyFrame)
       end
     end
     if MV_PartyTestMode or (MV.NumGroupMembers > 5 or MV.NumGroupMembers == 0) then return end
@@ -89,7 +91,7 @@ local function CreatePartyFrame(index)
     elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
       MV.UpdateAbsorbBar(partyFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-      MV.UpdateHealthBar(partyFrame)
+      MV.SetRangeAlpha(partyFrame)
     elseif event == "UNIT_NAME_UPDATE" then
       MV.ApplyClassColor(partyFrame)
     elseif event == "UNIT_AURA" then
@@ -100,7 +102,6 @@ local function CreatePartyFrame(index)
       end
     elseif event == "UNIT_TARGET" then
       MV.UpdateTargetIndicator(partyFrame)
-      --MV.UpdateTargetIndicatorByGUID(partyFrame)
     elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATED" then
       if arg1 == unit then
         MV.TryAndUpdateDRStateFromLOC(partyFrame, arg2)
