@@ -118,7 +118,7 @@ function MV.UpdateTargetIndicator(frame)
 end
 
 function MV.UpdateTargetIndicatorByGUID(frame)
-  if frame.unit == "player" then
+  if frame.unit == "player" or MV.IsUnitUnit(frame.unit, "player") then
     return
   end
   MV.ResetTargetIndicator(frame)
