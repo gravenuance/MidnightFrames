@@ -202,14 +202,14 @@ function MV.CreateUnitFrame(params)
 
   -- Outer border
   f.outerBorder = CreateFrame("Frame", nil, f, "BackdropTemplate")
-  f.outerBorder:SetPoint("TOPLEFT", outerInset, -outerInset)
-  f.outerBorder:SetPoint("BOTTOMRIGHT", -outerInset, outerInset)
+  f.outerBorder:SetPoint("TOPLEFT", inset, -inset)
+  f.outerBorder:SetPoint("BOTTOMRIGHT", -inset, inset)
   f.outerBorder:SetBackdrop({
     edgeFile = "Interface\\Buttons\\WHITE8x8",
     edgeSize = 2,
   })
-  f.outerBorder:SetBackdropBorderColor(0.8, 0.2, 0.2, 1)
-  f.outerBorder:SetFrameLevel(f.border:GetFrameLevel() - 1)
+  f.outerBorder:SetBackdropBorderColor(1, 1, 1, 1)
+  f.outerBorder:SetFrameLevel(f.border:GetFrameLevel() + 2)
   f.outerBorder:Hide()
 
   -- Health bar
@@ -235,7 +235,7 @@ function MV.CreateUnitFrame(params)
   f.absorb:SetRotatesTexture(true)
   f.absorb:SetFrameStrata("MEDIUM")
   f.absorb:SetStatusBarColor(0.2, 0.45, 0.85, 0.6)
-  f.absorb:SetFrameLevel(f:GetFrameLevel() + 2)
+  f.absorb:SetFrameLevel(f.health:GetFrameLevel() + 1)
   f.absorb:SetMinMaxValues(0, 1)
   f.absorb:SetValue(0)
 
@@ -259,6 +259,7 @@ function MV.CreateUnitFrame(params)
     f.auraContainer:SetSize(28, totalHeight)
     f.auraContainer:SetPoint("BOTTOM", f, "TOP", 0, -190)
   end
+  f.auraContainer:SetFrameLevel(f.absorb:GetFrameLevel() + 1)
   f.auraContainer.icons = {}
   LayoutAuraButtons(f.auraContainer, horizontal)
 
