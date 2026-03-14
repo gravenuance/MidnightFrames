@@ -2,8 +2,8 @@ local _, MV = ...
 function MV.UpdateTargetHighlight(frame, testFlag)
   if testFlag then return end
   if MV.UnitIsUnit(frame.unit) then
-    frame.border:SetBackdropBorderColor(1, 1, 1, 1)
+    frame.outerBorder:Show()
   else
-    frame.border:SetBackdropBorderColor(0, 0, 0, 1)
+    frame.outerBorder:Hide()
   end
 end
