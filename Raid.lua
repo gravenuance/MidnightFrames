@@ -12,7 +12,7 @@ local MAX_AURAS   = 3
 local function LayoutRaidFrames()
   local numRaid = GetNumGroupMembers() or 0
   if MV_RaidTestMode then numRaid = MV.MaxRaidMembers end
-  if numRaid < 6 then
+  if numRaid < 6 or numRaid > MV.MaxRaidMembers then
     return
   end
 
@@ -25,13 +25,9 @@ local function LayoutRaidFrames()
     local unit = frame.unit
     if MV.UnitExists(unit) or MV_RaidTestMode then
       shown = shown + 1
-      MV.CallExternalFunction({
-        namespace = frame,
-        functionName = "ClearAllPoints",
-        args = {
-          frame,
-        },
-      })
+      if not InCombatLockdown() then
+        frame:ClearAllPoints()
+      end
       frame:SetPoint("CENTER", UIParent, "CENTER",
         -MV.FrameX * 1.5,
         startY - (shown - 1) * spacingY)
@@ -66,7 +62,7 @@ local function CreateRaidFrame(index)
       if raidFrame.unit == "raid1" then
         LayoutRaidFrames()
       end
-    elseif (MV.NumGroupMembers < 6 or MV.NumGroupMembers == 0) and not InCombatLockdown() then
+    elseif (MV.NumGroupMembers < 6 or MV.NumGroupMembers == 0 or MV.NumGroupMembers > MV.MaxRaidMembers) and not InCombatLockdown() then
       UnregisterUnitWatch(raidFrame)
       raidFrame.IsDriverRegistered = false
       raidFrame:Hide()

@@ -240,7 +240,7 @@ function MV.CreateUnitFrame(params)
   f.absorb:SetValue(0)
 
   if roleIcon then
-    f.roleIcon = f:CreateFrame("RoleIcon", name .. "RoleIcon", f)
+    f.roleIcon = CreateFrame("Frame", name .. "RoleIcon", f)
     f.roleIcon:SetPoint("CENTER", f, "CENTER", 0, 0)
     f.roleIcon:SetSize(iconSize, iconSize)
     f.roleIcon:SetFrameStrata("MEDIUM")

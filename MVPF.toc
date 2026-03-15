@@ -18,6 +18,7 @@ Modules/HighlightUtil.lua
 Modules/RangeUtil.lua
 Modules/TestUtil.lua
 Modules/TrinketUtil.lua
+Modules/RoleUtil.lua
 Core.lua
 Party.lua
 Player.lua

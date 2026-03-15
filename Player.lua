@@ -10,6 +10,7 @@ local playerFrame = MV.CreateUnitFrame({
   size = { MV.SizeX, MV.SizeY },
   maxAuras = MAX_AURAS,
   iconSize = MV.DefaultSize,
+  roleIcon = true,
 })
 RegisterUnitWatch(playerFrame)
 
@@ -70,11 +71,13 @@ playerFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     MV.ApplyClassColor(playerFrame)
     UpdateHealthBar()
     UpdatePetHealthBar()
+    MV.UpdateAbsorbBar(playerFrame)
     MV.UpdateAuras(playerFrame)
     MV.UpdateTargetHighlight(playerFrame, false)
     MV.UpdateTargetHighlight(petFrame, false)
     MV.UpdatePowerLabel(playerFrame)
     MV.ResetTargetIndicator(playerFrame)
+    MV.UpdateRoleIcon(playerFrame, false)
   elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
     if arg1 == playerFrame.unit then
       UpdateHealthBar()
