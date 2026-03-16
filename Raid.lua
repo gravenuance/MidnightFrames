@@ -27,10 +27,10 @@ local function LayoutRaidFrames()
       shown = shown + 1
       if not InCombatLockdown() then
         frame:ClearAllPoints()
+        frame:SetPoint("CENTER", UIParent, "CENTER",
+          -MV.FrameX * 1.5,
+          startY - (shown - 1) * spacingY)
       end
-      frame:SetPoint("CENTER", UIParent, "CENTER",
-        -MV.FrameX * 1.5,
-        startY - (shown - 1) * spacingY)
     end
   end
 end
