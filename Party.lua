@@ -81,6 +81,8 @@ local function CreatePartyFrame(index)
         MV.UpdateTargetIndicator(partyFrame)
         MV.ResetDR(partyFrame)
         MV.SetRangeAlpha(partyFrame)
+      else
+        MV.ResetTargetIndicator(partyFrame)
       end
     end
     if MV_PartyTestMode or (MV.NumGroupMembers > 5 or MV.NumGroupMembers == 0) then return end

@@ -112,6 +112,8 @@ local function CreateRaidFrame(index)
         MV.UpdateTargetIndicator(raidFrame)
         MV.ResetDR(raidFrame)
         MV.SetRangeAlpha(raidFrame)
+      else
+        MV.ResetTargetIndicator(raidFrame)
       end
       if raidFrame.unit == "raid1" then
         LayoutRaidFrames()
