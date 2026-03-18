@@ -33,9 +33,6 @@ local function CheckUnits(unit, otherUnit)
 end
 
 local function GetTargetUnit(frame)
-  if frame.unit == "player" then
-    return
-  end
   local targetUnit = frame.unit .. "target"
   local tempUnit
   local _, numGroup = MV.CallExternalFunction({
@@ -89,6 +86,9 @@ end
 
 function MV.UpdateTargetIndicator(frame)
   if not frame or not frame.unit then return end
+  if frame.unit == "player" or MV.IsUnitUnit(frame.unit, "player") then
+    return
+  end
 
   local targetUnit = GetTargetUnit(frame)
   if not MV.IsString(targetUnit) then
