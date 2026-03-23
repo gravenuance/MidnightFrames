@@ -1,13 +1,14 @@
-local _, MV       = ...
+local _, MV         = ...
 
-local baseName    = "MV_Raid"
+local defaultFrames = _G["CompactRaidFrameContainer"]
+local baseName      = "MV_Raid"
 
-MV_RaidTestMode   = false
-MV.MaxRaidMembers = 20
+MV_RaidTestMode     = false
+MV.MaxRaidMembers   = 20
 
-local RaidFrames  = {}
+local RaidFrames    = {}
 
-local MAX_AURAS   = 3
+local MAX_AURAS     = 3
 
 local function LayoutRaidFrames()
   local numRaid = GetNumGroupMembers() or 0
@@ -74,6 +75,13 @@ local function CreateRaidFrame(index)
 
   function raidFrame:UpdateVisibility() UpdateVisibility() end
 
+  local function DisableRaidFrames()
+    if defaultFrames and defaultFrames:IsShown() then
+      defaultFrames:UnregisterAllEvents()
+      defaultFrames:Hide()
+    end
+  end
+
   raidFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
   raidFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
   raidFrame:RegisterUnitEvent("UNIT_HEALTH", unit)
@@ -117,6 +125,7 @@ local function CreateRaidFrame(index)
       end
       if raidFrame.unit == "raid1" then
         LayoutRaidFrames()
+        DisableRaidFrames()
       end
     end
     if MV_RaidTestMode or (MV.NumGroupMembers < 6 or MV.NumGroupMembers == 0) then return end
