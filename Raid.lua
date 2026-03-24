@@ -77,6 +77,10 @@ local function CreateRaidFrame(index)
 
   local function DisableRaidFrames()
     if defaultFrames and defaultFrames:IsShown() then
+      if InCombatLockdown() then
+        defaultFrames:SetAlpha(0)
+        return
+      end
       defaultFrames:UnregisterAllEvents()
       defaultFrames:Hide()
     end
@@ -133,8 +137,10 @@ local function CreateRaidFrame(index)
       MV.UpdateTargetHighlight(raidFrame)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
       MV.UpdateHealthBar(raidFrame)
+      MV.SetRangeAlpha(raidFrame)
     elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
       MV.UpdateAbsorbBar(raidFrame)
+      MV.SetRangeAlpha(raidFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
       MV.SetRangeAlpha(raidFrame)
     elseif event == "UNIT_NAME_UPDATE" then

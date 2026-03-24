@@ -90,8 +90,10 @@ local function CreatePartyFrame(index)
       MV.UpdateTargetHighlight(partyFrame)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
       MV.UpdateHealthBar(partyFrame)
+      MV.SetRangeAlpha(partyFrame)
     elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
       MV.UpdateAbsorbBar(partyFrame)
+      MV.SetRangeAlpha(partyFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
       MV.SetRangeAlpha(partyFrame)
     elseif event == "UNIT_NAME_UPDATE" then
