@@ -84,7 +84,6 @@ local function CreateRaidFrame(index)
       defaultFrames:UnregisterAllEvents()
       if InCombatLockdown() then
         defaultFrames:SetAlpha(0)
-        return
       else
         defaultFrames:Hide()
       end
