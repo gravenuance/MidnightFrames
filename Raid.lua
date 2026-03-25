@@ -5,12 +5,16 @@ local baseName      = "MV_Raid"
 
 MV_RaidTestMode     = false
 MV.MaxRaidMembers   = 20
+MV.MustUpdate       = false
 
 local RaidFrames    = {}
 
 local MAX_AURAS     = 3
 
 local function LayoutRaidFrames()
+  if InCombatLockdown() then
+    MV.MustUpdate = true; return
+  end
   local numRaid = GetNumGroupMembers() or 0
   if MV_RaidTestMode then numRaid = MV.MaxRaidMembers end
   if numRaid < 6 or numRaid > MV.MaxRaidMembers then
@@ -26,14 +30,14 @@ local function LayoutRaidFrames()
     local unit = frame.unit
     if MV.UnitExists(unit) or MV_RaidTestMode then
       shown = shown + 1
-      if not InCombatLockdown() then
-        frame:ClearAllPoints()
-        frame:SetPoint("CENTER", UIParent, "CENTER",
-          -MV.FrameX * 1.5,
-          startY - (shown - 1) * spacingY)
-      end
+
+      frame:ClearAllPoints()
+      frame:SetPoint("CENTER", UIParent, "CENTER",
+        -MV.FrameX * 1.5,
+        startY - (shown - 1) * spacingY)
     end
   end
+  MV.MustUpdate = false
 end
 
 local function CreateRaidFrame(index)
@@ -133,6 +137,9 @@ local function CreateRaidFrame(index)
       end
     end
     if MV_RaidTestMode or (MV.NumGroupMembers < 6 or MV.NumGroupMembers == 0) then return end
+    if MV.MustUpdate then
+      LayoutRaidFrames()
+    end
     if event == "PLAYER_TARGET_CHANGED" then
       MV.UpdateTargetHighlight(raidFrame)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
