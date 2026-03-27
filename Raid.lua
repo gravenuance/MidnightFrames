@@ -90,22 +90,35 @@ local function CreateRaidFrame(index)
     end
   end
 
+  --DEFAULTS
   raidFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
   raidFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+  raidFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+  raidFrame:RegisterUnitEvent("UNIT_OTHER_PARTY_CHANGED", unit)
+
+  --UNIT FRAMES
   raidFrame:RegisterUnitEvent("UNIT_HEALTH", unit)
   raidFrame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
   raidFrame:RegisterUnitEvent("UNIT_NAME_UPDATE", unit)
   raidFrame:RegisterUnitEvent("UNIT_AURA", unit)
   raidFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
+
+  -- PLAYER HIGHLIGHT
   raidFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-  raidFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-  raidFrame:RegisterUnitEvent("UNIT_OTHER_PARTY_CHANGED", unit)
+
+  -- RANGE CHECK
   raidFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
   raidFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   raidFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+
+  -- TRINKET
   raidFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
   raidFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
+
+  -- UNIT TARGET
   raidFrame:RegisterUnitEvent("UNIT_TARGET", unit)
+
+  -- DR
   raidFrame:RegisterEvent("LOSS_OF_CONTROL_ADDED")
   raidFrame:RegisterEvent("LOSS_OF_CONTROL_UPDATE")
 

@@ -96,17 +96,25 @@ local function SetBossFrame(index)
     HideBossContainer()
   end
 
+  -- DEFAULTS
   bossFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
   bossFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+  bossFrame:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
+
+  -- UNIT FRAMES
   bossFrame:RegisterUnitEvent("UNIT_HEALTH", unit)
   bossFrame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
   bossFrame:RegisterUnitEvent("UNIT_AURA", unit)
+  bossFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
+
+  -- PLAYER HIGHLIGHT
   bossFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-  bossFrame:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
+
+  -- RANGE CHECK
   bossFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
   bossFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   bossFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
-  bossFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
+
 
   bossFrame:SetScript("OnEvent", function(self, event)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then

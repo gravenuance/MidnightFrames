@@ -30,17 +30,25 @@ end
 
 function targetFrame:UpdateVisibility() UpdateVisibility() end
 
-targetFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+-- DEFAULTS
+targetFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+targetFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+
+-- UNIT FRAMES
 targetFrame:RegisterUnitEvent("UNIT_HEALTH", targetFrame.unit)
 targetFrame:RegisterUnitEvent("UNIT_MAXHEALTH", targetFrame.unit)
 targetFrame:RegisterUnitEvent("UNIT_AURA", targetFrame.unit)
 targetFrame:RegisterUnitEvent("UNIT_NAME_UPDATE", targetFrame.unit)
-targetFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-targetFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+targetFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", targetFrame.unit)
+
+-- PLAYER HIGHLIGHT
+targetFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+
+-- RANGE CHECK
 targetFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
 targetFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
 targetFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
-targetFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", targetFrame.unit)
+
 
 targetFrame:SetScript("OnEvent", function(_, event, arg1)
   if (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then

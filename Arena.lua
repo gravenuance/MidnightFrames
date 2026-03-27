@@ -164,8 +164,10 @@ local function SetArenaFrame(index)
 
   local function HookDR(frame, shouldHook)
     if not shouldHook then return end
+
     local member = unitFrame
     if member and member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MV_Hooked then
+      print("Using DR Hooks for arena frame", frame:GetName())
       local tray = member.SpellDiminishStatusTray
       tray.MV_Hooked = true
       hooksecurefunc(member.SpellDiminishStatusTray, "TryUpdateOrAddTrayItem", function(self)

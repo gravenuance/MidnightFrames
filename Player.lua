@@ -46,20 +46,31 @@ local function UpdatePetHealthBar()
   MV.UpdateHealthBar(petFrame)
 end
 
+-- DEFAULTS
 playerFrame:RegisterEvent("PLAYER_LOGIN")
 playerFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 playerFrame:RegisterEvent("PLAYER_ALIVE")
+playerFrame:RegisterEvent("ZONE_CHANGED")
+
+-- UNIT FRAMES
 playerFrame:RegisterUnitEvent("UNIT_HEALTH", playerFrame.unit, petFrame.unit)
 playerFrame:RegisterUnitEvent("UNIT_MAXHEALTH", playerFrame.unit, petFrame.unit)
 playerFrame:RegisterUnitEvent("UNIT_AURA", playerFrame.unit)
 playerFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", playerFrame.unit)
-playerFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-playerFrame:RegisterUnitEvent("UNIT_POWER_UPDATE", playerFrame.unit)
-playerFrame:RegisterUnitEvent("UNIT_MAXPOWER", playerFrame.unit)
-playerFrame:RegisterEvent("ZONE_CHANGED")
-playerFrame:RegisterUnitEvent("UNIT_PET", playerFrame.unit)
 playerFrame:RegisterEvent("PLAYER_DEAD")
 playerFrame:RegisterEvent("PLAYER_UNGHOST")
+
+-- PLAYER HIGHLIGHT
+playerFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+
+-- UNIT POWER
+playerFrame:RegisterUnitEvent("UNIT_POWER_UPDATE", playerFrame.unit)
+playerFrame:RegisterUnitEvent("UNIT_MAXPOWER", playerFrame.unit)
+
+-- PET
+playerFrame:RegisterUnitEvent("UNIT_PET", playerFrame.unit)
+
+-- REGISTER RANGE CHECK
 playerFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
 
