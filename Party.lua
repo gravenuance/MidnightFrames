@@ -1,11 +1,10 @@
-local _, MV           = ...
+local _, MV      = ...
 
-local baseName        = "MV_Party"
+local baseName   = "MV_Party"
 
-MV_PartyTestMode      = false
+MV_PartyTestMode = false
 
-local MAX_AURAS       = 3
-local numGroupMembers = 0
+local MAX_AURAS  = 3
 
 local function CreatePartyFrame(index)
   local unit = "party" .. index
@@ -42,24 +41,37 @@ local function CreatePartyFrame(index)
 
   function partyFrame:UpdateVisibility() UpdateVisibility() end
 
+  --DEFAULTS
   partyFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+  partyFrame:RegisterUnitEvent("UNIT_OTHER_PARTY_CHANGED", unit)
   partyFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+  partyFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+
+  --UNIT FRAMES
   partyFrame:RegisterUnitEvent("UNIT_HEALTH", unit)
   partyFrame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
   partyFrame:RegisterUnitEvent("UNIT_NAME_UPDATE", unit)
   partyFrame:RegisterUnitEvent("UNIT_AURA", unit)
+  partyFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
+
+  -- PLAYER HIGHLIGHT
   partyFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-  partyFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-  partyFrame:RegisterUnitEvent("UNIT_OTHER_PARTY_CHANGED", unit)
+
+  -- RANGE CHECK
   partyFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
   partyFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   partyFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+
+  -- TRINKET
   partyFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
   partyFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
+
+  -- UNIT TARGET
   partyFrame:RegisterUnitEvent("UNIT_TARGET", unit)
+
+  -- DR
   partyFrame:RegisterEvent("LOSS_OF_CONTROL_ADDED")
   partyFrame:RegisterEvent("LOSS_OF_CONTROL_UPDATE")
-  partyFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
 
   partyFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"

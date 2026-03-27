@@ -96,6 +96,7 @@ local function CreateRaidFrame(index)
   raidFrame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
   raidFrame:RegisterUnitEvent("UNIT_NAME_UPDATE", unit)
   raidFrame:RegisterUnitEvent("UNIT_AURA", unit)
+  raidFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
   raidFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
   raidFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
   raidFrame:RegisterUnitEvent("UNIT_OTHER_PARTY_CHANGED", unit)
@@ -107,7 +108,7 @@ local function CreateRaidFrame(index)
   raidFrame:RegisterUnitEvent("UNIT_TARGET", unit)
   raidFrame:RegisterEvent("LOSS_OF_CONTROL_ADDED")
   raidFrame:RegisterEvent("LOSS_OF_CONTROL_UPDATE")
-  raidFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
+
 
   raidFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"

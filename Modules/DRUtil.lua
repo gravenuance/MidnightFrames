@@ -10,7 +10,7 @@ local ENEMY_DR_ORDER = {
   [0] = "root",
 }
 
-MV.DRFallback = false
+MV.DRFallback = true
 
 local CATEGORY_ICON = {
   stun = "Interface\\Icons\\Ability_Rogue_CheapShot",

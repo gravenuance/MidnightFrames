@@ -221,7 +221,7 @@ local function SetArenaFrame(index)
   arenaFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE") -- Trinket
   arenaFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
 
-  arenaFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit)
+  arenaFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit) --DR
 
 
 

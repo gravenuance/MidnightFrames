@@ -30,20 +30,17 @@ function MV.UpdateTrinket(frame, timer)
           )
           if ok and not MV.IsNil(spellId) then
             btn.icon:SetTexture(spellId)
-            if timer then
-              local startTime = GetTime()
-              if MV.IsNil(btn.endTime) or btn.endTime < startTime then
-                local duration = 120
-                btn.endTime = startTime + duration
-                if spellId then
-                  btn.cooldown:SetHideCountdownNumbers(false)
-                  btn.cooldown:SetCooldown(startTime, duration, 1000)
-                end
-              end
-            end
           end
         else
           btn.icon:SetTexture(MV.DefaultTrinket)
+        end
+        if timer then
+          local durationData = C_PvP.GetArenaCrowdControlDuration(frame.unit)
+          if durationData then
+            btn.cooldown:SetCooldownFromDurationObject(durationData)
+          else
+            btn.cooldown:SetCooldown(0, 0)
+          end
         end
         btn:Show()
       end

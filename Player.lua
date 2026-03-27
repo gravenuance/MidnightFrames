@@ -52,6 +52,7 @@ playerFrame:RegisterEvent("PLAYER_ALIVE")
 playerFrame:RegisterUnitEvent("UNIT_HEALTH", playerFrame.unit, petFrame.unit)
 playerFrame:RegisterUnitEvent("UNIT_MAXHEALTH", playerFrame.unit, petFrame.unit)
 playerFrame:RegisterUnitEvent("UNIT_AURA", playerFrame.unit)
+playerFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", playerFrame.unit)
 playerFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 playerFrame:RegisterUnitEvent("UNIT_POWER_UPDATE", playerFrame.unit)
 playerFrame:RegisterUnitEvent("UNIT_MAXPOWER", playerFrame.unit)
@@ -60,7 +61,7 @@ playerFrame:RegisterUnitEvent("UNIT_PET", playerFrame.unit)
 playerFrame:RegisterEvent("PLAYER_DEAD")
 playerFrame:RegisterEvent("PLAYER_UNGHOST")
 playerFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
-playerFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", playerFrame.unit)
+
 
 
 playerFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
