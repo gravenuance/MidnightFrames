@@ -165,12 +165,10 @@ function MV.ResetDR(frame)
     for i = MV.DRStartIndex, MV.DRSize do
       local candidate = frame.otherContainer.icons[i]
       if candidate.categoryTable then
-        if candidate.categoryTable.IsShown and not candidate.categoryTable:IsShown() then
-          candidate.categoryTable = nil
-          candidate:Hide()
+        if candidate.categoryTable.MV_Button then
+          candidate.categoryTable.MV_Button = nil
         end
-      elseif candidate.MV_Button then
-        candidate.MV_Button = nil
+        candidate.categoryTable = nil
         candidate:Hide()
       end
     end
