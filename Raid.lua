@@ -169,9 +169,7 @@ local function CreateRaidFrame(index)
     elseif event == "UNIT_AURA" then
       MV.UpdateAuras(raidFrame)
     elseif event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" or event == "ARENA_COOLDOWNS_UPDATE" then
-      if arg1 == unit then
-        MV.UpdateTrinket(raidFrame, true)
-      end
+      MV.UpdateTrinket(raidFrame, true)
     elseif event == "UNIT_TARGET" then
       MV.UpdateTargetIndicator(raidFrame)
     elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATE" then

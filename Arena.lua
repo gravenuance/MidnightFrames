@@ -167,20 +167,19 @@ local function SetArenaFrame(index)
 
     local member = unitFrame
     if member and member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MV_Hooked then
-      print("Using DR Hooks for arena frame", frame:GetName())
       local tray = member.SpellDiminishStatusTray
       tray.MV_Hooked = true
-      hooksecurefunc(member.SpellDiminishStatusTray, "TryUpdateOrAddTrayItem", function(self)
-        MV.TryAndUpdateDRStateFromHooks(self, frame)
+      hooksecurefunc(member.SpellDiminishStatusTray, "TryUpdateOrAddTrayItem", function()
+        MV.TryAndUpdateDRStateFromHooks(member.SpellDiminishStatusTray, frame)
       end)
-      hooksecurefunc(member.SpellDiminishStatusTray, "UpdateOrAddTrayItem", function(self)
-        MV.TryAndUpdateDRStateFromHooks(self, frame)
+      hooksecurefunc(member.SpellDiminishStatusTray, "UpdateOrAddTrayItem", function()
+        MV.TryAndUpdateDRStateFromHooks(member.SpellDiminishStatusTray, frame)
       end)
-      hooksecurefunc(member.SpellDiminishStatusTray, "RefreshTrayLayout", function(self)
-        MV.TryAndUpdateDRStateFromHooks(self, frame)
+      hooksecurefunc(member.SpellDiminishStatusTray, "RefreshTrayLayout", function()
+        MV.TryAndUpdateDRStateFromHooks(member.SpellDiminishStatusTray, frame)
       end)
-      hooksecurefunc(member.SpellDiminishStatusTray, "AddNewItemToTray", function(self)
-        MV.TryAndUpdateDRStateFromHooks(self, frame)
+      hooksecurefunc(member.SpellDiminishStatusTray, "AddNewItemToTray", function()
+        MV.TryAndUpdateDRStateFromHooks(member.SpellDiminishStatusTray, frame)
       end)
       hooksecurefunc(member.SpellDiminishStatusTray, "RemoveCategoryFromOrder", function()
         MV.ResetDR(frame)
@@ -223,9 +222,8 @@ local function SetArenaFrame(index)
   arenaFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE") -- Trinket
   arenaFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
 
-  arenaFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit) --DR
-
-
+  --DR
+  arenaFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit)
 
   arenaFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
@@ -265,9 +263,7 @@ local function SetArenaFrame(index)
     elseif event == "UNIT_AURA" then
       MV.UpdateAuras(arenaFrame)
     elseif event == "ARENA_COOLDOWNS_UPDATE" or event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then -- These are the only two needed: Trinket
-      if arg1 == unit then
-        MV.UpdateTrinket(arenaFrame, true)
-      end
+      MV.UpdateTrinket(arenaFrame, true)
     elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
       if not MV.DRFallback then
         MV.TryAndUpdateDRStateFromLOC(arenaFrame, arg2)

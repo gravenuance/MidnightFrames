@@ -11,6 +11,8 @@ local ENEMY_DR_ORDER = {
 }
 
 MV.DRFallback = true
+MV.DRSize = 5
+MV.DRStartIndex = 2
 
 local CATEGORY_ICON = {
   stun = "Interface\\Icons\\Ability_Rogue_CheapShot",
@@ -36,16 +38,16 @@ end
 
 local function SetTrayButtons(button, frame)
   if not button or not frame then return end
-  if not button:IsShown() then return end
+  --if not button:IsShown() then return end
   if button.MV_Button then
     MV.MoveBlizzardButton(button, button.MV_Button)
     return
   end
   local candidate
-  for i = 2, 5 do
+  for i = MV.DRStartIndex, MV.DRSize do
     candidate = frame.otherContainer.icons and frame.otherContainer.icons[i]
     if candidate and not candidate.categoryTable then
-      candidate:Show()
+      candidate:SetShown(button:IsShown())
       candidate.categoryTable = button
       button.MV_Button = candidate
       SetTrayButtonIcon(button, candidate)
@@ -55,15 +57,14 @@ local function SetTrayButtons(button, frame)
 end
 
 function MV.TryAndUpdateDRStateFromHooks(tray, frame)
-  if not tray or not frame then
+  if MV.IsNil(tray) or not frame then
     return
   end
-
   local ok, children = MV.CallExternalFunction(
     {
       namespace = tray,
       args = { tray },
-      functionName = "GetChildren",
+      functionName = "GetLayoutChildren",
     }
   )
   if not ok then return end
@@ -139,7 +140,7 @@ local function SetButtons(frame)
         button.duration = duration
         SetButtonIcon(button, icon, showCountdown, isImmune)
       else
-        for i = 2, 5 do
+        for i = MV.DRStartIndex, MV.DRSize do
           local candidate = frame.otherContainer.icons[i]
           if not candidate.categoryTable then
             button = candidate
@@ -161,18 +162,16 @@ function MV.ResetDR(frame)
     wipe(frame.categories)
   end
   if frame.otherContainer then
-    for i = 2, 5 do
+    for i = MV.DRStartIndex, MV.DRSize do
       local candidate = frame.otherContainer.icons[i]
-      if not candidate.categoryTable then
-        candidate.categoryTable = nil
-        candidate:Hide()
-        break
-      elseif candidate.categoryTable.MV_Button then
+      if candidate.categoryTable then
         if candidate.categoryTable.IsShown and not candidate.categoryTable:IsShown() then
-          candidate.categoryTable.MV_Button = nil
           candidate.categoryTable = nil
           candidate:Hide()
         end
+      elseif candidate.MV_Button then
+        candidate.MV_Button = nil
+        candidate:Hide()
       end
     end
   end
@@ -199,7 +198,6 @@ function MV.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
     return
   end
   if not frame or not frame.unit then return end
-  --ResetInactive(frame)
   local category = GetAndInterpretField(trackerInfo, "category")
   local ok, info = MV.IsNumber(category)
   if not ok then
@@ -269,7 +267,6 @@ end
 
 function MV.TryAndUpdateDRStateFromLOC(frame)
   if not frame or not frame.unit then return end
-  --ResetInactive(frame)
   local ok, count = MV.CallExternalFunction({
     namespace = _G.C_LossOfControl,
     functionName = "GetActiveLossOfControlDataCountByUnit",

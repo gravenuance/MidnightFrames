@@ -113,9 +113,7 @@ local function CreatePartyFrame(index)
     elseif event == "UNIT_AURA" then
       MV.UpdateAuras(partyFrame)
     elseif event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" or event == "ARENA_COOLDOWNS_UPDATE" then
-      if arg1 == unit then
-        MV.UpdateTrinket(partyFrame, true)
-      end
+      MV.UpdateTrinket(partyFrame, true)
     elseif event == "UNIT_TARGET" then
       MV.UpdateTargetIndicator(partyFrame)
     elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATED" then
