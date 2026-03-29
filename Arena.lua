@@ -257,7 +257,8 @@ local function SetArenaFrame(index)
     then
       if arg1 == unit then
         SetMemberFrame(index)
-        MV.UpdateTrinket(arenaFrame)
+        MV.UpdateTrinket(arenaFrame, true)
+        MV.ResetDR(arenaFrame)
         HookDR(arenaFrame, MV.DRFallback)
       end
     elseif event == "UNIT_AURA" then
