@@ -163,7 +163,7 @@ local function SetArenaFrame(index)
   end
 
   local function HookDR(frame, shouldHook)
-    if not shouldHook then return end
+    if not MV.DRFallback then return end
 
     local member = unitFrame
     if member and member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MV_Hooked then
@@ -266,7 +266,7 @@ local function SetArenaFrame(index)
     elseif event == "ARENA_COOLDOWNS_UPDATE" or event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then -- These are the only two needed: Trinket
       MV.UpdateTrinket(arenaFrame, true)
     elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
-      if MV.DRFallback then
+      if not MV.DRFallback then
         if unitFrame and unitFrame.SpellDiminishStatusTray then
           --print("DR Updated from tray for " .. unit)
           MV.TryAndUpdateDRStateFromTray(unitFrame.SpellDiminishStatusTray, arenaFrame)

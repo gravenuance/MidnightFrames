@@ -29,16 +29,20 @@ local function SetSafeButton(candidate, icon, immunity, startTime)
   local ok, err = MV.CallExternalFunction({
     namespace = candidate.cooldown,
     functionName = "SetCooldown",
-    args = { candidate.cooldown, startTime, 16 * 1000 },
+    args = { candidate.cooldown, startTime * 1000, 16 * 1000 },
     argumentValidators = { MV.IsTable, MV.IsNumber, MV.IsNumber }
   })
   if ok then
-    candidate.cooldown:SetShowCountdownNumbers(true)
-    candidate:Show()
+    MV.CallExternalFunction({
+      namespace = candidate.cooldown,
+      functionName = "SetShowCountdownNumbers",
+      args = { candidate.cooldown, true },
+      argumentValidators = { MV.IsTable, MV.IsBoolean }
+    })
+
     print("Set DR Button from tray.")
-  else
-    print("Error setting DR Button from tray:", err)
   end
+  candidate:Show()
 end
 
 local function CheckTrayButton(button, frame)
