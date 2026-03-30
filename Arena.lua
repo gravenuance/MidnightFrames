@@ -267,7 +267,10 @@ local function SetArenaFrame(index)
       MV.UpdateTrinket(arenaFrame, true)
     elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
       if not MV.DRFallback then
-        MV.TryAndUpdateDRStateFromLOC(arenaFrame, arg2)
+        if unitFrame and unitFrame.SpellDiminishStatusTray then
+          --print("DR Updated from tray for " .. unit)
+          MV.TryAndUpdateDRStateFromTray(unitFrame.SpellDiminishStatusTray, arenaFrame)
+        end
       end
     end
   end)

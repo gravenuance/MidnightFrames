@@ -7,6 +7,7 @@
 ## Category: Matcha Latte
 
 Modules/SecureUtil.lua
+Modules/DurationUtil.lua
 Modules/ArenaUtil.lua
 Modules/Setup.lua
 Modules/AuraUtil.lua

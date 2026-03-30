@@ -60,6 +60,28 @@ function MV.IsUserData(value)
   return MV.IsOfType("userdata", value)
 end
 
+function MV.IsOfObjectType(expectedType, value)
+  if MV.IsNil(value) then
+    return false, (tostring(value) or "nil") .. " must not be nil"
+  end
+  if not value:IsObjectType(expectedType) then
+    return false, (tostring(value) or "<non-string>") .. " must be a " .. expectedType .. ", got " .. type(value)
+  end
+  return true
+end
+
+function MV.IsFrame(value)
+  return MV.IsOfObjectType("Frame", value)
+end
+
+function MV.IsButton(value)
+  return MV.IsOfObjectType("Button", value)
+end
+
+function MV.IsTexture(value)
+  return MV.IsOfObjectType("Texture", value)
+end
+
 --@args can be nil
 --@argumentValidators can be nil
 --@namespace can be nil

@@ -10,7 +10,7 @@ local ENEMY_DR_ORDER = {
   [0] = "root",
 }
 
-MV.DRFallback = true
+MV.DRFallback = false
 MV.DRSize = 5
 MV.DRStartIndex = 2
 
@@ -22,6 +22,60 @@ local CATEGORY_ICON = {
   disarm = "Interface\\Icons\\Ability_Warrior_Disarm",
   root = "Interface\\Icons\\Spell_Nature_StrangleVines",
 }
+
+local function CheckTrayButton(button, frame)
+  --if not MV.IsButton(button) then return end
+  --if not MV.IsTexture(button.Icon) then return end
+  print("Checking button")
+  local iconTexture = button.Icon and button.Icon:GetTexture()
+  local immunity = button.ImmunityIndicator and button.ImmunityIndicator:IsShown()
+  local duration = button.Cooldown and button.Cooldown:GetCooldownDuration()
+  local now = GetTime()
+  local durationObject = MV.CreateDurationObject(now, duration)
+  local candidate
+  if button.MV_Button then
+    candidate = button.MV_Button
+    candidate.icon:SetTexture(iconTexture)
+    candidate.immune:SetShown(immunity)
+    candidate.cooldown:SetCooldownFromDurationObject(durationObject)
+    candidate:SetShown(button:IsShown())
+    return
+  end
+  for i = MV.DRStartIndex, MV.DRSize do
+    candidate = frame.otherContainer.icons and frame.otherContainer.icons[i]
+    if candidate and not candidate.categoryTable then
+      candidate:SetShown(button:IsShown())
+      candidate.categoryTable = button
+      button.MV_Button = candidate
+      candidate.icon:SetTexture(iconTexture)
+      candidate.immune:SetShown(immunity)
+      candidate.cooldown:SetCooldownFromDurationObject(durationObject)
+      candidate:SetShown(button:IsShown())
+      return
+    end
+  end
+end
+
+function MV.TryAndUpdateDRStateFromTray(tray, frame)
+  if MV.IsNil(tray) or not frame then
+    return
+  end
+  local ok, children = MV.CallExternalFunction(
+    {
+      namespace = tray,
+      args = { tray },
+      functionName = "GetLayoutChildren",
+    }
+  )
+  --print("DR Tray children:", ok, #children)
+  if not ok then return end
+  pcall(function()
+    for _, child in ipairs(children) do
+      if not child:GetCategory() then break end
+      CheckTrayButton(child, frame)
+    end
+  end)
+end
 
 local function SetTrayButtonIcon(button, candidate)
   button:ClearAllPoints()

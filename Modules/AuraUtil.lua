@@ -116,10 +116,10 @@ local function ApplyAuraCooldown(btn, unit, auraData)
     )
     if ok then
       cd:Show()
-      return
+      --return
     end
   end
-  ok, result = MV.CallExternalFunction(
+  --[[   ok, result = MV.CallExternalFunction(
     {
       namespace = cd,
       functionName = "SetCooldownFromExpirationTime",
@@ -129,7 +129,7 @@ local function ApplyAuraCooldown(btn, unit, auraData)
   )
   if ok then
     cd:Show()
-  end
+  end ]]
 end
 
 local function SetAuraTexture(btn, auraData)
