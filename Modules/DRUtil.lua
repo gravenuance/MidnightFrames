@@ -10,7 +10,7 @@ local ENEMY_DR_ORDER = {
   [0] = "root",
 }
 
-MV.DRFallback = false
+MV.DRFallback = true
 MV.DRSize = 5
 MV.DRStartIndex = 2
 
@@ -23,34 +23,45 @@ local CATEGORY_ICON = {
   root = "Interface\\Icons\\Spell_Nature_StrangleVines",
 }
 
+local function SetSafeButton(candidate, icon, immunity, startTime)
+  candidate.icon:SetTexture(icon)
+  candidate.immune:SetShown(immunity)
+  local ok, err = MV.CallExternalFunction({
+    namespace = candidate.cooldown,
+    functionName = "SetCooldown",
+    args = { candidate.cooldown, startTime, 16 * 1000 },
+    argumentValidators = { MV.IsTable, MV.IsNumber, MV.IsNumber }
+  })
+  if ok then
+    candidate.cooldown:SetShowCountdownNumbers(true)
+    candidate:Show()
+    print("Set DR Button from tray.")
+  else
+    print("Error setting DR Button from tray:", err)
+  end
+end
+
 local function CheckTrayButton(button, frame)
-  --if not MV.IsButton(button) then return end
-  --if not MV.IsTexture(button.Icon) then return end
-  print("Checking button")
   local iconTexture = button.Icon and button.Icon:GetTexture()
   local immunity = button.ImmunityIndicator and button.ImmunityIndicator:IsShown()
-  local duration = button.Cooldown and button.Cooldown:GetCooldownDuration()
-  local now = GetTime()
-  local durationObject = MV.CreateDurationObject(now, duration)
+  local cooldown = button.Cooldown
+  if not cooldown.MV_Hooked then
+    cooldown.MV_Hooked = true
+    cooldown:HookScript("OnHide", function() if button.MV_Button then MV.ResetButton(button.MV_Button) end end)
+  end
+  local startTime = GetTime()
   local candidate
   if button.MV_Button then
     candidate = button.MV_Button
-    candidate.icon:SetTexture(iconTexture)
-    candidate.immune:SetShown(immunity)
-    candidate.cooldown:SetCooldownFromDurationObject(durationObject)
-    candidate:SetShown(button:IsShown())
+    SetSafeButton(candidate, iconTexture, immunity, startTime)
     return
   end
   for i = MV.DRStartIndex, MV.DRSize do
     candidate = frame.otherContainer.icons and frame.otherContainer.icons[i]
     if candidate and not candidate.categoryTable then
-      candidate:SetShown(button:IsShown())
       candidate.categoryTable = button
       button.MV_Button = candidate
-      candidate.icon:SetTexture(iconTexture)
-      candidate.immune:SetShown(immunity)
-      candidate.cooldown:SetCooldownFromDurationObject(durationObject)
-      candidate:SetShown(button:IsShown())
+      SetSafeButton(candidate, iconTexture, immunity, startTime)
       return
     end
   end
@@ -67,12 +78,10 @@ function MV.TryAndUpdateDRStateFromTray(tray, frame)
       functionName = "GetLayoutChildren",
     }
   )
-  --print("DR Tray children:", ok, #children)
   if not ok then return end
   pcall(function()
     for _, child in ipairs(children) do
-      if not child:GetCategory() then break end
-      CheckTrayButton(child, frame)
+      if child:GetCategory() then CheckTrayButton(child, frame) end
     end
   end)
 end
@@ -92,7 +101,6 @@ end
 
 local function SetTrayButtons(button, frame)
   if not button or not frame then return end
-  --if not button:IsShown() then return end
   if button.MV_Button then
     MV.MoveBlizzardButton(button, button.MV_Button)
     return
@@ -101,7 +109,7 @@ local function SetTrayButtons(button, frame)
   for i = MV.DRStartIndex, MV.DRSize do
     candidate = frame.otherContainer.icons and frame.otherContainer.icons[i]
     if candidate and not candidate.categoryTable then
-      candidate:SetShown(button:IsShown())
+      candidate:SetShown(true)
       candidate.categoryTable = button
       button.MV_Button = candidate
       SetTrayButtonIcon(button, candidate)
@@ -124,8 +132,7 @@ function MV.TryAndUpdateDRStateFromHooks(tray, frame)
   if not ok then return end
   pcall(function()
     for _, child in ipairs(children) do
-      if not child:GetCategory() then break end
-      SetTrayButtons(child, frame)
+      if child:GetCategory() then SetTrayButtons(child, frame) end
     end
   end)
 end
@@ -211,6 +218,16 @@ local function SetButtons(frame)
   end
 end
 
+function MV.ResetButton(button)
+  if button and button.categoryTable then
+    if button.categoryTable.MV_Button then
+      button.categoryTable.MV_Button = nil
+    end
+    button.categoryTable = nil
+    button:Hide()
+  end
+end
+
 function MV.ResetDR(frame)
   if MV.IsTable(frame.categories) then
     wipe(frame.categories)
@@ -218,13 +235,7 @@ function MV.ResetDR(frame)
   if frame.otherContainer then
     for i = MV.DRStartIndex, MV.DRSize do
       local candidate = frame.otherContainer.icons[i]
-      if candidate.categoryTable then
-        if candidate.categoryTable.MV_Button then
-          candidate.categoryTable.MV_Button = nil
-        end
-        candidate.categoryTable = nil
-        candidate:Hide()
-      end
+      MV.ResetButton(candidate)
     end
   end
 end

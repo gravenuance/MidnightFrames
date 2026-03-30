@@ -104,7 +104,7 @@ local function CreateGenericButton(parent, index)
   -- Cooldown
   btn.cooldown = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
   btn.cooldown:SetAllPoints(btn)
-  btn.cooldown:Hide()
+  --btn.cooldown:Hide()
   btn:Hide()
   return btn
 end
