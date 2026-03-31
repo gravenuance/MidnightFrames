@@ -27,13 +27,12 @@ local function SetSafeButton(candidate, icon, immunity, startTime)
   if candidate.icon and icon then
     candidate.icon:SetTexture(icon)
   end
-  if candidate.immune then
-    MV.CallExternalFunction({
-      namespace = candidate.immune,
-      functionName = "SetShown",
-      args = { candidate.immune, immunity },
-      argumentValidators = { MV.IsTable, MV.IsBoolean }
-    })
+  if candidate.border then
+    if immunity then
+      candidate.border:SetVertexColor(1, 0, 0, 1)
+    else
+      candidate.border:SetVertexColor(0, 1, 0, 1)
+    end
   end
   local ok, err = MV.CallExternalFunction({
     namespace = candidate.cooldown,
@@ -150,10 +149,10 @@ end
 local function SetButtonIcon(button, icon, showCountdown, isImmune)
   if button.icon and icon then
     button.icon:SetTexture(icon)
-    if button.immune and isImmune then
-      button.immune:Show()
+    if button.border and isImmune then
+      button.border:SetVertexColor(1, 0, 0, 1)
     else
-      button.immune:Hide()
+      button.border:SetVertexColor(0, 1, 0, 1)
     end
   end
 
