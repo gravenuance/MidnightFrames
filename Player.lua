@@ -14,7 +14,6 @@ local playerFrame = MV.CreateUnitFrame({
 })
 RegisterUnitWatch(playerFrame)
 
--- Center power label on health bar
 local power
 if playerFrame.health then
   power = playerFrame.health:CreateFontString(nil, "OVERLAY")

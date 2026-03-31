@@ -101,7 +101,7 @@ local DEFAULT_FILTERS = {
     ["PLAYER|RAID_IN_COMBAT"] = true,
   },
 
-  arena = { -- testing all of them
+  arena = {
     ["HARMFUL|IMPORTANT"] = true,
     ["HELPFUL|IMPORTANT"] = true,
     ["HARMFUL|CROWD_CONTROL"] = true,
@@ -159,7 +159,6 @@ local UNIT_LABELS = {
   raid   = "Raid",
 }
 
--- Public accessor for other files
 function MV.GetUnitFilters(unit)
   if not MV_DB or not MV_DB.filters then
     return {}
@@ -265,7 +264,6 @@ function MV.InitConfigAndOptions()
     boss   = {},
   }
 
-  -- Apply defaults for any missing filter on each unit
   for unit, defaults in pairs(DEFAULT_FILTERS) do
     MV_DB.filters[unit] = MV_DB.filters[unit] or {}
     for filter, val in pairs(defaults) do

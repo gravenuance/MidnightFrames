@@ -162,7 +162,7 @@ local function SetArenaFrame(index)
     end
   end
 
-  local function HookDR(frame, shouldHook)
+  local function HookDR(frame)
     if not MV.DRFallback then return end
 
     local member = unitFrame
@@ -259,7 +259,7 @@ local function SetArenaFrame(index)
         SetMemberFrame(index)
         MV.UpdateTrinket(arenaFrame, true)
         MV.ResetDR(arenaFrame)
-        HookDR(arenaFrame, MV.DRFallback)
+        HookDR(arenaFrame)
       end
     elseif event == "UNIT_AURA" then
       MV.UpdateAuras(arenaFrame)
@@ -268,7 +268,6 @@ local function SetArenaFrame(index)
     elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
       if not MV.DRFallback then
         if unitFrame and unitFrame.SpellDiminishStatusTray then
-          --print("DR Updated from tray for " .. unit)
           MV.TryAndUpdateDRStateFromTray(unitFrame.SpellDiminishStatusTray, arenaFrame)
         end
       end

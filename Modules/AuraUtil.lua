@@ -116,20 +116,8 @@ local function ApplyAuraCooldown(btn, unit, auraData)
     )
     if ok then
       cd:Show()
-      --return
     end
   end
-  --[[   ok, result = MV.CallExternalFunction(
-    {
-      namespace = cd,
-      functionName = "SetCooldownFromExpirationTime",
-      args = { cd, auraData.duration, auraData.expirationTime },
-      argumentValidators = { MV.IsTable, MV.IsNumber, MV.IsNumber }
-    }
-  )
-  if ok then
-    cd:Show()
-  end ]]
 end
 
 local function SetAuraTexture(btn, auraData)
@@ -152,18 +140,6 @@ local function SetAuraTexture(btn, auraData)
 end
 
 local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
-  --[[ if not C_UnitAuras
-      or not C_UnitAuras.GetUnitAuras
-      or not UnitExists(unit) then
-    for i = 1, container.maxAuras do
-      local btn = container.icons[i]
-      if btn then
-        btn:Hide()
-        if btn.cooldown then btn.cooldown:Hide() end
-      end
-    end
-    return
-  end ]]
   if not MV.UnitExists(unit) then
     for i = 1, container.maxAuras do
       local btn = container.icons[i]

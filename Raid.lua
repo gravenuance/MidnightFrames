@@ -44,7 +44,6 @@ local function CreateRaidFrame(index)
   local unit = "raid" .. index
   local name = baseName .. index
 
-  -- Set up frames
   local raidFrame = MV.CreateUnitFrame({
     name       = name,
     unit       = unit,

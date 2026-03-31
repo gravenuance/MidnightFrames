@@ -9,10 +9,6 @@ local MAX_AURAS = 4
 local blizzContainerName = "BossTargetFrameContainer"
 local blizzFrameBase = "Boss"
 
-------------------------------------------------------------------------
--- Boss frame creation
-------------------------------------------------------------------------
-
 local function SetBossFrame(index)
   local unit = "boss" .. index
   local name = baseName .. index

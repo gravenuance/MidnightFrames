@@ -12,13 +12,11 @@ local function IsSecretSafe(value)
   return result == true
 end
 
--- Optional: stricter guard just for unit tokens
 local function IsSecretUnit(unit)
   return type(unit) == "string" and IsSecretSafe(unit)
 end
 
 function MV.IsNil(value)
-  -- Secret values are considered non-nil but "hands off"
   if IsSecretSafe(value) then
     return false
   end
@@ -35,7 +33,6 @@ function MV.IsOfType(expectedType, value)
   return true
 end
 
--- Derived helpers
 function MV.IsNumber(value)
   return MV.IsOfType("number", value)
 end
@@ -82,10 +79,10 @@ function MV.IsTexture(value)
   return MV.IsOfObjectType("Texture", value)
 end
 
---@args can be nil
---@argumentValidators can be nil
---@namespace can be nil
---@params.functionName cannot be nil
+--@params.args can be nil
+--@params.argumentValidators can be nil
+--@params.namespace can be nil, accepts a table or userdata
+--@params.functionName cannot be nil, must be a string
 function MV.CallExternalFunction(params)
   local namespace = params.namespace
   local argumentValidators = params.argumentValidators
