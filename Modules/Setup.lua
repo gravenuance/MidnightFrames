@@ -22,29 +22,6 @@ local function CreateAuraButton(parent, index)
   btn.cooldown:SetAllPoints(btn)
   btn.cooldown:Hide()
 
-  -- Tooltip handlers
-  btn:SetScript("OnEnter", function(self)
-    if not self.unit or not self.auraInstanceID or GameTooltip:IsForbidden() then
-      return
-    end
-    MV.CallExternalFunction(
-      {
-        namespace = GameTooltip,
-        functionName = "SetOwner",
-        args = { GameTooltip, self, "ANCHOR_BOTTOMRIGHT" },
-        argumentValidators = { MV.IsUserData, MV.IsUserData, MV.IsString }
-      }
-    )
-    MV.CallExternalFunction(
-      {
-        namespace = GameTooltip,
-        functionName = "SetUnitAuraByAuraInstanceID",
-        args = { GameTooltip, self.unit, self.auraInstanceID },
-        argumentValidators = { MV.IsUserData, MV.IsString, MV.IsNumber }
-      }
-    )
-  end)
-
   btn:SetScript("OnLeave", function()
     if GameTooltip:IsForbidden() then return end
     GameTooltip:Hide()
@@ -243,28 +220,10 @@ function MV.CreateUnitFrame(params)
 
   f:SetScript("OnEnter", function(self)
     self.mouseoverBorder:Show()
-
-    if GameTooltip:IsForbidden() then return end
-
-    MV.CallExternalFunction({
-      namespace = GameTooltip,
-      functionName = "SetOwner",
-      args = { GameTooltip, self, "ANCHOR_BOTTOMRIGHT" },
-      argumentValidators = { MV.IsUserData, MV.IsUserData, MV.IsString }
-    })
-
-    MV.CallExternalFunction({
-      namespace = GameTooltip,
-      functionName = "SetUnit",
-      args = { GameTooltip, self.unit },
-      argumentValidators = { MV.IsUserData, MV.IsString }
-    })
   end)
 
   f:SetScript("OnLeave", function(self)
     self.mouseoverBorder:Hide()
-    if GameTooltip:IsForbidden() then return end
-    GameTooltip:Hide()
   end)
 
   -- Aura container
