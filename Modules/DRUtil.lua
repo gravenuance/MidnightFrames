@@ -24,12 +24,21 @@ local CATEGORY_ICON = {
 }
 
 local function SetSafeButton(candidate, icon, immunity, startTime)
-  candidate.icon:SetTexture(icon)
-  candidate.immune:SetShown(immunity)
+  if candidate.icon and icon then
+    candidate.icon:SetTexture(icon)
+  end
+  if candidate.immune then
+    MV.CallExternalFunction({
+      namespace = candidate.immune,
+      functionName = "SetShown",
+      args = { candidate.immune, immunity },
+      argumentValidators = { MV.IsTable, MV.IsBoolean }
+    })
+  end
   local ok, err = MV.CallExternalFunction({
     namespace = candidate.cooldown,
     functionName = "SetCooldown",
-    args = { candidate.cooldown, startTime * 1000, 16 * 1000 },
+    args = { candidate.cooldown, startTime, 16 },
     argumentValidators = { MV.IsTable, MV.IsNumber, MV.IsNumber }
   })
   if ok then
@@ -39,15 +48,12 @@ local function SetSafeButton(candidate, icon, immunity, startTime)
       args = { candidate.cooldown, true },
       argumentValidators = { MV.IsTable, MV.IsBoolean }
     })
-
-    print("Set DR Button from tray.")
   end
   candidate:Show()
 end
 
 local function CheckTrayButton(button, frame)
   local iconTexture = button.Icon and button.Icon:GetTexture()
-  local immunity = button.ImmunityIndicator and button.ImmunityIndicator:IsShown()
   local cooldown = button.Cooldown
   if not cooldown.MV_Hooked then
     cooldown.MV_Hooked = true
@@ -57,7 +63,7 @@ local function CheckTrayButton(button, frame)
   local candidate
   if button.MV_Button then
     candidate = button.MV_Button
-    SetSafeButton(candidate, iconTexture, immunity, startTime)
+    SetSafeButton(candidate, iconTexture, true, startTime)
     return
   end
   for i = MV.DRStartIndex, MV.DRSize do
@@ -65,7 +71,7 @@ local function CheckTrayButton(button, frame)
     if candidate and not candidate.categoryTable then
       candidate.categoryTable = button
       button.MV_Button = candidate
-      SetSafeButton(candidate, iconTexture, immunity, startTime)
+      SetSafeButton(candidate, iconTexture, false, startTime)
       return
     end
   end
