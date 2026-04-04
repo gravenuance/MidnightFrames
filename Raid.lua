@@ -185,7 +185,6 @@ local function CreateRaidFrame(index)
         MV.TryAndUpdateDRStateFromLOC(raidFrame, arg2)
       end
     elseif event == "ARENA_OPPONENT_UPDATE" then
-      print(arg1, arg2)
       MV.UpdateOrbs(raidFrame, arg1)
     end
   end)
