@@ -218,6 +218,18 @@ function MV.CreateUnitFrame(params)
     f.roleIcon:Hide()
   end
 
+  if horizontal then
+    f.orbIcon = CreateFrame("Frame", name .. "OrbIcon", f)
+    f.orbIcon:SetPoint("LEFT", f, "RIGHT", 10, 0)
+    f.orbIcon:SetSize(iconSize, iconSize)
+    f.orbIcon:SetFrameStrata("MEDIUM")
+    f.orbIcon:SetFrameLevel(f.absorb:GetFrameLevel() + 1)
+    f.orbIcon.icon = f.orbIcon:CreateTexture(nil, "ARTWORK")
+    f.orbIcon.icon:SetAllPoints(f.orbIcon)
+    f.orbIcon.icon:SetAtlas("UI-LFG-RoleIcon-Leader", true)
+    f.orbIcon:Hide()
+  end
+
   f:SetScript("OnEnter", function(self)
     self.mouseoverBorder:Show()
   end)

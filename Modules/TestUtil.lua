@@ -56,6 +56,9 @@ function MV.ToggleTestMode(kind, on)
       if f then
         if f.UpdateVisibility then f:UpdateVisibility() end
         SetTestIcons(f, MV_RaidTestMode)
+        if f.orbIcon then
+          f.orbIcon:SetShown(MV_RaidTestMode)
+        end
       end
     end
   end

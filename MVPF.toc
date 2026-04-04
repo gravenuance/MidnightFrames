@@ -8,6 +8,7 @@
 
 Modules/SecureUtil.lua
 Modules/DurationUtil.lua
+Modules/ObjectiveUtil.lua
 Modules/ArenaUtil.lua
 Modules/Setup.lua
 Modules/AuraUtil.lua

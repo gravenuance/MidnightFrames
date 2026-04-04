@@ -121,6 +121,31 @@ local function CreateRaidFrame(index)
   raidFrame:RegisterEvent("LOSS_OF_CONTROL_ADDED")
   raidFrame:RegisterEvent("LOSS_OF_CONTROL_UPDATE")
 
+  -- Objective update
+  raidFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
+
+  local function OnReset()
+    MV_RaidTestMode = false
+    UpdateVisibility()
+    if MV.UnitExists(unit) then
+      MV.ApplyClassColor(raidFrame)
+      MV.UpdateHealthBar(raidFrame)
+      MV.UpdateAbsorbBar(raidFrame)
+      MV.UpdateAuras(raidFrame)
+      MV.UpdateTrinket(raidFrame, true)
+      MV.UpdateRoleIcon(raidFrame, MV_RaidTestMode)
+      MV.UpdateTargetHighlight(raidFrame)
+      MV.UpdateTargetIndicator(raidFrame)
+      MV.ResetDR(raidFrame)
+      MV.SetRangeAlpha(raidFrame)
+    else
+      MV.ResetTargetIndicator(raidFrame)
+    end
+    if raidFrame.unit == "raid1" then
+      LayoutRaidFrames()
+      DisableRaidFrames()
+    end
+  end
 
   raidFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"
@@ -128,25 +153,9 @@ local function CreateRaidFrame(index)
         or event == "ZONE_CHANGED_NEW_AREA"
         or event == "UNIT_OTHER_PARTY_CHANGED"
     then
-      MV_RaidTestMode = false
-      UpdateVisibility()
-      if MV.UnitExists(unit) then
-        MV.ApplyClassColor(raidFrame)
-        MV.UpdateHealthBar(raidFrame)
-        MV.UpdateAbsorbBar(raidFrame)
-        MV.UpdateAuras(raidFrame)
-        MV.UpdateTrinket(raidFrame, true)
-        MV.UpdateRoleIcon(raidFrame, MV_RaidTestMode)
-        MV.UpdateTargetHighlight(raidFrame)
-        MV.UpdateTargetIndicator(raidFrame)
-        MV.ResetDR(raidFrame)
-        MV.SetRangeAlpha(raidFrame)
-      else
-        MV.ResetTargetIndicator(raidFrame)
-      end
-      if raidFrame.unit == "raid1" then
-        LayoutRaidFrames()
-        DisableRaidFrames()
+      OnReset()
+      if event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
+        MV.ResetOrbs(raidFrame)
       end
     end
     if MV_RaidTestMode or (MV.NumGroupMembers < 6 or MV.NumGroupMembers == 0) then return end
@@ -175,6 +184,9 @@ local function CreateRaidFrame(index)
       if arg1 == unit then
         MV.TryAndUpdateDRStateFromLOC(raidFrame, arg2)
       end
+    elseif event == "ARENA_OPPONENT_UPDATE" then
+      print(arg1, arg2)
+      MV.UpdateOrbs(raidFrame, arg1)
     end
   end)
   RaidFrames[index] = raidFrame
