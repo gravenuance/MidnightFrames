@@ -28,6 +28,16 @@ dispel[Enum.DispelType.Enrage]  = CreateColor(243 / 255, 95 / 255, 245 / 255, 1)
 
 local dispelTypeCurve
 
+-- Validator arrays are static per call site; hoisted so GetAndUpdateAuras
+-- (run on every UNIT_AURA, per aura button, per frame) doesn't reallocate
+-- them on every single call.
+local CURVE_SETTYPE_VALIDATORS  = { MV.IsUserData, MV.IsNumber }
+local CURVE_ADDPOINT_VALIDATORS = { MV.IsUserData, MV.IsNumber, MV.IsTable }
+local DISPEL_COLOR_VALIDATORS   = { MV.IsString, MV.IsNumber, MV.IsUserData }
+local AURA_DURATION_VALIDATORS  = { MV.IsString, MV.IsNumber }
+local SET_COOLDOWN_VALIDATORS   = { MV.IsTable, MV.IsUserData, MV.IsBoolean }
+local GET_UNIT_AURAS_VALIDATORS = { MV.IsString, MV.IsString, MV.IsNumber, MV.IsNumber, MV.IsNumber }
+
 local function GetDispelTypeCurve()
   if not MV.IsNil(dispelTypeCurve) then
     return dispelTypeCurve
@@ -43,7 +53,7 @@ local function GetDispelTypeCurve()
     namespace = curve,
     functionName = "SetType",
     args = { curve, curveType },
-    argumentValidators = { MV.IsUserData, MV.IsNumber }
+    argumentValidators = CURVE_SETTYPE_VALIDATORS
   })
   if not ok then return end
   for _, dispelIndex in next, Enum.DispelType do
@@ -53,7 +63,7 @@ local function GetDispelTypeCurve()
         namespace = curve,
         functionName = "AddPoint",
         args = { curve, dispelIndex, color },
-        argumentValidators = { MV.IsUserData, MV.IsNumber, MV.IsTable }
+        argumentValidators = CURVE_ADDPOINT_VALIDATORS
       })
     end
   end
@@ -80,7 +90,7 @@ local function ApplyAuraDispelBorderColor(btn, unit, auraData)
     namespace = C_UnitAuras,
     functionName = "GetAuraDispelTypeColor",
     args = { unit, auraData.auraInstanceID, curve },
-    argumentValidators = { MV.IsString, MV.IsNumber, MV.IsUserData }
+    argumentValidators = DISPEL_COLOR_VALIDATORS
   })
   if ok then
     border:SetVertexColor(dispelTypeColor:GetRGBA())
@@ -102,7 +112,7 @@ local function ApplyAuraCooldown(btn, unit, auraData)
       namespace = C_UnitAuras,
       functionName = "GetAuraDuration",
       args = { unit, auraData.auraInstanceID },
-      argumentValidators = { MV.IsString, MV.IsNumber }
+      argumentValidators = AURA_DURATION_VALIDATORS
     }
   )
   if ok then
@@ -111,7 +121,7 @@ local function ApplyAuraCooldown(btn, unit, auraData)
         namespace = cd,
         functionName = "SetCooldownFromDurationObject",
         args = { cd, result, true },
-        argumentValidators = { MV.IsTable, MV.IsUserData, MV.IsBoolean },
+        argumentValidators = SET_COOLDOWN_VALIDATORS,
       }
     )
     if ok then
@@ -161,7 +171,7 @@ local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
       namespace = C_UnitAuras,
       functionName = "GetUnitAuras",
       args = { unit, filter, maxRemaining, Enum.UnitAuraSortRule.BigDefensive, Enum.UnitAuraSortDirection.Reverse },
-      argumentValidators = { MV.IsString, MV.IsString, MV.IsNumber, MV.IsNumber, MV.IsNumber }
+      argumentValidators = GET_UNIT_AURAS_VALIDATORS
     })
     if ok and MV.IsTable(result) then
       local count = #result
@@ -181,10 +191,17 @@ local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
         break
       end
 
-      if seen[auraData.auraInstanceID] then
-        break
-      else
-        seen[auraData.auraInstanceID] = true
+      -- auraInstanceID isn't expected to ever be secret, but table-key
+      -- indexing by a secret value is unreliable, so guard it anyway rather
+      -- than assume: if it can't be trusted, just skip the dedup check for
+      -- this aura instead of risking a bad break/no-op.
+      local instanceID = auraData.auraInstanceID
+      if MV.IsNumber(instanceID) and not MV.IsSecretSafe(instanceID) then
+        if seen[instanceID] then
+          break
+        else
+          seen[instanceID] = true
+        end
       end
 
       if auraData.icon then

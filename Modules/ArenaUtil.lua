@@ -5,17 +5,16 @@ local function IsMatchEngaged()
     namespace = C_PvP,
     functionName = "GetActiveMatchState",
   })
-  if not ok then return false end
+  if not ok or MV.IsSecretSafe(result) then return false end
   return result == Enum.PvPMatchState.Engaged
 end
 
 local function IsMatchComplete()
-  local _, isComplete = MV.CallExternalFunction({
+  local ok, isComplete = MV.CallExternalFunction({
     namespace = C_PvP,
     functionName = "IsMatchComplete",
   })
-  if MV.IsBoolean(isComplete) and isComplete then return true end
-  return false
+  return MV.SafeBoolResult(ok, isComplete)
 end
 
 function MV.IsInArena()
@@ -23,12 +22,12 @@ function MV.IsInArena()
     namespace = C_PvP,
     functionName = "IsMatchConsideredArena",
   })
-  if ok and asArena then
-    local _, isActive = MV.CallExternalFunction({
+  if MV.SafeBoolResult(ok, asArena) then
+    local ok2, isActive = MV.CallExternalFunction({
       namespace = C_PvP,
       functionName = "IsMatchActive",
     })
-    if MV.IsBoolean(isActive) and isActive then return true end
+    if MV.SafeBoolResult(ok2, isActive) then return true end
     if IsMatchComplete() then return true end
   end
   return false
@@ -48,8 +47,8 @@ function MV.IsUnit(index)
     args = { index },
     argumentValidators = { MV.IsNumber }
   })
-  if not ok then return false end
-  return specID and specID > 0, specID
+  if not ok or MV.IsSecretSafe(specID) then return false end
+  return MV.IsNumber(specID) and specID > 0, specID
 end
 
 function MV.GetOpponentSpecAndClass(index)
@@ -72,13 +71,7 @@ function MV.GetArenaSize()
   local ok, totalSpecs = MV.CallExternalFunction({
     functionName = "GetNumArenaOpponentSpecs"
   })
-  if ok and MV.IsNumber(totalSpecs) and totalSpecs > 0 then
-    return totalSpecs
-  end
-  ok, totalSpecs = MV.CallExternalFunction({
-    functionName = "GetNumArenaOpponentSpecs"
-  })
-  if ok and MV.IsNumber(totalSpecs) and totalSpecs > 0 then
+  if ok and MV.IsNumber(totalSpecs) and not MV.IsSecretSafe(totalSpecs) and totalSpecs > 0 then
     return totalSpecs
   end
 
@@ -96,6 +89,6 @@ function MV.IsInStealth(idx, unit)
     args = { unit },
     argumentValidators = { MV.IsString }
   })
-  if not ok then return false end
+  if not ok or MV.IsSecretSafe(unitExists) then return false end
   return not unitExists and MV.IsArenaInProgress()
 end

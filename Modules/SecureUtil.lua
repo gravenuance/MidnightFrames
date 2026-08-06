@@ -1,6 +1,10 @@
 local _, MV = ...
 
-local function IsSecretSafe(value)
+-- Secret values can't be compared or boolean-tested by insecure code (a
+-- boolean-typed secret can't even be truthiness-tested), so any value that
+-- came back from an external API must be run through this before it's used
+-- in ==, <, >, arithmetic, string concatenation, or as a table key.
+function MV.IsSecretSafe(value)
   if not issecretvalue then
     return false
   end
@@ -11,9 +15,20 @@ local function IsSecretSafe(value)
   end
   return result == true
 end
+local IsSecretSafe = MV.IsSecretSafe
 
 local function IsSecretUnit(unit)
   return type(unit) == "string" and IsSecretSafe(unit)
+end
+
+-- Resolves an (ok, value) pair from CallExternalFunction that is expected to
+-- be a plain boolean into a definite true/false, refusing to truthiness-test
+-- the raw value directly (unsafe if it turns out to be a secret boolean).
+function MV.SafeBoolResult(ok, value)
+  if not ok or IsSecretSafe(value) then
+    return false
+  end
+  return value == true
 end
 
 function MV.IsNil(value)
@@ -79,6 +94,10 @@ function MV.IsTexture(value)
   return MV.IsOfObjectType("Texture", value)
 end
 
+-- Shared, never-mutated stand-in for calls with no args, so every no-arg
+-- CallExternalFunction call doesn't allocate its own throwaway table.
+local NO_ARGS = {}
+
 --@params.args can be nil
 --@params.argumentValidators can be nil
 --@params.namespace can be nil, accepts a table or userdata
@@ -86,7 +105,7 @@ end
 function MV.CallExternalFunction(params)
   local namespace = params.namespace
   local argumentValidators = params.argumentValidators
-  local args = params.args or {}
+  local args = params.args or NO_ARGS
 
   if MV.IsNil(namespace) then
     namespace = _G
@@ -133,13 +152,7 @@ function MV.UnitExists(unit)
     args = { unit },
     argumentValidators = { MV.IsString },
   })
-  if not ok then
-    return false
-  end
-  if IsSecretSafe(result) then
-    return false
-  end
-  return result == true
+  return MV.SafeBoolResult(ok, result)
 end
 
 function MV.UnitIsDeadOrGhost(unit)
@@ -150,7 +163,7 @@ function MV.UnitIsDeadOrGhost(unit)
       argumentValidators = { MV.IsString }
     }
   )
-  return ok and result
+  return MV.SafeBoolResult(ok, result)
 end
 
 function MV.UnitIsConnected(unit)
@@ -161,7 +174,7 @@ function MV.UnitIsConnected(unit)
       argumentValidators = { MV.IsString }
     }
   )
-  return ok and result
+  return MV.SafeBoolResult(ok, result)
 end
 
 function MV.UnitIsPlayer(unit)
@@ -172,7 +185,7 @@ function MV.UnitIsPlayer(unit)
       argumentValidators = { MV.IsString }
     }
   )
-  return ok and result
+  return MV.SafeBoolResult(ok, result)
 end
 
 function MV.UnitReaction(unit)
@@ -194,7 +207,7 @@ function MV.UnitIsUnit(unit)
       argumentValidators = { MV.IsString, MV.IsString }
     }
   )
-  return ok and result
+  return MV.SafeBoolResult(ok, result)
 end
 
 function MV.UnitCanAttack(unit)
@@ -246,11 +259,5 @@ function MV.IsUnitUnit(unit, otherUnit)
     argumentValidators = { MV.IsString, MV.IsString }
   })
 
-  if not ok then
-    return false
-  end
-  if IsSecretSafe(result) then
-    return false
-  end
-  return result == true
+  return MV.SafeBoolResult(ok, result)
 end

@@ -78,7 +78,7 @@ local function CreateGenericButton(parent, index)
 end
 
 local function LayoutPvPButtons(container, horizontal)
-  for i = 1, 5 do
+  for i = 1, container.maxSlots do
     local btn = container.icons[i] or CreateGenericButton(container, i)
     container.icons[i] = btn
     btn.container = container
@@ -114,6 +114,7 @@ function MV.CreateUnitFrame(params)
   local pvpIcons   = params.pvpIcons or false
   local horizontal = params.horizontal or false
   local roleIcon   = params.roleIcon or false
+  local otherSlots = params.otherSlots or MV.DRSize
 
   local f          = CreateFrame("Button", name, UIParent, "SecureUnitButtonTemplate")
   f:SetSize(size[1], size[2])
@@ -257,7 +258,8 @@ function MV.CreateUnitFrame(params)
   if pvpIcons then
     f.otherContainer = CreateFrame("Frame", name .. "Buttons", f)
     f.otherContainer.iconSize = iconSize
-    totalHeight = iconSize * 5 + 2 * (5 - 1)
+    f.otherContainer.maxSlots = otherSlots
+    totalHeight = iconSize * otherSlots + 2 * (otherSlots - 1)
     if horizontal then
       f.otherContainer:SetSize(totalHeight, 28)
       f.otherContainer:SetPoint("RIGHT", f, "LEFT", -10, 0)

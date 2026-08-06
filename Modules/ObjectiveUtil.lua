@@ -5,6 +5,9 @@ function MV.UpdateOrbs(frame, unitId, identifier)
   if frame.unit == "player" or MV.IsUnitUnit(frame.unit, "player") then
     return
   end
+  if MV.IsSecretSafe(unitId) or MV.IsSecretSafe(identifier) then
+    return
+  end
   if MV.IsUnitUnit(frame.unit, unitId) and identifier == "seen" then
     frame.orbIcon:SetShown(true)
     frame.bgUnit = unitId

@@ -150,6 +150,21 @@ local FILTER_LABELS = {
   ["PLAYER|RAID_IN_COMBAT"] = "HoTs and DoTs",
 }
 
+-- Explicit display order. Do not iterate DEFAULT_FILTERS/unitDefaults with
+-- pairs() for anything user-facing: Lua does not guarantee hash-table
+-- iteration order, so the panel would reshuffle groups/checkboxes on reload.
+local FILTER_ORDER = {
+  "HARMFUL|IMPORTANT",
+  "HELPFUL|IMPORTANT",
+  "HARMFUL|CROWD_CONTROL",
+  "HELPFUL|CROWD_CONTROL",
+  "HARMFUL|BIG_DEFENSIVE",
+  "HELPFUL|BIG_DEFENSIVE",
+  "HARMFUL|EXTERNAL_DEFENSIVE",
+  "HELPFUL|EXTERNAL_DEFENSIVE",
+  "PLAYER|RAID_IN_COMBAT",
+}
+
 local UNIT_LABELS = {
   player = "Player",
   target = "Target",
@@ -158,6 +173,8 @@ local UNIT_LABELS = {
   boss   = "Boss",
   raid   = "Raid",
 }
+
+local UNIT_ORDER = { "player", "target", "party", "arena", "boss", "raid" }
 
 function MV.GetUnitFilters(unit)
   if not MV_DB or not MV_DB.filters then
@@ -170,79 +187,87 @@ local _ = LibStub("AceAddon-3.0")
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
-local function BuildOptionsTable()
+local TEST_MODE_TOGGLES = {
+  { key = "target", var = "MV_TargetTestMode", label = "Toggle Target Test Mode" },
+  { key = "party",  var = "MV_PartyTestMode",  label = "Toggle Party Test Mode" },
+  { key = "arena",  var = "MV_ArenaTestMode",  label = "Toggle Arena Test Mode" },
+  { key = "boss",   var = "MV_BossTestMode",   label = "Toggle Boss Test Mode" },
+  { key = "raid",   var = "MV_RaidTestMode",   label = "Toggle Raid Test Mode" },
+}
+
+local function BuildGeneralArgs()
   local args = {
-    desc = { type = "description", order = 0, name = "Select which aura filters to track per frame." }
+    desc = {
+      type = "description",
+      order = 1,
+      name = "Select which aura filters to track per frame using the tabs above. " ..
+          "Use the buttons below to preview frame layouts without needing a live target.",
+    },
+    testingHeader = { type = "header", name = "Testing", order = 2 },
   }
 
-
-  args.testingHeader = { type = "header", name = "Testing", order = 7 }
-  args.testing = {
-    type = "group",
-    name = "Testing",
-    inline = true,
-    order = 8,
-    args = {
-      testTarget = {
-        type = "execute",
-        name = "Toggle Target Test Mode",
-        func = function() MV.ToggleTestMode("target", not MV_TargetTestMode) end
-      },
-      testParty  = {
-        type = "execute",
-        name = "Toggle Party Test Mode",
-        func = function() MV.ToggleTestMode("party", not MV_PartyTestMode) end
-      },
-      testArena  = {
-        type = "execute",
-        name = "Toggle Arena Test Mode",
-        func = function() MV.ToggleTestMode("arena", not MV_ArenaTestMode) end
-      },
-      testBoss   = {
-        type = "execute",
-        name = "Toggle Boss Test Mode",
-        func = function() MV.ToggleTestMode("boss", not MV_BossTestMode) end
-      },
-      testRaid   = {
-        type = "execute",
-        name = "Toggle Raid Test Mode",
-        func = function() MV.ToggleTestMode("boss", not MV_RaidTestMode) end
-      }
-    }
-  }
-
-  local order = 15
-  for unitKey, unitDefaults in pairs(DEFAULT_FILTERS) do
-    args[unitKey .. "Header"] = {
-      type = "header",
-      name = UNIT_LABELS[unitKey] or unitKey,
-      order = order
+  local order = 3
+  for _, entry in ipairs(TEST_MODE_TOGGLES) do
+    args[entry.key .. "Test"] = {
+      type = "execute",
+      name = entry.label,
+      order = order,
+      func = function() MV.ToggleTestMode(entry.key, not _G[entry.var]) end,
     }
     order = order + 1
+  end
 
-    for filterKey in pairs(unitDefaults) do
-      args[unitKey .. filterKey] = {
-        type = "toggle",
-        name = FILTER_LABELS[filterKey] or filterKey,
-        order = order,
-        get = function()
-          local f = MV_DB.filters[unitKey]
-          return f and f[filterKey]
-        end,
-        set = function(_, val)
-          MV_DB.filters[unitKey] = MV_DB.filters[unitKey] or {}
-          MV_DB.filters[unitKey][filterKey] = val
-        end
-      }
-      order = order + 1
-    end
-    order = order + 4
+  return args
+end
+
+local function BuildFilterArgs(unitKey)
+  local args = {}
+  local order = 1
+  for _, filterKey in ipairs(FILTER_ORDER) do
+    args[filterKey] = {
+      type = "toggle",
+      name = FILTER_LABELS[filterKey] or filterKey,
+      order = order,
+      get = function()
+        local f = MV_DB.filters[unitKey]
+        return f and f[filterKey]
+      end,
+      set = function(_, val)
+        MV_DB.filters[unitKey] = MV_DB.filters[unitKey] or {}
+        MV_DB.filters[unitKey][filterKey] = val
+      end,
+    }
+    order = order + 1
+  end
+  return args
+end
+
+local function BuildOptionsTable()
+  local args = {
+    general = {
+      type = "group",
+      name = "General",
+      order = 1,
+      args = BuildGeneralArgs(),
+    },
+  }
+
+  local order = 2
+  for _, unitKey in ipairs(UNIT_ORDER) do
+    args[unitKey] = {
+      type = "group",
+      name = UNIT_LABELS[unitKey] or unitKey,
+      order = order,
+      args = BuildFilterArgs(unitKey),
+    }
+    order = order + 1
   end
 
   return {
     type = "group",
     name = "Auras",
-    args = args
+    childGroups = "tab",
+    args = args,
   }
 end
 
@@ -262,6 +287,7 @@ function MV.InitConfigAndOptions()
     party  = {},
     arena  = {},
     boss   = {},
+    raid   = {},
   }
 
   for unit, defaults in pairs(DEFAULT_FILTERS) do

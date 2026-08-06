@@ -26,6 +26,7 @@ local function CreatePartyFrame(index)
 
   local function UpdateVisibility()
     if MV_PartyTestMode then
+      if InCombatLockdown() then return end
       UnregisterUnitWatch(partyFrame)
       partyFrame.IsDriverRegistered = false
       partyFrame:Show()
@@ -116,7 +117,7 @@ local function CreatePartyFrame(index)
       MV.UpdateTrinket(partyFrame, true)
     elseif event == "UNIT_TARGET" then
       MV.UpdateTargetIndicator(partyFrame)
-    elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATED" then
+    elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATE" then
       if arg1 == unit then
         MV.TryAndUpdateDRStateFromLOC(partyFrame, arg2)
       end

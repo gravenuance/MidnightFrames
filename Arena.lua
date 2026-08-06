@@ -47,7 +47,10 @@ local function UpdateBorder(owner)
 end
 
 local function GetClassColors(class)
-  local c = class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
+  if not MV.IsString(class) or MV.IsSecretSafe(class) then
+    return
+  end
+  local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
   if c then
     return c.r, c.g, c.b
   end
@@ -81,8 +84,10 @@ local function SetArenaFrame(index)
     local _, class = MV.GetOpponentSpecAndClass(index)
     if class then
       local r, g, b = GetClassColors(class)
-      arenaFrame.health:SetStatusBarColor(r, g, b, alpha or regAlpha)
-      return true
+      if r then
+        arenaFrame.health:SetStatusBarColor(r, g, b, alpha or regAlpha)
+        return true
+      end
     end
     return false
   end
@@ -127,6 +132,7 @@ local function SetArenaFrame(index)
 
   local function UpdateVisibility()
     if MV_ArenaTestMode then
+      if InCombatLockdown() then return end
       arenaFrame:Show()
       return
     end
@@ -236,6 +242,7 @@ local function SetArenaFrame(index)
       MV.UpdateTargetHighlight(arenaFrame, MV_ArenaTestMode)
       MV.ResetDR(arenaFrame)
       MV.SetRangeAlpha(arenaFrame)
+      HookDR(arenaFrame)
     end
     if not MV.IsInArena() then return end
     if (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
@@ -267,9 +274,7 @@ local function SetArenaFrame(index)
       MV.UpdateTrinket(arenaFrame, true)
     elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
       if not MV.DRFallback then
-        if unitFrame and unitFrame.SpellDiminishStatusTray then
-          MV.TryAndUpdateDRStateFromTray(unitFrame.SpellDiminishStatusTray, arenaFrame)
-        end
+        MV.TryAndUpdateDRStateFromEvent(arenaFrame, arg2)
       end
     end
   end)

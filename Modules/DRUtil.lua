@@ -11,7 +11,11 @@ local ENEMY_DR_ORDER = {
 }
 
 MV.DRFallback = true
-MV.DRSize = 5
+-- Default otherContainer slot count: 1 trinket slot + 1 slot per tracked DR
+-- category (stun/incap/disorient/silence/disarm/root). CreateUnitFrame()
+-- callers can override via params.otherSlots (see Raid.lua, which uses a
+-- smaller count to cut down on the 20x widget overhead of the full set).
+MV.DRSize = 7
 MV.DRStartIndex = 2
 
 local CATEGORY_ICON = {
@@ -62,13 +66,18 @@ local function CheckTrayButton(button, frame)
   local candidate
   if button.MV_Button then
     candidate = button.MV_Button
-    SetSafeButton(candidate, iconTexture, true, startTime)
+    -- Re-application while the previous window is still running means this
+    -- is a stacked/reduced hit, not a fresh one; treat it as the "immune" state.
+    local wasActive = candidate.lastStartTime and (candidate.lastStartTime + ENEMY_DR_RESET_TIME) > startTime
+    candidate.lastStartTime = startTime
+    SetSafeButton(candidate, iconTexture, wasActive, startTime)
     return
   end
-  for i = MV.DRStartIndex, MV.DRSize do
+  for i = MV.DRStartIndex, #frame.otherContainer.icons do
     candidate = frame.otherContainer.icons and frame.otherContainer.icons[i]
     if candidate and not candidate.categoryTable then
       candidate.categoryTable = button
+      candidate.lastStartTime = startTime
       button.MV_Button = candidate
       SetSafeButton(candidate, iconTexture, false, startTime)
       return
@@ -91,57 +100,6 @@ function MV.TryAndUpdateDRStateFromTray(tray, frame)
   pcall(function()
     for _, child in ipairs(children) do
       if child:GetCategory() then CheckTrayButton(child, frame) end
-    end
-  end)
-end
-
-local function SetTrayButtonIcon(button, candidate)
-  button:ClearAllPoints()
-  button:SetPoint("CENTER", candidate, "CENTER", 0, 0)
-  button:SetSize(MV.DefaultSize, MV.DefaultSize)
-  local baseLevel = candidate:GetFrameLevel()
-  button:SetFrameStrata(candidate:GetFrameStrata())
-  button:SetFrameLevel(baseLevel + 1)
-  if button.Icon then
-    button.Icon:SetAlpha(0.8)
-    button.Icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-  end
-end
-
-local function SetTrayButtons(button, frame)
-  if not button or not frame then return end
-  if button.MV_Button then
-    MV.MoveBlizzardButton(button, button.MV_Button)
-    return
-  end
-  local candidate
-  for i = MV.DRStartIndex, MV.DRSize do
-    candidate = frame.otherContainer.icons and frame.otherContainer.icons[i]
-    if candidate and not candidate.categoryTable then
-      candidate:SetShown(true)
-      candidate.categoryTable = button
-      button.MV_Button = candidate
-      SetTrayButtonIcon(button, candidate)
-      return
-    end
-  end
-end
-
-function MV.TryAndUpdateDRStateFromHooks(tray, frame)
-  if MV.IsNil(tray) or not frame then
-    return
-  end
-  local ok, children = MV.CallExternalFunction(
-    {
-      namespace = tray,
-      args = { tray },
-      functionName = "GetLayoutChildren",
-    }
-  )
-  if not ok then return end
-  pcall(function()
-    for _, child in ipairs(children) do
-      if child:GetCategory() then SetTrayButtons(child, frame) end
     end
   end)
 end
@@ -210,7 +168,7 @@ local function SetButtons(frame)
         button.duration = duration
         SetButtonIcon(button, icon, showCountdown, isImmune)
       else
-        for i = MV.DRStartIndex, MV.DRSize do
+        for i = MV.DRStartIndex, #frame.otherContainer.icons do
           local candidate = frame.otherContainer.icons[i]
           if not candidate.categoryTable then
             button = candidate
@@ -242,7 +200,7 @@ function MV.ResetDR(frame)
     wipe(frame.categories)
   end
   if frame.otherContainer then
-    for i = MV.DRStartIndex, MV.DRSize do
+    for i = MV.DRStartIndex, #frame.otherContainer.icons do
       local candidate = frame.otherContainer.icons[i]
       MV.ResetButton(candidate)
     end
@@ -265,6 +223,19 @@ local function IsTracked(category)
   return false
 end
 
+-- SetButtons (shared by both DR paths) does raw arithmetic/comparison on
+-- categoryTable.startTime/.duration (startTime + duration <= now). Those are
+-- exactly the kind of cooldown/debuff data that can come back secret, so
+-- anything populated from an external event payload must be sanitized
+-- before it reaches that table - never store a value there that hasn't been
+-- confirmed non-secret first.
+local function SanitizeBoolean(value, default)
+  if MV.IsSecretSafe(value) then
+    return default
+  end
+  return value
+end
+
 function MV.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
   if not MV.IsTable(trackerInfo) and not MV.IsUserData(trackerInfo) then
     return
@@ -276,6 +247,7 @@ function MV.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
     print(ok, info)
     return
   end
+  if MV.IsSecretSafe(category) then return end
   category = IsTracked(category)
   if not MV.IsString(category) then return end
   local startTime = GetAndInterpretField(trackerInfo, "startTime")
@@ -283,12 +255,13 @@ function MV.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
   local isImmune = GetAndInterpretField(trackerInfo, "isImmune")
   local showCountdown = GetAndInterpretField(trackerInfo, "showCountdown")
 
-  if MV.IsNumber(startTime) and MV.IsNumber(duration) then
+  if MV.IsNumber(startTime) and MV.IsNumber(duration)
+      and not MV.IsSecretSafe(startTime) and not MV.IsSecretSafe(duration) then
     frame.categories[category] = {
       duration = duration,
       startTime = startTime,
-      isImmune = isImmune,
-      showCountdown = showCountdown,
+      isImmune = SanitizeBoolean(isImmune, false),
+      showCountdown = SanitizeBoolean(showCountdown, true),
       icon = CATEGORY_ICON[category]
     }
   end

@@ -1,8 +1,5 @@
 local _, MV = ...
 
-MV.frameByGUID = {}
-MV.GUIDByFrame = {}
-
 local arenaUnits = {}
 for i = 1, 5 do
   arenaUnits[i] = "arena" .. i
@@ -23,29 +20,26 @@ for i = 1, 5 do
   bossUnits[i] = "boss" .. i
 end
 
+-- UnitIsUnit is already safe to call with a nonexistent unit token (returns
+-- false), so there is no need to pay for a separate UnitExists check first.
 local function CheckUnits(unit, otherUnit)
-  if MV.UnitExists(unit) then
-    if MV.IsUnitUnit(unit, otherUnit) then
-      return true
-    end
-  end
-  return false
+  return MV.IsUnitUnit(unit, otherUnit)
 end
 
 local function GetTargetUnit(frame)
   local targetUnit = frame.unit .. "target"
   local tempUnit
-  local _, numGroup = MV.CallExternalFunction({
-    functionName = "GetNumGroupMembers"
-  })
-  if MV.IsNumber(numGroup) and numGroup > 5 then
+  -- MV.NumGroupMembers is kept fresh by Party.lua's roster-change handler;
+  -- reuse it instead of paying for another wrapped GetNumGroupMembers call.
+  local numGroup = MV.NumGroupMembers
+  if numGroup > 5 then
     for index = 1, numGroup do
       tempUnit = raidUnits[index]
       if CheckUnits(tempUnit, targetUnit) then
         return tempUnit
       end
     end
-  elseif MV.IsNumber(numGroup) and numGroup <= 5 then
+  elseif numGroup > 0 then
     for index = 1, numGroup - 1 do
       tempUnit = partyUnits[index]
       if CheckUnits(tempUnit, targetUnit) then
@@ -115,49 +109,6 @@ function MV.UpdateTargetIndicator(frame)
   end
 
   frame.targetFrame = targetFrame
-end
-
-function MV.UpdateTargetIndicatorByGUID(frame)
-  if frame.unit == "player" or MV.IsUnitUnit(frame.unit, "player") then
-    return
-  end
-  MV.ResetTargetIndicator(frame)
-  local targetUnit = frame.unit .. "target"
-  local ok, targetGUID = MV.CallExternalFunction({
-    functionName = "UnitGUID",
-    args = { targetUnit },
-  })
-  if not ok then
-    print(ok, targetGUID)
-  end
-  local targetFrame
-  if MV.IsUnitUnit(targetUnit, "player") then
-    targetFrame = GetTargetByUnit("player")
-  else
-    targetFrame = MV.frameByGUID[targetGUID]
-  end
-  if not targetFrame then
-    return
-  end
-  targetFrame.targeted = targetFrame.targeted or {}
-  targetFrame.targeted[frame.unit] = true
-  targetFrame.innerBorder:SetShown(true)
-
-  frame.targetFrame = targetFrame
-end
-
-function MV.SetUnitGUID(frame)
-  if MV.UnitExists(frame.unit) then
-    local ok, unitGUID = MV.CallExternalFunction({
-      functionName = "UnitGUID",
-      args = { frame.unit },
-    })
-    if not ok then
-      print(ok, unitGUID)
-      return
-    end
-    MV.frameByGUID[unitGUID] = frame
-  end
 end
 
 function MV.ResetTargetIndicator(frame)

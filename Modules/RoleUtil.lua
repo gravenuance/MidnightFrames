@@ -7,8 +7,8 @@ function MV.UpdateRoleIcon(frame, testFlag)
     args = { frame.unit },
     argumentValidators = { MV.IsString }
   })
-  if not ok then
-    print(ok, "Result:", role)
+  if not ok or MV.IsSecretSafe(role) then
+    frame.roleIcon:Hide()
     return
   end
   if role == "TANK" then

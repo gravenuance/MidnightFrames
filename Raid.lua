@@ -55,11 +55,40 @@ local function CreateRaidFrame(index)
     pvpIcons   = true,
     horizontal = true,
     roleIcon   = true,
+    -- 1 trinket + 4 DR slots. Raid frames are the widest-fanned-out frame
+    -- type (up to MV.MaxRaidMembers instances), so this trades a bit of
+    -- simultaneous DR-category visibility for meaningfully fewer eagerly
+    -- created widgets; arena/party keep the full MV.DRSize default.
+    otherSlots = 5,
   })
   raidFrame.IsDriverRegistered = false
+  raidFrame.HasBroadcastEvents = false
+
+  -- PLAYER_TARGET_CHANGED / PLAYER_SOFT_ENEMY_CHANGED / PLAYER_SOFT_INTERACT_CHANGED /
+  -- SPELL_RANGE_CHECK_UPDATE are broadcast (non-unit) events: with up to 20 raid
+  -- frames all listening, every firing re-runs their handlers in every frame,
+  -- including ones with no live unit. Only keep them registered on frames whose
+  -- unit currently exists, re-evaluated whenever the roster changes.
+  local function UpdateBroadcastEvents()
+    local shouldRegister = MV.UnitExists(unit)
+    if shouldRegister and not raidFrame.HasBroadcastEvents then
+      raidFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+      raidFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
+      raidFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
+      raidFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+      raidFrame.HasBroadcastEvents = true
+    elseif not shouldRegister and raidFrame.HasBroadcastEvents then
+      raidFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+      raidFrame:UnregisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
+      raidFrame:UnregisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
+      raidFrame:UnregisterEvent("SPELL_RANGE_CHECK_UPDATE")
+      raidFrame.HasBroadcastEvents = false
+    end
+  end
 
   local function UpdateVisibility()
     if MV_RaidTestMode then
+      if InCombatLockdown() then return end
       UnregisterUnitWatch(raidFrame)
       raidFrame.IsDriverRegistered = false
       raidFrame:Show()
@@ -102,13 +131,9 @@ local function CreateRaidFrame(index)
   raidFrame:RegisterUnitEvent("UNIT_AURA", unit)
   raidFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
 
-  -- PLAYER HIGHLIGHT
-  raidFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-
-  -- RANGE CHECK
-  raidFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
-  raidFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
-  raidFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+  -- PLAYER HIGHLIGHT + RANGE CHECK
+  -- (PLAYER_TARGET_CHANGED / PLAYER_SOFT_ENEMY_CHANGED / PLAYER_SOFT_INTERACT_CHANGED /
+  -- SPELL_RANGE_CHECK_UPDATE are registered conditionally by UpdateBroadcastEvents)
 
   -- TRINKET
   raidFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
@@ -127,6 +152,7 @@ local function CreateRaidFrame(index)
   local function OnReset()
     MV_RaidTestMode = false
     UpdateVisibility()
+    UpdateBroadcastEvents()
     if MV.UnitExists(unit) then
       MV.ApplyClassColor(raidFrame)
       MV.UpdateHealthBar(raidFrame)
