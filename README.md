@@ -33,6 +33,6 @@ I intend to maintain this UI for as long as I continue playing; I’ve grown too
 
 * Better DR, when Blizzard starts allowing access to the required functions.
 
-* Better range tracking.
+* ~~Better range tracking.~~
   
-* Raid frames.
+* ~~Raid frames.~~
