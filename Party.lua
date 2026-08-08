@@ -1,5 +1,7 @@
 local _, MF      = ...
 
+MF.HideBlizzardFrame("CompactPartyFrame")
+
 local baseName   = "MF_Party"
 
 MF_PartyTestMode = false

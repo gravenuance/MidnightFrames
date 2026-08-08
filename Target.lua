@@ -1,5 +1,7 @@
 local _, MF = ...
 
+MF.HideBlizzardFrame("TargetFrame")
+
 MF_TargetTestMode = false
 
 local IsDriverRegistered = false

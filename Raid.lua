@@ -1,6 +1,8 @@
 local _, MF         = ...
 
-local defaultFrames = _G["CompactRaidFrameContainer"]
+MF.HideBlizzardFrame("CompactRaidFrameContainer")
+MF.HideBlizzardFrame("CompactRaidFrameManager")
+
 local baseName      = "MF_Raid"
 
 MF_RaidTestMode     = false
@@ -107,17 +109,6 @@ local function CreateRaidFrame(index)
 
   function raidFrame:UpdateVisibility() UpdateVisibility() end
 
-  local function DisableRaidFrames()
-    if defaultFrames and defaultFrames:IsShown() then
-      defaultFrames:UnregisterAllEvents()
-      if InCombatLockdown() then
-        defaultFrames:SetAlpha(0)
-      else
-        defaultFrames:Hide()
-      end
-    end
-  end
-
   --DEFAULTS
   raidFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
   raidFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -169,7 +160,6 @@ local function CreateRaidFrame(index)
     end
     if raidFrame.unit == "raid1" then
       LayoutRaidFrames()
-      DisableRaidFrames()
     end
   end
 

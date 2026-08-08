@@ -1,5 +1,7 @@
 local _, MF = ...
 
+MF.HideBlizzardFrame("PlayerFrame")
+
 local MAX_AURAS = 4
 
 local playerFrame = MF.CreateUnitFrame({
