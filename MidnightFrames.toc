@@ -1,4 +1,4 @@
-## Interface: 120000, 120001, 120005, 120100
+## Interface: 120000, 120001, 120005, 120007, 120100
 ## Title: MidnightFrames
 ## Notes: Custom frames for almost everything.
 ## IconTexture: Interface\AddOns\MidnightFrames\Media\icon
@@ -31,4 +31,3 @@ Target.lua
 Arena.lua
 Boss.lua
 Raid.lua
-
