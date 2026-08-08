@@ -80,12 +80,15 @@ end
 
 function MF.SetRangeAlpha(frame)
   if not frame:IsShown() then return end
-  local r, g, b = frame.health:GetStatusBarColor()
-  if r == nil then return end
+  -- Used to read the bar's current color back via GetStatusBarColor() and
+  -- re-apply it with a different alpha. Health color is now a gradient
+  -- texture (MF.ApplyHealthGradient), which has no equivalent "read it back"
+  -- operation, so alpha is now a fully separate concern from color - just
+  -- fade the whole textured bar via SetAlpha instead.
   local inRange = CheckMultiSpellRange(frame.unit)
   if inRange then
-    frame.health:SetStatusBarColor(r, g, b, MF.RegAlpha)
+    frame.health:SetAlpha(MF.RegAlpha)
   else
-    frame.health:SetStatusBarColor(r, g, b, MF.OtherAlpha)
+    frame.health:SetAlpha(MF.OtherAlpha)
   end
 end

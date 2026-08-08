@@ -51,6 +51,19 @@ targetFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
 targetFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
 targetFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
+-- RAID TARGET MARK
+targetFrame:RegisterEvent("RAID_TARGET_UPDATE")
+
+-- CAST INDICATOR
+targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", targetFrame.unit)
+targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", targetFrame.unit)
+targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", targetFrame.unit)
+targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", targetFrame.unit)
+targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", targetFrame.unit)
+targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", targetFrame.unit)
+targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE", targetFrame.unit)
+targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", targetFrame.unit)
+
 
 targetFrame:SetScript("OnEvent", function(_, event, arg1)
   if (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
@@ -67,6 +80,8 @@ targetFrame:SetScript("OnEvent", function(_, event, arg1)
       MF.UpdateAbsorbBar(targetFrame)
       MF.UpdateAuras(targetFrame)
       MF.SetRangeAlpha(targetFrame)
+      MF.UpdateRaidMark(targetFrame)
+      MF.UpdateCastIndicator(targetFrame)
     end
   elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
     MF.UpdateHealthBar(targetFrame)
@@ -76,5 +91,17 @@ targetFrame:SetScript("OnEvent", function(_, event, arg1)
     MF.SetRangeAlpha(targetFrame)
   elseif event == "UNIT_AURA" then
     MF.UpdateAuras(targetFrame)
+  elseif event == "RAID_TARGET_UPDATE" then
+    MF.UpdateRaidMark(targetFrame)
+  elseif event == "UNIT_SPELLCAST_START"
+      or event == "UNIT_SPELLCAST_STOP"
+      or event == "UNIT_SPELLCAST_FAILED"
+      or event == "UNIT_SPELLCAST_INTERRUPTED"
+      or event == "UNIT_SPELLCAST_CHANNEL_START"
+      or event == "UNIT_SPELLCAST_CHANNEL_STOP"
+      or event == "UNIT_SPELLCAST_INTERRUPTIBLE"
+      or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE"
+  then
+    MF.UpdateCastIndicator(targetFrame)
   end
 end)

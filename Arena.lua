@@ -85,7 +85,8 @@ local function SetArenaFrame(index)
     if class then
       local r, g, b = GetClassColors(class)
       if r then
-        arenaFrame.health:SetStatusBarColor(r, g, b, alpha or regAlpha)
+        MF.ApplyHealthGradient(arenaFrame.health, r, g, b)
+        arenaFrame.health:SetAlpha(alpha or regAlpha)
         return true
       end
     end
@@ -231,6 +232,19 @@ local function SetArenaFrame(index)
   --DR
   arenaFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit)
 
+  --RAID TARGET MARK
+  arenaFrame:RegisterEvent("RAID_TARGET_UPDATE")
+
+  --CAST INDICATOR
+  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
+  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
+  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
+  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit)
+  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
+  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
+  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE", unit)
+  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", unit)
+
   arenaFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
       MF_ArenaTestMode = false
@@ -242,6 +256,8 @@ local function SetArenaFrame(index)
       MF.UpdateTargetHighlight(arenaFrame, MF_ArenaTestMode)
       MF.ResetDR(arenaFrame)
       MF.SetRangeAlpha(arenaFrame)
+      MF.UpdateRaidMark(arenaFrame)
+      MF.UpdateCastIndicator(arenaFrame)
       HookDR(arenaFrame)
     end
     if not MF.IsInArena() then return end
@@ -266,6 +282,8 @@ local function SetArenaFrame(index)
         SetMemberFrame(index)
         MF.UpdateTrinket(arenaFrame, true)
         MF.ResetDR(arenaFrame)
+        MF.UpdateRaidMark(arenaFrame)
+        MF.UpdateCastIndicator(arenaFrame)
         HookDR(arenaFrame)
       end
     elseif event == "UNIT_AURA" then
@@ -276,6 +294,18 @@ local function SetArenaFrame(index)
       if not MF.DRFallback then
         MF.TryAndUpdateDRStateFromEvent(arenaFrame, arg2)
       end
+    elseif event == "RAID_TARGET_UPDATE" then
+      MF.UpdateRaidMark(arenaFrame)
+    elseif event == "UNIT_SPELLCAST_START"
+        or event == "UNIT_SPELLCAST_STOP"
+        or event == "UNIT_SPELLCAST_FAILED"
+        or event == "UNIT_SPELLCAST_INTERRUPTED"
+        or event == "UNIT_SPELLCAST_CHANNEL_START"
+        or event == "UNIT_SPELLCAST_CHANNEL_STOP"
+        or event == "UNIT_SPELLCAST_INTERRUPTIBLE"
+        or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE"
+    then
+      MF.UpdateCastIndicator(arenaFrame)
     end
   end)
 end

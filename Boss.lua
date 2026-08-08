@@ -79,7 +79,7 @@ local function SetBossFrame(index)
     local container = _G[blizzContainerName]
     if not container then return end
     if container.MF_Hooked then return end
-    if container.UpdateShownState then
+    if container.SetShown then
       hooksecurefunc(container, "SetShown", ForceHide)
     end
     for i = 1, MAX_BOSS_FRAMES do
@@ -111,6 +111,19 @@ local function SetBossFrame(index)
   bossFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   bossFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
+  -- RAID TARGET MARK
+  bossFrame:RegisterEvent("RAID_TARGET_UPDATE")
+
+  -- CAST INDICATOR
+  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
+  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
+  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
+  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit)
+  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
+  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
+  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE", unit)
+  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", unit)
+
 
   bossFrame:SetScript("OnEvent", function(self, event)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
@@ -118,6 +131,19 @@ local function SetBossFrame(index)
       UpdateVisibility()
       SetupBossHooks()
       MF.ResetTargetIndicator(bossFrame)
+      -- Mirrors Arena/Party/Raid.lua: if the boss unit already exists here
+      -- (e.g. /reload or reconnect mid-pull), populate the frame immediately
+      -- instead of leaving it blank until the next native UNIT_HEALTH/
+      -- UNIT_AURA/etc. event happens to fire.
+      if MF.UnitExists(unit) then
+        MF.ApplyClassColor(bossFrame)
+        MF.UpdateHealthBar(bossFrame)
+        MF.UpdateAbsorbBar(bossFrame)
+        MF.UpdateAuras(bossFrame)
+        MF.SetRangeAlpha(bossFrame)
+        MF.UpdateRaidMark(bossFrame)
+        MF.UpdateCastIndicator(bossFrame)
+      end
     end
     if not MF.InInstance() then return end
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
@@ -130,8 +156,21 @@ local function SetBossFrame(index)
       MF.UpdateTargetHighlight(bossFrame, MF_BossTestMode)
     elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" then
       MF.ApplyClassColor(bossFrame)
+      MF.UpdateRaidMark(bossFrame)
     elseif event == "UNIT_AURA" then
       MF.UpdateAuras(bossFrame)
+    elseif event == "RAID_TARGET_UPDATE" then
+      MF.UpdateRaidMark(bossFrame)
+    elseif event == "UNIT_SPELLCAST_START"
+        or event == "UNIT_SPELLCAST_STOP"
+        or event == "UNIT_SPELLCAST_FAILED"
+        or event == "UNIT_SPELLCAST_INTERRUPTED"
+        or event == "UNIT_SPELLCAST_CHANNEL_START"
+        or event == "UNIT_SPELLCAST_CHANNEL_STOP"
+        or event == "UNIT_SPELLCAST_INTERRUPTIBLE"
+        or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE"
+    then
+      MF.UpdateCastIndicator(bossFrame)
     end
   end)
 end

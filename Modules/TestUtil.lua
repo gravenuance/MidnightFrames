@@ -2,6 +2,9 @@ local _, MF = ...
 
 local testAura = "Interface\\Icons\\Spell_Nature_Rejuvenation"
 local testTrinket = "Interface\\Icons\\INV_Misc_PocketWatch_01"
+local testCast = "Interface\\Icons\\Spell_Fire_Fireball02"
+
+local TEST_RAID_MARK = 8 -- Skull
 
 local function SetTestIcons(frame, test)
   frame.auraContainer.icons[1]:SetShown(test)
@@ -9,6 +12,19 @@ local function SetTestIcons(frame, test)
   if frame.otherContainer then
     frame.otherContainer.icons[1]:SetShown(test)
     frame.otherContainer.icons[1].icon:SetTexture(testTrinket)
+  end
+  if frame.raidMark then
+    if test then
+      SetRaidTargetIconTexture(frame.raidMark.icon, TEST_RAID_MARK)
+    end
+    frame.raidMark:SetShown(test)
+  end
+  if frame.castIndicator then
+    if test then
+      frame.castIndicator.icon:SetTexture(testCast)
+      frame.castIndicator.border:SetVertexColor(0, 1, 0, 1)
+    end
+    frame.castIndicator:SetShown(test)
   end
   frame.innerBorder:SetShown(test)
   frame.outerBorder:SetShown(test)

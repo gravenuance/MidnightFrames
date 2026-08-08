@@ -139,12 +139,16 @@ function MF.CallExternalFunction(params)
       end
     end
   end
-  local ok, r1, r2, r3, r4, r5, r6 = pcall(func, unpack(args))
+  -- 9 slots to cover UnitCastingInfo (name, text, texture, startTimeMS,
+  -- endTimeMS, isTradeSkill, castID, notInterruptible, spellID) - the widest
+  -- return signature any wrapper in this file needs; existing callers with
+  -- fewer return values are unaffected.
+  local ok, r1, r2, r3, r4, r5, r6, r7, r8, r9 = pcall(func, unpack(args))
   if not ok then
     local errorMessage = r1
     return false, errorMessage
   end
-  return true, r1, r2, r3, r4, r5, r6
+  return true, r1, r2, r3, r4, r5, r6, r7, r8, r9
 end
 
 function MF.UnitExists(unit)
@@ -522,6 +526,35 @@ function MF.IsSpellInRange(id, unit)
     functionName = "IsSpellInRange",
     args = { id, unit },
     argumentValidators = { MF.IsNumber, MF.IsString }
+  })
+end
+
+function MF.GetRaidTargetIndex(unit)
+  return MF.CallExternalFunction({
+    functionName = "GetRaidTargetIndex",
+    args = { unit },
+    argumentValidators = { MF.IsString }
+  })
+end
+
+-- name, text, texture, startTimeMS, endTimeMS, isTradeSkill, castID,
+-- notInterruptible, spellID - the 9-value signature CallExternalFunction's
+-- r1..r9 capture above exists specifically to carry in full.
+function MF.UnitCastingInfo(unit)
+  return MF.CallExternalFunction({
+    functionName = "UnitCastingInfo",
+    args = { unit },
+    argumentValidators = { MF.IsString }
+  })
+end
+
+-- name, text, texture, startTimeMS, endTimeMS, isTradeSkill, notInterruptible,
+-- spellID - one fewer field than UnitCastingInfo (no castID).
+function MF.UnitChannelInfo(unit)
+  return MF.CallExternalFunction({
+    functionName = "UnitChannelInfo",
+    args = { unit },
+    argumentValidators = { MF.IsString }
   })
 end
 

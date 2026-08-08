@@ -22,6 +22,8 @@ Modules/RangeUtil.lua
 Modules/TestUtil.lua
 Modules/TrinketUtil.lua
 Modules/RoleUtil.lua
+Modules/RaidMarkUtil.lua
+Modules/CastUtil.lua
 Core.lua
 Party.lua
 Player.lua

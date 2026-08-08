@@ -67,10 +67,11 @@ local function CreateRaidFrame(index)
   raidFrame.HasBroadcastEvents = false
 
   -- PLAYER_TARGET_CHANGED / PLAYER_SOFT_ENEMY_CHANGED / PLAYER_SOFT_INTERACT_CHANGED /
-  -- SPELL_RANGE_CHECK_UPDATE are broadcast (non-unit) events: with up to 20 raid
-  -- frames all listening, every firing re-runs their handlers in every frame,
-  -- including ones with no live unit. Only keep them registered on frames whose
-  -- unit currently exists, re-evaluated whenever the roster changes.
+  -- SPELL_RANGE_CHECK_UPDATE / RAID_TARGET_UPDATE are broadcast (non-unit)
+  -- events: with up to 20 raid frames all listening, every firing re-runs
+  -- their handlers in every frame, including ones with no live unit. Only
+  -- keep them registered on frames whose unit currently exists, re-evaluated
+  -- whenever the roster changes.
   local function UpdateBroadcastEvents()
     local shouldRegister = MF.UnitExists(unit)
     if shouldRegister and not raidFrame.HasBroadcastEvents then
@@ -78,12 +79,14 @@ local function CreateRaidFrame(index)
       raidFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
       raidFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
       raidFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
+      raidFrame:RegisterEvent("RAID_TARGET_UPDATE")
       raidFrame.HasBroadcastEvents = true
     elseif not shouldRegister and raidFrame.HasBroadcastEvents then
       raidFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
       raidFrame:UnregisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
       raidFrame:UnregisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
       raidFrame:UnregisterEvent("SPELL_RANGE_CHECK_UPDATE")
+      raidFrame:UnregisterEvent("RAID_TARGET_UPDATE")
       raidFrame.HasBroadcastEvents = false
     end
   end
@@ -155,6 +158,7 @@ local function CreateRaidFrame(index)
       MF.UpdateTargetIndicator(raidFrame)
       MF.ResetDR(raidFrame)
       MF.SetRangeAlpha(raidFrame)
+      MF.UpdateRaidMark(raidFrame)
     else
       MF.ResetTargetIndicator(raidFrame)
     end
@@ -202,6 +206,8 @@ local function CreateRaidFrame(index)
       end
     elseif event == "ARENA_OPPONENT_UPDATE" then
       MF.UpdateOrbs(raidFrame, arg1, arg2)
+    elseif event == "RAID_TARGET_UPDATE" then
+      MF.UpdateRaidMark(raidFrame)
     end
   end)
   RaidFrames[index] = raidFrame

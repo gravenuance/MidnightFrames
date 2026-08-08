@@ -76,6 +76,19 @@ local function CreatePartyFrame(index)
   partyFrame:RegisterEvent("LOSS_OF_CONTROL_ADDED")
   partyFrame:RegisterEvent("LOSS_OF_CONTROL_UPDATE")
 
+  -- RAID TARGET MARK
+  partyFrame:RegisterEvent("RAID_TARGET_UPDATE")
+
+  -- CAST INDICATOR
+  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
+  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
+  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
+  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit)
+  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
+  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
+  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE", unit)
+  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", unit)
+
   partyFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"
         or event == "PLAYER_ENTERING_WORLD"
@@ -96,6 +109,8 @@ local function CreatePartyFrame(index)
         MF.UpdateTargetIndicator(partyFrame)
         MF.ResetDR(partyFrame)
         MF.SetRangeAlpha(partyFrame)
+        MF.UpdateRaidMark(partyFrame)
+        MF.UpdateCastIndicator(partyFrame)
       else
         MF.ResetTargetIndicator(partyFrame)
       end
@@ -123,6 +138,18 @@ local function CreatePartyFrame(index)
       if arg1 == unit then
         MF.TryAndUpdateDRStateFromLOC(partyFrame, arg2)
       end
+    elseif event == "RAID_TARGET_UPDATE" then
+      MF.UpdateRaidMark(partyFrame)
+    elseif event == "UNIT_SPELLCAST_START"
+        or event == "UNIT_SPELLCAST_STOP"
+        or event == "UNIT_SPELLCAST_FAILED"
+        or event == "UNIT_SPELLCAST_INTERRUPTED"
+        or event == "UNIT_SPELLCAST_CHANNEL_START"
+        or event == "UNIT_SPELLCAST_CHANNEL_STOP"
+        or event == "UNIT_SPELLCAST_INTERRUPTIBLE"
+        or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE"
+    then
+      MF.UpdateCastIndicator(partyFrame)
     end
   end)
 end

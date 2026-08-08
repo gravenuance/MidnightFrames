@@ -81,18 +81,58 @@ local function GetClassColor(unit, fr, fg, fb)
   return fr or 0, fg or 0.8, fb or 0, false
 end
 
+-- Deep: darker/richer toward the back of the fill. Bright: lifted toward
+-- white at the leading edge. Same base hue throughout (class color, hostile
+-- red, whatever GetClassColor produced) - just two derived shades instead of
+-- one flat tone, for a bit of depth instead of a flat fill.
+local function DeriveGradientShades(r, g, b)
+  local deepR, deepG, deepB = r * 0.35, g * 0.35, b * 0.35
+  local brightR = r + (1 - r) * 0.55
+  local brightG = g + (1 - g) * 0.55
+  local brightB = b + (1 - b) * 0.55
+  return deepR, deepG, deepB, brightR, brightG, brightB
+end
+
+-- Alpha is deliberately NOT part of this: it used to be baked into
+-- SetStatusBarColor's 4th argument and re-read/re-applied by MF.SetRangeAlpha
+-- (RangeUtil.lua) on every range check. A gradient texture has no equivalent
+-- "read the current color back" operation, so alpha (range-in/out-of-range,
+-- prep/stealth dimming in Arena.lua) is now its own concern, applied via
+-- statusBar:SetAlpha() independently of color. See MF.SetRangeAlpha and
+-- Arena.lua's SetClassColor for the two other callers this affects.
+--
+-- CAVEAT: SetGradient's orientation parameter operates in the status bar
+-- texture's own coordinate space. Vertical frames combine
+-- SetOrientation("VERTICAL") with SetRotatesTexture(true) (see Setup.lua),
+-- and it wasn't possible to confirm against a live client whether the
+-- rotation changes which SetGradient orientation string produces a visually
+-- vertical gradient. This reads statusBar:GetOrientation() directly (the
+-- simpler, more likely mapping) - if a vertical frame's gradient renders
+-- sideways in-game, swap the two branches below.
+function MF.ApplyHealthGradient(statusBar, r, g, b)
+  if not statusBar then return end
+  local texture = statusBar:GetStatusBarTexture()
+  if not texture then return end
+
+  local deepR, deepG, deepB, brightR, brightG, brightB = DeriveGradientShades(r, g, b)
+  local orientation = statusBar:GetOrientation()
+  texture:SetGradient(orientation, CreateColor(deepR, deepG, deepB), CreateColor(brightR, brightG, brightB))
+end
+
 function MF.ApplyClassColor(frame)
   if not frame.health then return end
   local r, g, b = GetClassColor(frame.unit)
 
-  frame.health:SetStatusBarColor(r, g, b, MF.RegAlpha)
+  MF.ApplyHealthGradient(frame.health, r, g, b)
+  frame.health:SetAlpha(MF.RegAlpha)
   if frame.power then
     local dr, dg, db = r * 0.7, g * 0.7, b * 0.7
     frame.power:SetTextColor(dr, dg, db, 1)
   end
   if frame.pet then
     if frame.pet.health then
-      frame.pet.health:SetStatusBarColor(r, g, b, MF.RegAlpha)
+      MF.ApplyHealthGradient(frame.pet.health, r, g, b)
+      frame.pet.health:SetAlpha(MF.RegAlpha)
     end
   end
 end

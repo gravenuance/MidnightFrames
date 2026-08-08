@@ -74,6 +74,19 @@ playerFrame:RegisterUnitEvent("UNIT_PET", playerFrame.unit)
 -- REGISTER RANGE CHECK
 playerFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
+-- RAID TARGET MARK
+playerFrame:RegisterEvent("RAID_TARGET_UPDATE")
+
+-- CAST INDICATOR
+playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", playerFrame.unit)
+playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", playerFrame.unit)
+playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", playerFrame.unit)
+playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", playerFrame.unit)
+playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", playerFrame.unit)
+playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", playerFrame.unit)
+playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE", playerFrame.unit)
+playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", playerFrame.unit)
+
 
 
 playerFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
@@ -91,6 +104,8 @@ playerFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     MF.UpdatePowerLabel(playerFrame)
     MF.ResetTargetIndicator(playerFrame)
     MF.UpdateRoleIcon(playerFrame, false)
+    MF.UpdateRaidMark(playerFrame)
+    MF.UpdateCastIndicator(playerFrame)
   elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
     if arg1 == playerFrame.unit then
       UpdateHealthBar()
@@ -112,5 +127,17 @@ playerFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     MF.UpdateTargetHighlight(petFrame, false)
   elseif event == "SPELL_RANGE_CHECK_UPDATE" then
     MF.RegisterRangeSpell(arg1)
+  elseif event == "RAID_TARGET_UPDATE" then
+    MF.UpdateRaidMark(playerFrame)
+  elseif event == "UNIT_SPELLCAST_START"
+      or event == "UNIT_SPELLCAST_STOP"
+      or event == "UNIT_SPELLCAST_FAILED"
+      or event == "UNIT_SPELLCAST_INTERRUPTED"
+      or event == "UNIT_SPELLCAST_CHANNEL_START"
+      or event == "UNIT_SPELLCAST_CHANNEL_STOP"
+      or event == "UNIT_SPELLCAST_INTERRUPTIBLE"
+      or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE"
+  then
+    MF.UpdateCastIndicator(playerFrame)
   end
 end)
