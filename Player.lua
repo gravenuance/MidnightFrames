@@ -1,15 +1,15 @@
-local _, MV = ...
+local _, MF = ...
 
 local MAX_AURAS = 4
 
-local playerFrame = MV.CreateUnitFrame({
-  name = "MV_Player",
+local playerFrame = MF.CreateUnitFrame({
+  name = "MF_Player",
   unit = "player",
   unitKey = "player",
-  point = { "CENTER", UIParent, "CENTER", -MV.FrameXAlt, 0 },
-  size = { MV.SizeX, MV.SizeY },
+  point = { "CENTER", UIParent, "CENTER", -MF.FrameXAlt, 0 },
+  size = { MF.SizeX, MF.SizeY },
   maxAuras = MAX_AURAS,
-  iconSize = MV.DefaultSize,
+  iconSize = MF.DefaultSize,
   roleIcon = true,
 })
 RegisterUnitWatch(playerFrame)
@@ -25,12 +25,12 @@ if playerFrame.health then
   playerFrame.power = power
 end
 
-local petFrame = MV.CreateUnitFrame({
-  name     = "MV_PetFrame",
+local petFrame = MF.CreateUnitFrame({
+  name     = "MF_PetFrame",
   unit     = "pet",
   unitKey  = "pet",
-  point    = { "TOPLEFT", playerFrame, "TOPRIGHT", MV.PetSpace, 0 },
-  size     = { MV.PetX, MV.PetY },
+  point    = { "TOPLEFT", playerFrame, "TOPRIGHT", MF.PetSpace, 0 },
+  size     = { MF.PetX, MF.PetY },
   maxAuras = 0,
   iconSize = 0,
 })
@@ -38,11 +38,11 @@ RegisterUnitWatch(petFrame)
 playerFrame.pet = petFrame
 
 local function UpdateHealthBar()
-  MV.UpdateHealthBar(playerFrame)
+  MF.UpdateHealthBar(playerFrame)
 end
 
 local function UpdatePetHealthBar()
-  MV.UpdateHealthBar(petFrame)
+  MF.UpdateHealthBar(petFrame)
 end
 
 -- DEFAULTS
@@ -79,16 +79,16 @@ playerFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
       or event == "PLAYER_ENTERING_WORLD"
       or event == "PLAYER_ALIVE"
       or event == "ZONE_CHANGED" then
-    MV.ApplyClassColor(playerFrame)
+    MF.ApplyClassColor(playerFrame)
     UpdateHealthBar()
     UpdatePetHealthBar()
-    MV.UpdateAbsorbBar(playerFrame)
-    MV.UpdateAuras(playerFrame)
-    MV.UpdateTargetHighlight(playerFrame, false)
-    MV.UpdateTargetHighlight(petFrame, false)
-    MV.UpdatePowerLabel(playerFrame)
-    MV.ResetTargetIndicator(playerFrame)
-    MV.UpdateRoleIcon(playerFrame, false)
+    MF.UpdateAbsorbBar(playerFrame)
+    MF.UpdateAuras(playerFrame)
+    MF.UpdateTargetHighlight(playerFrame, false)
+    MF.UpdateTargetHighlight(petFrame, false)
+    MF.UpdatePowerLabel(playerFrame)
+    MF.ResetTargetIndicator(playerFrame)
+    MF.UpdateRoleIcon(playerFrame, false)
   elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
     if arg1 == playerFrame.unit then
       UpdateHealthBar()
@@ -96,19 +96,19 @@ playerFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
       UpdatePetHealthBar()
     end
   elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
-    MV.UpdateAbsorbBar(playerFrame)
+    MF.UpdateAbsorbBar(playerFrame)
   elseif event == "UNIT_PET" then
     UpdatePetHealthBar()
   elseif event == "PLAYER_DEAD" or event == "PLAYER_UNGHOST" then
     UpdateHealthBar()
   elseif (event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER") then
-    MV.UpdatePowerLabel(playerFrame)
+    MF.UpdatePowerLabel(playerFrame)
   elseif event == "UNIT_AURA" then
-    MV.UpdateAuras(playerFrame)
+    MF.UpdateAuras(playerFrame)
   elseif event == "PLAYER_TARGET_CHANGED" then
-    MV.UpdateTargetHighlight(playerFrame, false)
-    MV.UpdateTargetHighlight(petFrame, false)
+    MF.UpdateTargetHighlight(playerFrame, false)
+    MF.UpdateTargetHighlight(petFrame, false)
   elseif event == "SPELL_RANGE_CHECK_UPDATE" then
-    MV.RegisterRangeSpell(arg1)
+    MF.RegisterRangeSpell(arg1)
   end
 end)

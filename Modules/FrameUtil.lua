@@ -1,54 +1,37 @@
-local _, MV = ...
+local _, MF = ...
 
-local C_CurveUtil = C_CurveUtil
-
-MV.FrameSpace = 55
-MV.FrameX = 280
-MV.FrameXAlt = 225
-MV.SizeX = 50
-MV.SizeY = 220
-MV.SizeYAlt = 210
-MV.PetX = 20
-MV.PetY = 80
-MV.PetSpace = 5
-MV.RaidSizeX = 150
-MV.RaidSizeY = 35
-MV.NumGroupMembers = 0
+MF.FrameSpace = 55
+MF.FrameX = 280
+MF.FrameXAlt = 225
+MF.SizeX = 50
+MF.SizeY = 220
+MF.SizeYAlt = 210
+MF.PetX = 20
+MF.PetY = 80
+MF.PetSpace = 5
+MF.RaidSizeX = 150
+MF.RaidSizeY = 35
+MF.NumGroupMembers = 0
 
 local powerCurve
 local curveType = Enum.LuaCurveType.Linear
 
-function MV.UpdatePowerLabel(frame)
+function MF.UpdatePowerLabel(frame)
   if not frame.power then return end
-  if not MV.UnitExists(frame.unit) then
+  if not MF.UnitExists(frame.unit) then
     frame.power:SetText("")
     return
   end
-  if MV.IsNil(powerCurve) then
-    local ok, curve = MV.CallExternalFunction({
-      namespace = C_CurveUtil,
-      functionName = "CreateCurve"
-    }
-    )
+  if MF.IsNil(powerCurve) then
+    local ok, curve = MF.CreateCurve()
     if not ok then return end
-    ok, _ = MV.CallExternalFunction({
-      namespace = curve,
-      functionName = "SetType",
-      args = { curve, curveType },
-      argumentValidators = { MV.IsUserData, MV.IsNumber }
-    })
+    ok = MF.SetCurveType(curve, curveType)
     if not ok then return end
-    curve:AddPoint(0.0, 0)
-    curve:AddPoint(1.0, 100)
+    MF.AddCurvePoint(curve, 0.0, 0)
+    MF.AddCurvePoint(curve, 1.0, 100)
     powerCurve = curve
   end
-  local ok, power = MV.CallExternalFunction(
-    {
-      functionName = "UnitPowerPercent",
-      args = { frame.unit, nil, true, powerCurve },
-      argumentValidators = { MV.IsString, MV.IsNil, MV.IsBoolean, MV.IsUserData }
-    }
-  )
+  local ok, power = MF.UnitPowerPercent(frame.unit, powerCurve)
   if not ok or power == nil then
     frame.power:SetText("")
     return
@@ -56,7 +39,7 @@ function MV.UpdatePowerLabel(frame)
   frame.power:SetText(string.format("%.0f", power))
 end
 
-function MV.InInstance()
+function MF.InInstance()
   local _, instanceType = IsInInstance()
   return instanceType == "party" or instanceType == "raid"
 end

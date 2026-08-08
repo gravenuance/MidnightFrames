@@ -1,11 +1,11 @@
-local _, MV         = ...
+local _, MF         = ...
 
 local defaultFrames = _G["CompactRaidFrameContainer"]
-local baseName      = "MV_Raid"
+local baseName      = "MF_Raid"
 
-MV_RaidTestMode     = false
-MV.MaxRaidMembers   = 20
-MV.MustUpdate       = false
+MF_RaidTestMode     = false
+MF.MaxRaidMembers   = 20
+MF.MustUpdate       = false
 
 local RaidFrames    = {}
 
@@ -13,52 +13,52 @@ local MAX_AURAS     = 3
 
 local function LayoutRaidFrames()
   if InCombatLockdown() then
-    MV.MustUpdate = true; return
+    MF.MustUpdate = true; return
   end
   local numRaid = GetNumGroupMembers() or 0
-  if MV_RaidTestMode then numRaid = MV.MaxRaidMembers end
-  if numRaid < 6 or numRaid > MV.MaxRaidMembers then
+  if MF_RaidTestMode then numRaid = MF.MaxRaidMembers end
+  if numRaid < 6 or numRaid > MF.MaxRaidMembers then
     return
   end
 
-  local spacingY = MV.RaidSizeY + 5
+  local spacingY = MF.RaidSizeY + 5
   local startY = spacingY * math.floor(numRaid / 2)
   local shown = 0
 
   for index = 1, #RaidFrames do
     local frame = RaidFrames[index]
     local unit = frame.unit
-    if MV.UnitExists(unit) or MV_RaidTestMode then
+    if MF.UnitExists(unit) or MF_RaidTestMode then
       shown = shown + 1
 
       frame:ClearAllPoints()
       frame:SetPoint("CENTER", UIParent, "CENTER",
-        -MV.FrameX * 1.5,
+        -MF.FrameX * 1.5,
         startY - (shown - 1) * spacingY)
     end
   end
-  MV.MustUpdate = false
+  MF.MustUpdate = false
 end
 
 local function CreateRaidFrame(index)
   local unit = "raid" .. index
   local name = baseName .. index
 
-  local raidFrame = MV.CreateUnitFrame({
+  local raidFrame = MF.CreateUnitFrame({
     name       = name,
     unit       = unit,
     unitKey    = "raid",
-    point      = { "CENTER", UIParent, "CENTER", -MV.FrameX * 1.5, 0 },
-    size       = { MV.RaidSizeX, MV.RaidSizeY },
+    point      = { "CENTER", UIParent, "CENTER", -MF.FrameX * 1.5, 0 },
+    size       = { MF.RaidSizeX, MF.RaidSizeY },
     maxAuras   = MAX_AURAS,
-    iconSize   = MV.DefaultSizeSmall,
+    iconSize   = MF.DefaultSizeSmall,
     pvpIcons   = true,
     horizontal = true,
     roleIcon   = true,
     -- 1 trinket + 4 DR slots. Raid frames are the widest-fanned-out frame
-    -- type (up to MV.MaxRaidMembers instances), so this trades a bit of
+    -- type (up to MF.MaxRaidMembers instances), so this trades a bit of
     -- simultaneous DR-category visibility for meaningfully fewer eagerly
-    -- created widgets; arena/party keep the full MV.DRSize default.
+    -- created widgets; arena/party keep the full MF.DRSize default.
     otherSlots = 5,
   })
   raidFrame.IsDriverRegistered = false
@@ -70,7 +70,7 @@ local function CreateRaidFrame(index)
   -- including ones with no live unit. Only keep them registered on frames whose
   -- unit currently exists, re-evaluated whenever the roster changes.
   local function UpdateBroadcastEvents()
-    local shouldRegister = MV.UnitExists(unit)
+    local shouldRegister = MF.UnitExists(unit)
     if shouldRegister and not raidFrame.HasBroadcastEvents then
       raidFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
       raidFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
@@ -87,7 +87,7 @@ local function CreateRaidFrame(index)
   end
 
   local function UpdateVisibility()
-    if MV_RaidTestMode then
+    if MF_RaidTestMode then
       if InCombatLockdown() then return end
       UnregisterUnitWatch(raidFrame)
       raidFrame.IsDriverRegistered = false
@@ -95,7 +95,7 @@ local function CreateRaidFrame(index)
       if raidFrame.unit == "raid1" then
         LayoutRaidFrames()
       end
-    elseif (MV.NumGroupMembers < 6 or MV.NumGroupMembers == 0 or MV.NumGroupMembers > MV.MaxRaidMembers) and not InCombatLockdown() then
+    elseif (MF.NumGroupMembers < 6 or MF.NumGroupMembers == 0 or MF.NumGroupMembers > MF.MaxRaidMembers) and not InCombatLockdown() then
       UnregisterUnitWatch(raidFrame)
       raidFrame.IsDriverRegistered = false
       raidFrame:Hide()
@@ -150,22 +150,22 @@ local function CreateRaidFrame(index)
   raidFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
 
   local function OnReset()
-    MV_RaidTestMode = false
+    MF_RaidTestMode = false
     UpdateVisibility()
     UpdateBroadcastEvents()
-    if MV.UnitExists(unit) then
-      MV.ApplyClassColor(raidFrame)
-      MV.UpdateHealthBar(raidFrame)
-      MV.UpdateAbsorbBar(raidFrame)
-      MV.UpdateAuras(raidFrame)
-      MV.UpdateTrinket(raidFrame, true)
-      MV.UpdateRoleIcon(raidFrame, MV_RaidTestMode)
-      MV.UpdateTargetHighlight(raidFrame)
-      MV.UpdateTargetIndicator(raidFrame)
-      MV.ResetDR(raidFrame)
-      MV.SetRangeAlpha(raidFrame)
+    if MF.UnitExists(unit) then
+      MF.ApplyClassColor(raidFrame)
+      MF.UpdateHealthBar(raidFrame)
+      MF.UpdateAbsorbBar(raidFrame)
+      MF.UpdateAuras(raidFrame)
+      MF.UpdateTrinket(raidFrame, true)
+      MF.UpdateRoleIcon(raidFrame, MF_RaidTestMode)
+      MF.UpdateTargetHighlight(raidFrame)
+      MF.UpdateTargetIndicator(raidFrame)
+      MF.ResetDR(raidFrame)
+      MF.SetRangeAlpha(raidFrame)
     else
-      MV.ResetTargetIndicator(raidFrame)
+      MF.ResetTargetIndicator(raidFrame)
     end
     if raidFrame.unit == "raid1" then
       LayoutRaidFrames()
@@ -181,42 +181,42 @@ local function CreateRaidFrame(index)
     then
       OnReset()
       if event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
-        MV.ResetOrbs(raidFrame)
+        MF.ResetOrbs(raidFrame)
       end
     end
-    if MV_RaidTestMode or (MV.NumGroupMembers < 6 or MV.NumGroupMembers == 0) then return end
-    if MV.MustUpdate then
+    if MF_RaidTestMode or (MF.NumGroupMembers < 6 or MF.NumGroupMembers == 0) then return end
+    if MF.MustUpdate then
       LayoutRaidFrames()
     end
     if event == "PLAYER_TARGET_CHANGED" then
-      MV.UpdateTargetHighlight(raidFrame)
+      MF.UpdateTargetHighlight(raidFrame)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
-      MV.UpdateHealthBar(raidFrame)
-      MV.SetRangeAlpha(raidFrame)
+      MF.UpdateHealthBar(raidFrame)
+      MF.SetRangeAlpha(raidFrame)
     elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
-      MV.UpdateAbsorbBar(raidFrame)
-      MV.SetRangeAlpha(raidFrame)
+      MF.UpdateAbsorbBar(raidFrame)
+      MF.SetRangeAlpha(raidFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-      MV.SetRangeAlpha(raidFrame)
+      MF.SetRangeAlpha(raidFrame)
     elseif event == "UNIT_NAME_UPDATE" then
-      MV.ApplyClassColor(raidFrame)
+      MF.ApplyClassColor(raidFrame)
     elseif event == "UNIT_AURA" then
-      MV.UpdateAuras(raidFrame)
+      MF.UpdateAuras(raidFrame)
     elseif event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" or event == "ARENA_COOLDOWNS_UPDATE" then
-      MV.UpdateTrinket(raidFrame, true)
+      MF.UpdateTrinket(raidFrame, true)
     elseif event == "UNIT_TARGET" then
-      MV.UpdateTargetIndicator(raidFrame)
+      MF.UpdateTargetIndicator(raidFrame)
     elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATE" then
       if arg1 == unit then
-        MV.TryAndUpdateDRStateFromLOC(raidFrame, arg2)
+        MF.TryAndUpdateDRStateFromLOC(raidFrame, arg2)
       end
     elseif event == "ARENA_OPPONENT_UPDATE" then
-      MV.UpdateOrbs(raidFrame, arg1, arg2)
+      MF.UpdateOrbs(raidFrame, arg1, arg2)
     end
   end)
   RaidFrames[index] = raidFrame
 end
 
-for i = 1, MV.MaxRaidMembers do
+for i = 1, MF.MaxRaidMembers do
   CreateRaidFrame(i)
 end

@@ -1,4 +1,4 @@
-local _, MV = ...
+local _, MF = ...
 
 local arenaUnits = {}
 for i = 1, 5 do
@@ -23,15 +23,15 @@ end
 -- UnitIsUnit is already safe to call with a nonexistent unit token (returns
 -- false), so there is no need to pay for a separate UnitExists check first.
 local function CheckUnits(unit, otherUnit)
-  return MV.IsUnitUnit(unit, otherUnit)
+  return MF.IsUnitUnit(unit, otherUnit)
 end
 
 local function GetTargetUnit(frame)
   local targetUnit = frame.unit .. "target"
   local tempUnit
-  -- MV.NumGroupMembers is kept fresh by Party.lua's roster-change handler;
+  -- MF.NumGroupMembers is kept fresh by Party.lua's roster-change handler;
   -- reuse it instead of paying for another wrapped GetNumGroupMembers call.
-  local numGroup = MV.NumGroupMembers
+  local numGroup = MF.NumGroupMembers
   if numGroup > 5 then
     for index = 1, numGroup do
       tempUnit = raidUnits[index]
@@ -47,8 +47,8 @@ local function GetTargetUnit(frame)
       end
     end
   end
-  if MV.IsArenaInProgress() then
-    local arenaSize = MV.GetArenaSize()
+  if MF.IsArenaInProgress() then
+    local arenaSize = MF.GetArenaSize()
     if arenaSize > 0 then
       for index = 1, arenaSize do
         tempUnit = arenaUnits[index]
@@ -58,7 +58,7 @@ local function GetTargetUnit(frame)
       end
     end
   end
-  if MV.InInstance() then
+  if MF.InInstance() then
     for index = 1, 5 do
       tempUnit = bossUnits[index]
       if CheckUnits(tempUnit, targetUnit) then
@@ -71,27 +71,27 @@ end
 
 local function GetTargetByUnit(unit)
   unit = unit:gsub("^%l", string.upper)
-  local f = _G["MV_" .. unit]
+  local f = _G["MF_" .. unit]
   if f then
     return f
   end
   return nil
 end
 
-function MV.UpdateTargetIndicator(frame)
+function MF.UpdateTargetIndicator(frame)
   if not frame or not frame.unit then return end
-  if frame.unit == "player" or MV.IsUnitUnit(frame.unit, "player") then
+  if frame.unit == "player" or MF.IsUnitUnit(frame.unit, "player") then
     return
   end
 
   local targetUnit = GetTargetUnit(frame)
-  if not MV.IsString(targetUnit) then
-    MV.ResetTargetIndicator(frame)
+  if not MF.IsString(targetUnit) then
+    MF.ResetTargetIndicator(frame)
     return
   end
 
   local targetFrame
-  if MV.IsUnitUnit(targetUnit, "player") then
+  if MF.IsUnitUnit(targetUnit, "player") then
     targetFrame = GetTargetByUnit("player")
   else
     targetFrame = GetTargetByUnit(targetUnit)
@@ -111,7 +111,7 @@ function MV.UpdateTargetIndicator(frame)
   frame.targetFrame = targetFrame
 end
 
-function MV.ResetTargetIndicator(frame)
+function MF.ResetTargetIndicator(frame)
   if frame.targetFrame and frame.targetFrame.targeted then
     frame.targetFrame.targeted[frame.unit] = nil
     if not next(frame.targetFrame.targeted) then

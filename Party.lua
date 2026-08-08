@@ -1,8 +1,8 @@
-local _, MV      = ...
+local _, MF      = ...
 
-local baseName   = "MV_Party"
+local baseName   = "MF_Party"
 
-MV_PartyTestMode = false
+MF_PartyTestMode = false
 
 local MAX_AURAS  = 3
 
@@ -11,26 +11,26 @@ local function CreatePartyFrame(index)
   local name = baseName .. index
 
   -- Set up frames
-  local partyFrame = MV.CreateUnitFrame({
+  local partyFrame = MF.CreateUnitFrame({
     name     = name,
     unit     = unit,
     unitKey  = "party",
-    point    = { "CENTER", UIParent, "CENTER", -MV.FrameX - (index - 1) * MV.FrameSpace, 0 },
-    size     = { MV.SizeX, MV.SizeYAlt },
+    point    = { "CENTER", UIParent, "CENTER", -MF.FrameX - (index - 1) * MF.FrameSpace, 0 },
+    size     = { MF.SizeX, MF.SizeYAlt },
     maxAuras = MAX_AURAS,
-    iconSize = MV.DefaultSize,
+    iconSize = MF.DefaultSize,
     pvpIcons = true,
     roleIcon = true,
   })
   partyFrame.IsDriverRegistered = false
 
   local function UpdateVisibility()
-    if MV_PartyTestMode then
+    if MF_PartyTestMode then
       if InCombatLockdown() then return end
       UnregisterUnitWatch(partyFrame)
       partyFrame.IsDriverRegistered = false
       partyFrame:Show()
-    elseif (MV.NumGroupMembers > 5 or MV.NumGroupMembers == 0) and not InCombatLockdown() then
+    elseif (MF.NumGroupMembers > 5 or MF.NumGroupMembers == 0) and not InCombatLockdown() then
       UnregisterUnitWatch(partyFrame)
       partyFrame.IsDriverRegistered = false
       partyFrame:Hide()
@@ -80,46 +80,46 @@ local function CreatePartyFrame(index)
         or event == "ZONE_CHANGED_NEW_AREA"
         or event == "UNIT_OTHER_PARTY_CHANGED"
     then
-      MV.NumGroupMembers = GetNumGroupMembers() or 0
-      MV_PartyTestMode = false
+      MF.NumGroupMembers = GetNumGroupMembers() or 0
+      MF_PartyTestMode = false
       UpdateVisibility()
-      if MV.UnitExists(unit) then
-        MV.ApplyClassColor(partyFrame)
-        MV.UpdateHealthBar(partyFrame)
-        MV.UpdateAbsorbBar(partyFrame)
-        MV.UpdateAuras(partyFrame)
-        MV.UpdateTrinket(partyFrame, true)
-        MV.UpdateRoleIcon(partyFrame, MV_PartyTestMode)
-        MV.UpdateTargetHighlight(partyFrame)
-        MV.UpdateTargetIndicator(partyFrame)
-        MV.ResetDR(partyFrame)
-        MV.SetRangeAlpha(partyFrame)
+      if MF.UnitExists(unit) then
+        MF.ApplyClassColor(partyFrame)
+        MF.UpdateHealthBar(partyFrame)
+        MF.UpdateAbsorbBar(partyFrame)
+        MF.UpdateAuras(partyFrame)
+        MF.UpdateTrinket(partyFrame, true)
+        MF.UpdateRoleIcon(partyFrame, MF_PartyTestMode)
+        MF.UpdateTargetHighlight(partyFrame)
+        MF.UpdateTargetIndicator(partyFrame)
+        MF.ResetDR(partyFrame)
+        MF.SetRangeAlpha(partyFrame)
       else
-        MV.ResetTargetIndicator(partyFrame)
+        MF.ResetTargetIndicator(partyFrame)
       end
     end
-    if MV_PartyTestMode or (MV.NumGroupMembers > 5 or MV.NumGroupMembers == 0) then return end
+    if MF_PartyTestMode or (MF.NumGroupMembers > 5 or MF.NumGroupMembers == 0) then return end
     if event == "PLAYER_TARGET_CHANGED" then
-      MV.UpdateTargetHighlight(partyFrame)
+      MF.UpdateTargetHighlight(partyFrame)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
-      MV.UpdateHealthBar(partyFrame)
-      MV.SetRangeAlpha(partyFrame)
+      MF.UpdateHealthBar(partyFrame)
+      MF.SetRangeAlpha(partyFrame)
     elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
-      MV.UpdateAbsorbBar(partyFrame)
-      MV.SetRangeAlpha(partyFrame)
+      MF.UpdateAbsorbBar(partyFrame)
+      MF.SetRangeAlpha(partyFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-      MV.SetRangeAlpha(partyFrame)
+      MF.SetRangeAlpha(partyFrame)
     elseif event == "UNIT_NAME_UPDATE" then
-      MV.ApplyClassColor(partyFrame)
+      MF.ApplyClassColor(partyFrame)
     elseif event == "UNIT_AURA" then
-      MV.UpdateAuras(partyFrame)
+      MF.UpdateAuras(partyFrame)
     elseif event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" or event == "ARENA_COOLDOWNS_UPDATE" then
-      MV.UpdateTrinket(partyFrame, true)
+      MF.UpdateTrinket(partyFrame, true)
     elseif event == "UNIT_TARGET" then
-      MV.UpdateTargetIndicator(partyFrame)
+      MF.UpdateTargetIndicator(partyFrame)
     elseif event == "LOSS_OF_CONTROL_ADDED" or event == "LOSS_OF_CONTROL_UPDATE" then
       if arg1 == unit then
-        MV.TryAndUpdateDRStateFromLOC(partyFrame, arg2)
+        MF.TryAndUpdateDRStateFromLOC(partyFrame, arg2)
       end
     end
   end)

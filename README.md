@@ -1,5 +1,5 @@
 ![UI](/Media/screenshot.png)
-# MV Frames
+# MidnightFrames
 
 This UI originated as a WeakAura during BfA. With the decline of WeakAuras, I’ve since converted it into a standalone addon.
 

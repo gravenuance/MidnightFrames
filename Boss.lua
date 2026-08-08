@@ -1,7 +1,7 @@
-local _, MV = ...
-local baseName = "MV_Boss"
+local _, MF = ...
+local baseName = "MF_Boss"
 
-MV_BossTestMode = false
+MF_BossTestMode = false
 
 local MAX_BOSS_FRAMES = 5
 local MAX_AURAS = 4
@@ -13,28 +13,28 @@ local function SetBossFrame(index)
   local unit = "boss" .. index
   local name = baseName .. index
 
-  local bossFrame = MV.CreateUnitFrame({
+  local bossFrame = MF.CreateUnitFrame({
     name     = name,
     unit     = unit,
     unitKey  = "boss",
-    point    = { "CENTER", UIParent, "CENTER", MV.FrameX + (index - 1) * MV.FrameSpace, 0 },
-    size     = { MV.SizeX, MV.SizeYAlt },
+    point    = { "CENTER", UIParent, "CENTER", MF.FrameX + (index - 1) * MF.FrameSpace, 0 },
+    size     = { MF.SizeX, MF.SizeYAlt },
     maxAuras = MAX_AURAS,
-    iconSize = MV.DefaultSize,
+    iconSize = MF.DefaultSize,
   })
   bossFrame:SetFrameLevel(10)
 
   local HAS_REGISTERED_WATCH = false
   local function UpdateVisibility()
-    local hasUnit = MV.UnitExists(unit)
+    local hasUnit = MF.UnitExists(unit)
 
-    if not MV.InInstance() or not hasUnit or MV_BossTestMode then
+    if not MF.InInstance() or not hasUnit or MF_BossTestMode then
       if HAS_REGISTERED_WATCH and not InCombatLockdown() then
         UnregisterUnitWatch(bossFrame)
         HAS_REGISTERED_WATCH = false
       end
       if not InCombatLockdown() then
-        if MV_BossTestMode then
+        if MF_BossTestMode then
           bossFrame:Show()
         else
           bossFrame:Hide()
@@ -58,7 +58,7 @@ local function SetBossFrame(index)
   local function HideBossFrameAndSpellBar(index)
     local frame = _G[blizzFrameBase .. index .. "TargetFrame"]
     if not frame then return end
-    if frame.MV_Hooked then return end
+    if frame.MF_Hooked then return end
     local spellBar = frame.spellBar or _G[frame:GetName() .. "SpellBar"] or
         _G[blizzFrameBase .. index .. "TargetFrameSpellBar"]
     if spellBar then
@@ -72,20 +72,20 @@ local function SetBossFrame(index)
     if frame.OnShow then
       hooksecurefunc(frame, "OnShow", ForceHide)
     end
-    frame.MV_Hooked = true
+    frame.MF_Hooked = true
   end
 
   local function HideBossContainer()
     local container = _G[blizzContainerName]
     if not container then return end
-    if container.MV_Hooked then return end
+    if container.MF_Hooked then return end
     if container.UpdateShownState then
       hooksecurefunc(container, "SetShown", ForceHide)
     end
     for i = 1, MAX_BOSS_FRAMES do
       HideBossFrameAndSpellBar(i)
     end
-    container.MV_Hooked = true
+    container.MF_Hooked = true
   end
 
   local function SetupBossHooks()
@@ -114,24 +114,24 @@ local function SetBossFrame(index)
 
   bossFrame:SetScript("OnEvent", function(self, event)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
-      MV_BossTestMode = false
+      MF_BossTestMode = false
       UpdateVisibility()
       SetupBossHooks()
-      MV.ResetTargetIndicator(bossFrame)
+      MF.ResetTargetIndicator(bossFrame)
     end
-    if not MV.InInstance() then return end
+    if not MF.InInstance() then return end
     if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
-      MV.UpdateHealthBar(bossFrame)
+      MF.UpdateHealthBar(bossFrame)
     elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
-      MV.UpdateAbsorbBar(bossFrame)
+      MF.UpdateAbsorbBar(bossFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-      MV.SetRangeAlpha(bossFrame)
+      MF.SetRangeAlpha(bossFrame)
     elseif event == "PLAYER_TARGET_CHANGED" then
-      MV.UpdateTargetHighlight(bossFrame, MV_BossTestMode)
+      MF.UpdateTargetHighlight(bossFrame, MF_BossTestMode)
     elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" then
-      MV.ApplyClassColor(bossFrame)
+      MF.ApplyClassColor(bossFrame)
     elseif event == "UNIT_AURA" then
-      MV.UpdateAuras(bossFrame)
+      MF.UpdateAuras(bossFrame)
     end
   end)
 end

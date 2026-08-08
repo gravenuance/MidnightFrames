@@ -1,24 +1,24 @@
-local _, MV = ...
+local _, MF = ...
 
-MV_TargetTestMode = false
+MF_TargetTestMode = false
 
 local IsDriverRegistered = false
 
 local MAX_AURAS = 4
 
-local targetFrame = MV.CreateUnitFrame({
-  name     = "MV_Target",
+local targetFrame = MF.CreateUnitFrame({
+  name     = "MF_Target",
   unit     = "target",
   unitKey  = "target",
-  point    = { "CENTER", UIParent, "CENTER", MV.FrameXAlt, 0 },
-  size     = { MV.SizeX, MV.SizeY },
+  point    = { "CENTER", UIParent, "CENTER", MF.FrameXAlt, 0 },
+  size     = { MF.SizeX, MF.SizeY },
   maxAuras = MAX_AURAS,
-  iconSize = MV.DefaultSize,
+  iconSize = MF.DefaultSize,
 })
 
 local function UpdateVisibility()
   if InCombatLockdown() then return end
-  if MV_TargetTestMode then
+  if MF_TargetTestMode then
     UnregisterUnitWatch(targetFrame)
     targetFrame:Show()
     IsDriverRegistered = false
@@ -52,27 +52,27 @@ targetFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
 targetFrame:SetScript("OnEvent", function(_, event, arg1)
   if (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
-    MV_TargetTestMode = false
+    MF_TargetTestMode = false
     UpdateVisibility()
   end
-  if MV_TargetTestMode then return end
+  if MF_TargetTestMode then return end
   if event == "PLAYER_TARGET_CHANGED"
       or (event == "UNIT_NAME_UPDATE" and arg1 == targetFrame.unit) then
     UpdateVisibility()
-    if UnitExists(targetFrame.unit) then
-      MV.ApplyClassColor(targetFrame)
-      MV.UpdateHealthBar(targetFrame)
-      MV.UpdateAbsorbBar(targetFrame)
-      MV.UpdateAuras(targetFrame)
-      MV.SetRangeAlpha(targetFrame)
+    if MF.UnitExists(targetFrame.unit) then
+      MF.ApplyClassColor(targetFrame)
+      MF.UpdateHealthBar(targetFrame)
+      MF.UpdateAbsorbBar(targetFrame)
+      MF.UpdateAuras(targetFrame)
+      MF.SetRangeAlpha(targetFrame)
     end
   elseif (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
-    MV.UpdateHealthBar(targetFrame)
+    MF.UpdateHealthBar(targetFrame)
   elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
-    MV.UpdateAbsorbBar(targetFrame)
+    MF.UpdateAbsorbBar(targetFrame)
   elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-    MV.SetRangeAlpha(targetFrame)
+    MF.SetRangeAlpha(targetFrame)
   elseif event == "UNIT_AURA" then
-    MV.UpdateAuras(targetFrame)
+    MF.UpdateAuras(targetFrame)
   end
 end)

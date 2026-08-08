@@ -1,4 +1,4 @@
-local _, MV = ...
+local _, MF = ...
 
 local ENEMY_DR_RESET_TIME = 16
 local ENEMY_DR_ORDER = {
@@ -10,13 +10,13 @@ local ENEMY_DR_ORDER = {
   [0] = "root",
 }
 
-MV.DRFallback = true
+MF.DRFallback = true
 -- Default otherContainer slot count: 1 trinket slot + 1 slot per tracked DR
 -- category (stun/incap/disorient/silence/disarm/root). CreateUnitFrame()
 -- callers can override via params.otherSlots (see Raid.lua, which uses a
 -- smaller count to cut down on the 20x widget overhead of the full set).
-MV.DRSize = 7
-MV.DRStartIndex = 2
+MF.DRSize = 7
+MF.DRStartIndex = 2
 
 local CATEGORY_ICON = {
   stun = "Interface\\Icons\\Ability_Rogue_CheapShot",
@@ -38,19 +38,9 @@ local function SetSafeButton(candidate, icon, immunity, startTime)
       candidate.border:SetVertexColor(0, 1, 0, 1)
     end
   end
-  local ok, err = MV.CallExternalFunction({
-    namespace = candidate.cooldown,
-    functionName = "SetCooldown",
-    args = { candidate.cooldown, startTime, 16 },
-    argumentValidators = { MV.IsTable, MV.IsNumber, MV.IsNumber }
-  })
+  local ok = MF.SetCooldown(candidate.cooldown, startTime, 16)
   if ok then
-    MV.CallExternalFunction({
-      namespace = candidate.cooldown,
-      functionName = "SetShowCountdownNumbers",
-      args = { candidate.cooldown, true },
-      argumentValidators = { MV.IsTable, MV.IsBoolean }
-    })
+    MF.SetShowCountdownNumbers(candidate.cooldown, true)
   end
   candidate:Show()
 end
@@ -58,14 +48,14 @@ end
 local function CheckTrayButton(button, frame)
   local iconTexture = button.Icon and button.Icon:GetTexture()
   local cooldown = button.Cooldown
-  if not cooldown.MV_Hooked then
-    cooldown.MV_Hooked = true
-    cooldown:HookScript("OnHide", function() if button.MV_Button then MV.ResetButton(button.MV_Button) end end)
+  if not cooldown.MF_Hooked then
+    cooldown.MF_Hooked = true
+    cooldown:HookScript("OnHide", function() if button.MF_Button then MF.ResetButton(button.MF_Button) end end)
   end
   local startTime = GetTime()
   local candidate
-  if button.MV_Button then
-    candidate = button.MV_Button
+  if button.MF_Button then
+    candidate = button.MF_Button
     -- Re-application while the previous window is still running means this
     -- is a stacked/reduced hit, not a fresh one; treat it as the "immune" state.
     local wasActive = candidate.lastStartTime and (candidate.lastStartTime + ENEMY_DR_RESET_TIME) > startTime
@@ -73,29 +63,23 @@ local function CheckTrayButton(button, frame)
     SetSafeButton(candidate, iconTexture, wasActive, startTime)
     return
   end
-  for i = MV.DRStartIndex, #frame.otherContainer.icons do
+  for i = MF.DRStartIndex, #frame.otherContainer.icons do
     candidate = frame.otherContainer.icons and frame.otherContainer.icons[i]
     if candidate and not candidate.categoryTable then
       candidate.categoryTable = button
       candidate.lastStartTime = startTime
-      button.MV_Button = candidate
+      button.MF_Button = candidate
       SetSafeButton(candidate, iconTexture, false, startTime)
       return
     end
   end
 end
 
-function MV.TryAndUpdateDRStateFromTray(tray, frame)
-  if MV.IsNil(tray) or not frame then
+function MF.TryAndUpdateDRStateFromTray(tray, frame)
+  if MF.IsNil(tray) or not frame then
     return
   end
-  local ok, children = MV.CallExternalFunction(
-    {
-      namespace = tray,
-      args = { tray },
-      functionName = "GetLayoutChildren",
-    }
-  )
+  local ok, children = MF.GetLayoutChildren(tray)
   if not ok then return end
   pcall(function()
     for _, child in ipairs(children) do
@@ -115,19 +99,9 @@ local function SetButtonIcon(button, icon, showCountdown, isImmune)
   end
 
   if button.duration and button.duration > 0 then
-    local ok, result = MV.CallExternalFunction({
-      namespace = button.cooldown,
-      functionName = "SetCooldown",
-      args = { button.cooldown, button.startTime, button.duration },
-      argumentValidators = { MV.IsTable, MV.IsNumber, MV.IsNumber }
-    })
+    local ok, result = MF.SetCooldown(button.cooldown, button.startTime, button.duration)
     if ok then
-      MV.CallExternalFunction({
-        namespace = button.cooldown,
-        functionName = "SetShowCountdownNumbers",
-        args = { button.cooldown, showCountdown },
-        argumentValidators = { MV.IsTable, MV.IsBoolean }
-      })
+      MF.SetShowCountdownNumbers(button.cooldown, showCountdown)
       button:Show()
     else
       print(ok, "Result:", result)
@@ -150,7 +124,7 @@ local function SetButtons(frame)
     local icon          = categoryTable.icon
     local button        = categoryTable.button
 
-    if not MV.IsNumber(startTime) and not MV.IsNumber(duration) then
+    if not MF.IsNumber(startTime) and not MF.IsNumber(duration) then
       if button then
         button:Hide()
         button.categoryTable = nil
@@ -168,7 +142,7 @@ local function SetButtons(frame)
         button.duration = duration
         SetButtonIcon(button, icon, showCountdown, isImmune)
       else
-        for i = MV.DRStartIndex, #frame.otherContainer.icons do
+        for i = MF.DRStartIndex, #frame.otherContainer.icons do
           local candidate = frame.otherContainer.icons[i]
           if not candidate.categoryTable then
             button = candidate
@@ -185,30 +159,30 @@ local function SetButtons(frame)
   end
 end
 
-function MV.ResetButton(button)
+function MF.ResetButton(button)
   if button and button.categoryTable then
-    if button.categoryTable.MV_Button then
-      button.categoryTable.MV_Button = nil
+    if button.categoryTable.MF_Button then
+      button.categoryTable.MF_Button = nil
     end
     button.categoryTable = nil
     button:Hide()
   end
 end
 
-function MV.ResetDR(frame)
-  if MV.IsTable(frame.categories) then
+function MF.ResetDR(frame)
+  if MF.IsTable(frame.categories) then
     wipe(frame.categories)
   end
   if frame.otherContainer then
-    for i = MV.DRStartIndex, #frame.otherContainer.icons do
+    for i = MF.DRStartIndex, #frame.otherContainer.icons do
       local candidate = frame.otherContainer.icons[i]
-      MV.ResetButton(candidate)
+      MF.ResetButton(candidate)
     end
   end
 end
 
 local function GetAndInterpretField(table, field)
-  local ok, result = MV.GetField(table, field)
+  local ok, result = MF.GetField(table, field)
   if ok then
     return result
   else
@@ -219,7 +193,7 @@ end
 
 local function IsTracked(category)
   local result = GetAndInterpretField(ENEMY_DR_ORDER, category)
-  if not MV.IsNil(result) then return result end
+  if not MF.IsNil(result) then return result end
   return false
 end
 
@@ -230,33 +204,33 @@ end
 -- before it reaches that table - never store a value there that hasn't been
 -- confirmed non-secret first.
 local function SanitizeBoolean(value, default)
-  if MV.IsSecretSafe(value) then
+  if MF.IsSecretSafe(value) then
     return default
   end
   return value
 end
 
-function MV.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
-  if not MV.IsTable(trackerInfo) and not MV.IsUserData(trackerInfo) then
+function MF.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
+  if not MF.IsTable(trackerInfo) and not MF.IsUserData(trackerInfo) then
     return
   end
   if not frame or not frame.unit then return end
   local category = GetAndInterpretField(trackerInfo, "category")
-  local ok, info = MV.IsNumber(category)
+  local ok, info = MF.IsNumber(category)
   if not ok then
     print(ok, info)
     return
   end
-  if MV.IsSecretSafe(category) then return end
+  if MF.IsSecretSafe(category) then return end
   category = IsTracked(category)
-  if not MV.IsString(category) then return end
+  if not MF.IsString(category) then return end
   local startTime = GetAndInterpretField(trackerInfo, "startTime")
   local duration = GetAndInterpretField(trackerInfo, "duration")
   local isImmune = GetAndInterpretField(trackerInfo, "isImmune")
   local showCountdown = GetAndInterpretField(trackerInfo, "showCountdown")
 
-  if MV.IsNumber(startTime) and MV.IsNumber(duration)
-      and not MV.IsSecretSafe(startTime) and not MV.IsSecretSafe(duration) then
+  if MF.IsNumber(startTime) and MF.IsNumber(duration)
+      and not MF.IsSecretSafe(startTime) and not MF.IsSecretSafe(duration) then
     frame.categories[category] = {
       duration = duration,
       startTime = startTime,
@@ -269,18 +243,18 @@ function MV.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
 end
 
 local function SetDRInfoFromLOC(frame, trackerInfo)
-  if not MV.IsTable(trackerInfo) and not MV.IsUserData(trackerInfo) then
+  if not MF.IsTable(trackerInfo) and not MF.IsUserData(trackerInfo) then
     return
   end
   local displayType = GetAndInterpretField(trackerInfo, "displayType")
-  if not MV.IsNumber(displayType) or displayType ~= 2 then
+  if not MF.IsNumber(displayType) or displayType ~= 2 then
     return
   end
   local category = GetAndInterpretField(trackerInfo, "locType")
-  if MV.IsString(category) and issecretvalue(category) then
+  if MF.IsString(category) and issecretvalue(category) then
     return
   end
-  local ok, info = MV.IsString(category)
+  local ok, info = MF.IsString(category)
   if not ok then
     print(ok, info)
     return
@@ -291,7 +265,7 @@ local function SetDRInfoFromLOC(frame, trackerInfo)
   local iconTexture = GetAndInterpretField(trackerInfo, "iconTexture")
 
   local categoriesEntry = frame.categories[category]
-  if MV.IsTable(categoriesEntry) or MV.IsUserData(categoriesEntry) then
+  if MF.IsTable(categoriesEntry) or MF.IsUserData(categoriesEntry) then
     if categoriesEntry.startTime and categoriesEntry.duration then
       local existingExpiration = categoriesEntry.startTime + categoriesEntry.duration
       if existingExpiration > startTime then
@@ -310,26 +284,16 @@ local function SetDRInfoFromLOC(frame, trackerInfo)
   SetButtons(frame)
 end
 
-function MV.TryAndUpdateDRStateFromLOC(frame)
+function MF.TryAndUpdateDRStateFromLOC(frame)
   if not frame or not frame.unit then return end
-  local ok, count = MV.CallExternalFunction({
-    namespace = _G.C_LossOfControl,
-    functionName = "GetActiveLossOfControlDataCountByUnit",
-    args = { frame.unit },
-    argumentValidators = { MV.IsString }
-  })
+  local ok, count = MF.GetActiveLossOfControlDataCountByUnit(frame.unit)
   if not ok then
     print(ok, "Result:", count)
     return
   end
-  if MV.IsNumber(count) and count > 0 then
+  if MF.IsNumber(count) and count > 0 then
     for index = 1, count do
-      local ok2, trackerInfo = MV.CallExternalFunction({
-        namespace = _G.C_LossOfControl,
-        functionName = "GetActiveLossOfControlDataByUnit",
-        args = { frame.unit, index },
-        argumentValidators = { MV.IsString, MV.IsNumber }
-      })
+      local ok2, trackerInfo = MF.GetActiveLossOfControlDataByUnit(frame.unit, index)
       if ok2 then
         SetDRInfoFromLOC(frame, trackerInfo)
       else
@@ -339,7 +303,7 @@ function MV.TryAndUpdateDRStateFromLOC(frame)
   end
 end
 
-function MV.HideButton(button)
+function MF.HideButton(button)
   if button then
     button:Hide()
     if button.categoryTable then

@@ -1,6 +1,6 @@
-local _, MV             = ...
+local _, MF             = ...
 
-local baseName          = "MV_Core"
+local baseName          = "MF_Core"
 
 local pendingPostCombat = {}
 
@@ -13,37 +13,37 @@ local function RunOrDefer(key, func, ...)
   end
 end
 
-SLASH_MV1       = "/mv"
-SlashCmdList.MV = function(msg)
+SLASH_MF1       = "/mf"
+SlashCmdList.MF = function(msg)
   msg = msg and msg:lower() or ""
 
   if msg == "target" then
-    RunOrDefer("MV_target_test", function()
-      MV.ToggleTestMode("target", not MV_TargetTestMode)
-      print("MV: target test mode " .. (MV_TargetTestMode and "ON" or "OFF"))
+    RunOrDefer("MF_target_test", function()
+      MF.ToggleTestMode("target", not MF_TargetTestMode)
+      print("MF: target test mode " .. (MF_TargetTestMode and "ON" or "OFF"))
     end)
   elseif msg == "party" then
-    RunOrDefer("MV_party_test", function()
-      MV.ToggleTestMode("party", not MV_PartyTestMode)
-      print("MV: party test mode " .. (MV_PartyTestMode and "ON" or "OFF"))
+    RunOrDefer("MF_party_test", function()
+      MF.ToggleTestMode("party", not MF_PartyTestMode)
+      print("MF: party test mode " .. (MF_PartyTestMode and "ON" or "OFF"))
     end)
   elseif msg == "arena" then
-    RunOrDefer("MV_arena_test", function()
-      MV.ToggleTestMode("arena", not MV_ArenaTestMode)
-      print("MV: arena test mode " .. (MV_ArenaTestMode and "ON" or "OFF"))
+    RunOrDefer("MF_arena_test", function()
+      MF.ToggleTestMode("arena", not MF_ArenaTestMode)
+      print("MF: arena test mode " .. (MF_ArenaTestMode and "ON" or "OFF"))
     end)
   elseif msg == "boss" then
-    RunOrDefer("MV_boss_test", function()
-      MV.ToggleTestMode("boss", not MV_BossTestMode)
-      print("MV: boss test mode " .. (MV_BossTestMode and "ON" or "OFF"))
+    RunOrDefer("MF_boss_test", function()
+      MF.ToggleTestMode("boss", not MF_BossTestMode)
+      print("MF: boss test mode " .. (MF_BossTestMode and "ON" or "OFF"))
     end)
   elseif msg == "raid" then
-    RunOrDefer("MV_raid_test", function()
-      MV.ToggleTestMode("raid", not MV_RaidTestMode)
-      print("MV: raid test mode " .. (MV_RaidTestMode and "ON" or "OFF"))
+    RunOrDefer("MF_raid_test", function()
+      MF.ToggleTestMode("raid", not MF_RaidTestMode)
+      print("MF: raid test mode " .. (MF_RaidTestMode and "ON" or "OFF"))
     end)
   else
-    print("Usage: /mv target | party | raid | arena | boss")
+    print("Usage: /mf target | party | raid | arena | boss")
   end
 end
 
@@ -59,7 +59,7 @@ ef:SetScript("OnEvent", function(self, event)
       pendingPostCombat[key] = nil
     end
   elseif event == "PLAYER_LOGIN" then
-    MV.InitConfigAndOptions()
+    MF.InitConfigAndOptions()
   end
 end)
 
@@ -164,6 +164,10 @@ local FILTER_ORDER = {
   "HELPFUL|EXTERNAL_DEFENSIVE",
   "PLAYER|RAID_IN_COMBAT",
 }
+-- Shared with AuraUtil.lua so aura-slot priority (which filters win the
+-- limited icon slots when more categories are enabled than maxAuras) matches
+-- this same explicit order, instead of Lua's unspecified pairs() order.
+MF.FilterOrder = FILTER_ORDER
 
 local UNIT_LABELS = {
   player = "Player",
@@ -176,11 +180,11 @@ local UNIT_LABELS = {
 
 local UNIT_ORDER = { "player", "target", "party", "arena", "boss", "raid" }
 
-function MV.GetUnitFilters(unit)
-  if not MV_DB or not MV_DB.filters then
+function MF.GetUnitFilters(unit)
+  if not MF_DB or not MF_DB.filters then
     return {}
   end
-  return MV_DB.filters[unit] or {}
+  return MF_DB.filters[unit] or {}
 end
 
 local _ = LibStub("AceAddon-3.0")
@@ -188,11 +192,11 @@ local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
 local TEST_MODE_TOGGLES = {
-  { key = "target", var = "MV_TargetTestMode", label = "Toggle Target Test Mode" },
-  { key = "party",  var = "MV_PartyTestMode",  label = "Toggle Party Test Mode" },
-  { key = "arena",  var = "MV_ArenaTestMode",  label = "Toggle Arena Test Mode" },
-  { key = "boss",   var = "MV_BossTestMode",   label = "Toggle Boss Test Mode" },
-  { key = "raid",   var = "MV_RaidTestMode",   label = "Toggle Raid Test Mode" },
+  { key = "target", var = "MF_TargetTestMode", label = "Toggle Target Test Mode" },
+  { key = "party",  var = "MF_PartyTestMode",  label = "Toggle Party Test Mode" },
+  { key = "arena",  var = "MF_ArenaTestMode",  label = "Toggle Arena Test Mode" },
+  { key = "boss",   var = "MF_BossTestMode",   label = "Toggle Boss Test Mode" },
+  { key = "raid",   var = "MF_RaidTestMode",   label = "Toggle Raid Test Mode" },
 }
 
 local function BuildGeneralArgs()
@@ -212,7 +216,7 @@ local function BuildGeneralArgs()
       type = "execute",
       name = entry.label,
       order = order,
-      func = function() MV.ToggleTestMode(entry.key, not _G[entry.var]) end,
+      func = function() MF.ToggleTestMode(entry.key, not _G[entry.var]) end,
     }
     order = order + 1
   end
@@ -229,12 +233,12 @@ local function BuildFilterArgs(unitKey)
       name = FILTER_LABELS[filterKey] or filterKey,
       order = order,
       get = function()
-        local f = MV_DB.filters[unitKey]
+        local f = MF_DB.filters[unitKey]
         return f and f[filterKey]
       end,
       set = function(_, val)
-        MV_DB.filters[unitKey] = MV_DB.filters[unitKey] or {}
-        MV_DB.filters[unitKey][filterKey] = val
+        MF_DB.filters[unitKey] = MF_DB.filters[unitKey] or {}
+        MF_DB.filters[unitKey][filterKey] = val
       end,
     }
     order = order + 1
@@ -272,16 +276,16 @@ local function BuildOptionsTable()
 end
 
 local CURRENT_VERSION = "5"
-function MV.InitConfigAndOptions()
-  MV_DB = MV_DB or {}
-  MV_DB.version = MV_DB.version or "1"
-  if MV_DB.version ~= CURRENT_VERSION then
-    if MV_DB.filters then
-      wipe(MV_DB.filters)
+function MF.InitConfigAndOptions()
+  MF_DB = MF_DB or {}
+  MF_DB.version = MF_DB.version or "1"
+  if MF_DB.version ~= CURRENT_VERSION then
+    if MF_DB.filters then
+      wipe(MF_DB.filters)
     end
-    MV_DB.version = CURRENT_VERSION
+    MF_DB.version = CURRENT_VERSION
   end
-  MV_DB.filters = MV_DB.filters or {
+  MF_DB.filters = MF_DB.filters or {
     player = {},
     target = {},
     party  = {},
@@ -291,15 +295,15 @@ function MV.InitConfigAndOptions()
   }
 
   for unit, defaults in pairs(DEFAULT_FILTERS) do
-    MV_DB.filters[unit] = MV_DB.filters[unit] or {}
+    MF_DB.filters[unit] = MF_DB.filters[unit] or {}
     for filter, val in pairs(defaults) do
-      if MV_DB.filters[unit][filter] == nil then
-        MV_DB.filters[unit][filter] = val
+      if MF_DB.filters[unit][filter] == nil then
+        MF_DB.filters[unit][filter] = val
       end
     end
   end
 
   local Options = BuildOptionsTable()
-  AceConfig:RegisterOptionsTable("MV", Options)
-  AceConfigDialog:AddToBlizOptions("MV", "MV")
+  AceConfig:RegisterOptionsTable("MF", Options)
+  AceConfigDialog:AddToBlizOptions("MF", "MF")
 end

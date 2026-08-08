@@ -1,9 +1,7 @@
-local _, MV                     = ...
-local C_UnitAuras               = _G.C_UnitAuras
-local C_CurveUtil               = _G.C_CurveUtil
+local _, MF                     = ...
 
-MV.DefaultSize                  = 32
-MV.DefaultSizeSmall             = 22
+MF.DefaultSize                  = 32
+MF.DefaultSizeSmall             = 22
 
 Enum.DispelType                 = {
   None    = 0,
@@ -28,43 +26,19 @@ dispel[Enum.DispelType.Enrage]  = CreateColor(243 / 255, 95 / 255, 245 / 255, 1)
 
 local dispelTypeCurve
 
--- Validator arrays are static per call site; hoisted so GetAndUpdateAuras
--- (run on every UNIT_AURA, per aura button, per frame) doesn't reallocate
--- them on every single call.
-local CURVE_SETTYPE_VALIDATORS  = { MV.IsUserData, MV.IsNumber }
-local CURVE_ADDPOINT_VALIDATORS = { MV.IsUserData, MV.IsNumber, MV.IsTable }
-local DISPEL_COLOR_VALIDATORS   = { MV.IsString, MV.IsNumber, MV.IsUserData }
-local AURA_DURATION_VALIDATORS  = { MV.IsString, MV.IsNumber }
-local SET_COOLDOWN_VALIDATORS   = { MV.IsTable, MV.IsUserData, MV.IsBoolean }
-local GET_UNIT_AURAS_VALIDATORS = { MV.IsString, MV.IsString, MV.IsNumber, MV.IsNumber, MV.IsNumber }
-
 local function GetDispelTypeCurve()
-  if not MV.IsNil(dispelTypeCurve) then
+  if not MF.IsNil(dispelTypeCurve) then
     return dispelTypeCurve
   end
 
-  local ok, curve = MV.CallExternalFunction({
-    namespace = C_CurveUtil,
-    functionName = "CreateColorCurve"
-  }
-  )
+  local ok, curve = MF.CreateColorCurve()
   if not ok then return end
-  ok, _ = MV.CallExternalFunction({
-    namespace = curve,
-    functionName = "SetType",
-    args = { curve, curveType },
-    argumentValidators = CURVE_SETTYPE_VALIDATORS
-  })
+  ok = MF.SetCurveType(curve, curveType)
   if not ok then return end
   for _, dispelIndex in next, Enum.DispelType do
     local color = dispel[dispelIndex]
     if color then
-      ok, _ = MV.CallExternalFunction({
-        namespace = curve,
-        functionName = "AddPoint",
-        args = { curve, dispelIndex, color },
-        argumentValidators = CURVE_ADDPOINT_VALIDATORS
-      })
+      MF.AddCurvePoint(curve, dispelIndex, color)
     end
   end
   dispelTypeCurve = curve
@@ -86,12 +60,7 @@ local function ApplyAuraDispelBorderColor(btn, unit, auraData)
     print("No curve object")
     return
   end
-  local ok, dispelTypeColor = MV.CallExternalFunction({
-    namespace = C_UnitAuras,
-    functionName = "GetAuraDispelTypeColor",
-    args = { unit, auraData.auraInstanceID, curve },
-    argumentValidators = DISPEL_COLOR_VALIDATORS
-  })
+  local ok, dispelTypeColor = MF.GetAuraDispelTypeColor(unit, auraData.auraInstanceID, curve)
   if ok then
     border:SetVertexColor(dispelTypeColor:GetRGBA())
   end
@@ -107,23 +76,9 @@ local function ApplyAuraCooldown(btn, unit, auraData)
     return
   end
 
-  local ok, result = MV.CallExternalFunction(
-    {
-      namespace = C_UnitAuras,
-      functionName = "GetAuraDuration",
-      args = { unit, auraData.auraInstanceID },
-      argumentValidators = AURA_DURATION_VALIDATORS
-    }
-  )
+  local ok, result = MF.GetAuraDuration(unit, auraData.auraInstanceID)
   if ok then
-    ok, result = MV.CallExternalFunction(
-      {
-        namespace = cd,
-        functionName = "SetCooldownFromDurationObject",
-        args = { cd, result, true },
-        argumentValidators = SET_COOLDOWN_VALIDATORS,
-      }
-    )
+    ok = MF.SetCooldownFromDurationObject(cd, result, true)
     if ok then
       cd:Show()
     end
@@ -141,7 +96,7 @@ local function SetAuraTexture(btn, auraData)
   end
 
   local tex = auraData.icon
-  if not MV.IsNumber(tex) and not MV.IsString(tex) then
+  if not MF.IsNumber(tex) and not MF.IsString(tex) then
     return false
   end
 
@@ -150,7 +105,7 @@ local function SetAuraTexture(btn, auraData)
 end
 
 local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
-  if not MV.UnitExists(unit) then
+  if not MF.UnitExists(unit) then
     for i = 1, container.maxAuras do
       local btn = container.icons[i]
       if btn then
@@ -165,20 +120,13 @@ local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
   local seen = {}
 
   local function AddAuras(filter)
-    local auraList, totalAuras
-
-    local ok, result = MV.CallExternalFunction({
-      namespace = C_UnitAuras,
-      functionName = "GetUnitAuras",
-      args = { unit, filter, maxRemaining, Enum.UnitAuraSortRule.BigDefensive, Enum.UnitAuraSortDirection.Reverse },
-      argumentValidators = GET_UNIT_AURAS_VALIDATORS
-    })
-    if ok and MV.IsTable(result) then
-      local count = #result
-      auraList = result
-      totalAuras = count
-    end
-    if not auraList or totalAuras == 0 then
+    -- Secret-vector safety (12.1's aura-container restrictions) is handled
+    -- inside MF.GetUnitAuras (SecureUtil.lua) so every caller gets it
+    -- automatically instead of re-deriving it at each call site.
+    local ok, auraList, totalAuras = MF.GetUnitAuras(
+      unit, filter, maxRemaining, Enum.UnitAuraSortRule.BigDefensive, Enum.UnitAuraSortDirection.Reverse
+    )
+    if not ok or not auraList or totalAuras == 0 then
       return
     end
     for listIndex = 1, totalAuras do
@@ -196,7 +144,7 @@ local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
       -- than assume: if it can't be trusted, just skip the dedup check for
       -- this aura instead of risking a bad break/no-op.
       local instanceID = auraData.auraInstanceID
-      if MV.IsNumber(instanceID) and not MV.IsSecretSafe(instanceID) then
+      if MF.IsNumber(instanceID) and not MF.IsSecretSafe(instanceID) then
         if seen[instanceID] then
           break
         else
@@ -237,16 +185,19 @@ local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
   end
 end
 
-function MV.UpdateAuras(frame)
+function MF.UpdateAuras(frame)
   --[[ if not UnitExists(frame.unit) then
     GetAndUpdateAuras(frame.auraContainer, frame.unit, {}, 0)
     return
   end ]]
   local filters = {}
-  local cfg = MV.GetUnitFilters(frame.unitKey)
+  local cfg = MF.GetUnitFilters(frame.unitKey)
 
-  for filter, enabled in pairs(cfg) do
-    if enabled then
+  -- Iterate MF.FilterOrder (not pairs(cfg)) so which enabled filters win the
+  -- limited icon slots is deterministic and priority-ranked, rather than
+  -- depending on Lua's unspecified hash-table iteration order.
+  for _, filter in ipairs(MF.FilterOrder or {}) do
+    if cfg[filter] then
       table.insert(filters, filter)
     end
   end

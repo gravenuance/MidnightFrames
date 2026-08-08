@@ -1,4 +1,4 @@
-local _, MV = ...
+local _, MF = ...
 
 local testAura = "Interface\\Icons\\Spell_Nature_Rejuvenation"
 local testTrinket = "Interface\\Icons\\INV_Misc_PocketWatch_01"
@@ -14,50 +14,50 @@ local function SetTestIcons(frame, test)
   frame.outerBorder:SetShown(test)
 end
 
-function MV.ToggleTestMode(kind, on)
+function MF.ToggleTestMode(kind, on)
   if kind == "target" then
-    MV_TargetTestMode = on
-    local f           = _G["MV_Target"]
+    MF_TargetTestMode = on
+    local f           = _G["MF_Target"]
     if f then
       if f.UpdateVisibility then f:UpdateVisibility() end
-      SetTestIcons(f, MV_TargetTestMode)
+      SetTestIcons(f, MF_TargetTestMode)
     end
   elseif kind == "party" then
-    MV_PartyTestMode = on
+    MF_PartyTestMode = on
     for i = 1, 4 do
-      local f = _G["MV_Party" .. i]
+      local f = _G["MF_Party" .. i]
       if f then
         if f.UpdateVisibility then f:UpdateVisibility() end
-        SetTestIcons(f, MV_PartyTestMode)
+        SetTestIcons(f, MF_PartyTestMode)
       end
     end
   elseif kind == "arena" then
-    MV_ArenaTestMode = on
+    MF_ArenaTestMode = on
     for i = 1, 3 do
-      local f = _G["MV_Arena" .. i]
+      local f = _G["MF_Arena" .. i]
       if f then
         if f.UpdateVisibility then f:UpdateVisibility() end
-        SetTestIcons(f, MV_ArenaTestMode)
+        SetTestIcons(f, MF_ArenaTestMode)
       end
     end
   elseif kind == "boss" then
-    MV_BossTestMode = on
+    MF_BossTestMode = on
     for i = 1, 5 do
-      local f = _G["MV_Boss" .. i]
+      local f = _G["MF_Boss" .. i]
       if f then
         if f.UpdateVisibility then f:UpdateVisibility() end
-        SetTestIcons(f, MV_BossTestMode)
+        SetTestIcons(f, MF_BossTestMode)
       end
     end
   elseif kind == "raid" then
-    MV_RaidTestMode = on
-    for i = 1, MV.MaxRaidMembers do
-      local f = _G["MV_Raid" .. i]
+    MF_RaidTestMode = on
+    for i = 1, MF.MaxRaidMembers do
+      local f = _G["MF_Raid" .. i]
       if f then
         if f.UpdateVisibility then f:UpdateVisibility() end
-        SetTestIcons(f, MV_RaidTestMode)
+        SetTestIcons(f, MF_RaidTestMode)
         if f.orbIcon then
-          f.orbIcon:SetShown(MV_RaidTestMode)
+          f.orbIcon:SetShown(MF_RaidTestMode)
         end
       end
     end

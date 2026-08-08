@@ -1,4 +1,4 @@
-local _, MV = ...
+local _, MF = ...
 
 local function CreateAuraButton(parent, index)
   local btn = CreateFrame("Button", parent:GetName() .. "Aura" .. index, parent)
@@ -22,10 +22,6 @@ local function CreateAuraButton(parent, index)
   btn.cooldown:SetAllPoints(btn)
   btn.cooldown:Hide()
 
-  btn:SetScript("OnLeave", function()
-    if GameTooltip:IsForbidden() then return end
-    GameTooltip:Hide()
-  end)
   btn:Hide()
   return btn
 end
@@ -89,7 +85,7 @@ local function LayoutPvPButtons(container, horizontal)
       else
         local prev = container.icons[i - 1]
         btn:SetPoint("RIGHT", prev, "LEFT", -4, 0)
-        btn.cooldown:SetScript("OnHide", function() MV.HideButton(btn) end)
+        btn.cooldown:SetScript("OnHide", function() MF.HideButton(btn) end)
       end
     else
       if i == 1 then
@@ -97,13 +93,13 @@ local function LayoutPvPButtons(container, horizontal)
       else
         local prev = container.icons[i - 1]
         btn:SetPoint("TOP", prev, "BOTTOM", 0, -4)
-        btn.cooldown:SetScript("OnHide", function() MV.HideButton(btn) end)
+        btn.cooldown:SetScript("OnHide", function() MF.HideButton(btn) end)
       end
     end
   end
 end
 
-function MV.CreateUnitFrame(params)
+function MF.CreateUnitFrame(params)
   local name       = params.name
   local unit       = params.unit
   local unitKey    = params.unitKey
@@ -114,7 +110,7 @@ function MV.CreateUnitFrame(params)
   local pvpIcons   = params.pvpIcons or false
   local horizontal = params.horizontal or false
   local roleIcon   = params.roleIcon or false
-  local otherSlots = params.otherSlots or MV.DRSize
+  local otherSlots = params.otherSlots or MF.DRSize
 
   local f          = CreateFrame("Button", name, UIParent, "SecureUnitButtonTemplate")
   f:SetSize(size[1], size[2])

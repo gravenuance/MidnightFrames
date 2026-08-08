@@ -1,13 +1,9 @@
-local _, MV = ...
+local _, MF = ...
 
-function MV.UpdateRoleIcon(frame, testFlag)
+function MF.UpdateRoleIcon(frame, testFlag)
   if testFlag then return end
-  local ok, role = MV.CallExternalFunction({
-    functionName = "UnitGroupRolesAssigned",
-    args = { frame.unit },
-    argumentValidators = { MV.IsString }
-  })
-  if not ok or MV.IsSecretSafe(role) then
+  local ok, role = MF.UnitGroupRolesAssigned(frame.unit)
+  if not ok or MF.IsSecretSafe(role) then
     frame.roleIcon:Hide()
     return
   end

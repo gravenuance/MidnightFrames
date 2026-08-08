@@ -1,14 +1,14 @@
-local _, MV = ...
+local _, MF = ...
 
-function MV.UpdateOrbs(frame, unitId, identifier)
+function MF.UpdateOrbs(frame, unitId, identifier)
   if not frame or not frame.unit then return end
-  if frame.unit == "player" or MV.IsUnitUnit(frame.unit, "player") then
+  if frame.unit == "player" or MF.IsUnitUnit(frame.unit, "player") then
     return
   end
-  if MV.IsSecretSafe(unitId) or MV.IsSecretSafe(identifier) then
+  if MF.IsSecretSafe(unitId) or MF.IsSecretSafe(identifier) then
     return
   end
-  if MV.IsUnitUnit(frame.unit, unitId) and identifier == "seen" then
+  if MF.IsUnitUnit(frame.unit, unitId) and identifier == "seen" then
     frame.orbIcon:SetShown(true)
     frame.bgUnit = unitId
   elseif frame.bgUnit == unitId and identifier == "cleared" then
@@ -17,7 +17,7 @@ function MV.UpdateOrbs(frame, unitId, identifier)
   end
 end
 
-function MV.ResetOrbs(frame)
+function MF.ResetOrbs(frame)
   if frame.orbIcon:IsShown() then
     frame.bgUnit = nil
     frame.orbIcon:Hide()

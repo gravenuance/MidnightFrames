@@ -1,13 +1,13 @@
-local _, MV = ...
-local baseName = "MV_Arena"
+local _, MF = ...
+local baseName = "MF_Arena"
 local SOLID_TEXTURE = "Interface\\Buttons\\WHITE8x8"
 
-MV_ArenaTestMode = false
+MF_ArenaTestMode = false
 
 local blizzFrame = "CompactArenaFrame"
 
-local altAlpha = MV.OtherAlpha
-local regAlpha = MV.RegAlpha
+local altAlpha = MF.OtherAlpha
+local regAlpha = MF.RegAlpha
 
 local MAX_AURAS = 4
 
@@ -47,7 +47,7 @@ local function UpdateBorder(owner)
 end
 
 local function GetClassColors(class)
-  if not MV.IsString(class) or MV.IsSecretSafe(class) then
+  if not MF.IsString(class) or MF.IsSecretSafe(class) then
     return
   end
   local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
@@ -60,14 +60,14 @@ local function SetArenaFrame(index)
   local unit = "arena" .. index
   local unitFrame = _G[blizzFrame .. "Member" .. index]
   local name = baseName .. index
-  local arenaFrame = MV.CreateUnitFrame({
+  local arenaFrame = MF.CreateUnitFrame({
     name = name,
     unit = unit,
     unitKey = "arena",
-    point = { "CENTER", UIParent, "CENTER", MV.FrameX + (index - 1) * MV.FrameSpace, 0 },
-    size = { MV.SizeX, MV.SizeYAlt },
+    point = { "CENTER", UIParent, "CENTER", MF.FrameX + (index - 1) * MF.FrameSpace, 0 },
+    size = { MF.SizeX, MF.SizeYAlt },
     maxAuras = MAX_AURAS,
-    iconSize = MV.DefaultSize,
+    iconSize = MF.DefaultSize,
     pvpIcons = true,
   })
   arenaFrame:SetFrameLevel(10)
@@ -81,7 +81,7 @@ local function SetArenaFrame(index)
   arenaFrame.statusIconAnchor:SetFrameLevel(arenaFrame:GetFrameLevel() + 5)
 
   local function SetClassColor(alpha)
-    local _, class = MV.GetOpponentSpecAndClass(index)
+    local _, class = MF.GetOpponentSpecAndClass(index)
     if class then
       local r, g, b = GetClassColors(class)
       if r then
@@ -105,9 +105,9 @@ local function SetArenaFrame(index)
 
     local texture
 
-    if MV.IsInPrep() then
-      texture = MV.GetOpponentSpecAndClass(index)
-    elseif MV.IsArenaInProgress() and MV.IsInStealth(index, unit) then
+    if MF.IsInPrep() then
+      texture = MF.GetOpponentSpecAndClass(index)
+    elseif MF.IsArenaInProgress() and MF.IsInStealth(index, unit) then
       texture = stealthIcon
     else
       texture = nil
@@ -131,12 +131,12 @@ local function SetArenaFrame(index)
   end
 
   local function UpdateVisibility()
-    if MV_ArenaTestMode then
+    if MF_ArenaTestMode then
       if InCombatLockdown() then return end
       arenaFrame:Show()
       return
     end
-    if not MV.IsInArena() and not InCombatLockdown() then
+    if not MF.IsInArena() and not InCombatLockdown() then
       arenaFrame:Hide()
       return
     end
@@ -151,7 +151,7 @@ local function SetArenaFrame(index)
     end
 
     if InCombatLockdown() then return end
-    arenaFrame:SetShown(MV.IsUnit(index))
+    arenaFrame:SetShown(MF.IsUnit(index))
   end
   function arenaFrame:UpdateVisibility() UpdateVisibility() end
 
@@ -163,35 +163,35 @@ local function SetArenaFrame(index)
   end
 
   local function SetFrames()
-    for i = 1, MV.GetArenaSize() do
+    for i = 1, MF.GetArenaSize() do
       SetMemberFrame(i)
     end
   end
 
   local function HookDR(frame)
-    if not MV.DRFallback then return end
+    if not MF.DRFallback then return end
 
     local member = unitFrame
-    if member and member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MV_Hooked then
+    if member and member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MF_Hooked then
       local tray = member.SpellDiminishStatusTray
-      tray.MV_Hooked = true
+      tray.MF_Hooked = true
       hooksecurefunc(member.SpellDiminishStatusTray, "TryUpdateOrAddTrayItem", function()
-        MV.TryAndUpdateDRStateFromTray(member.SpellDiminishStatusTray, frame)
+        MF.TryAndUpdateDRStateFromTray(member.SpellDiminishStatusTray, frame)
       end)
       hooksecurefunc(member.SpellDiminishStatusTray, "UpdateOrAddTrayItem", function()
-        MV.TryAndUpdateDRStateFromTray(member.SpellDiminishStatusTray, frame)
+        MF.TryAndUpdateDRStateFromTray(member.SpellDiminishStatusTray, frame)
       end)
       hooksecurefunc(member.SpellDiminishStatusTray, "RefreshTrayLayout", function()
-        MV.TryAndUpdateDRStateFromTray(member.SpellDiminishStatusTray, frame)
+        MF.TryAndUpdateDRStateFromTray(member.SpellDiminishStatusTray, frame)
       end)
       hooksecurefunc(member.SpellDiminishStatusTray, "AddNewItemToTray", function()
-        MV.TryAndUpdateDRStateFromTray(member.SpellDiminishStatusTray, frame)
+        MF.TryAndUpdateDRStateFromTray(member.SpellDiminishStatusTray, frame)
       end)
       hooksecurefunc(member.SpellDiminishStatusTray, "RemoveCategoryFromOrder", function()
-        MV.ResetDR(frame)
+        MF.ResetDR(frame)
       end)
       hooksecurefunc(member.SpellDiminishStatusTray, "OnTrayItemCooldownDone", function()
-        MV.ResetDR(frame)
+        MF.ResetDR(frame)
       end)
     end
   end
@@ -233,26 +233,26 @@ local function SetArenaFrame(index)
 
   arenaFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
-      MV_ArenaTestMode = false
+      MF_ArenaTestMode = false
       UpdateVisibility()
-      MV.UpdateHealthBar(arenaFrame)
-      MV.UpdateAbsorbBar(arenaFrame)
-      MV.UpdateAuras(arenaFrame)
-      MV.UpdateTrinket(arenaFrame)
-      MV.UpdateTargetHighlight(arenaFrame, MV_ArenaTestMode)
-      MV.ResetDR(arenaFrame)
-      MV.SetRangeAlpha(arenaFrame)
+      MF.UpdateHealthBar(arenaFrame)
+      MF.UpdateAbsorbBar(arenaFrame)
+      MF.UpdateAuras(arenaFrame)
+      MF.UpdateTrinket(arenaFrame)
+      MF.UpdateTargetHighlight(arenaFrame, MF_ArenaTestMode)
+      MF.ResetDR(arenaFrame)
+      MF.SetRangeAlpha(arenaFrame)
       HookDR(arenaFrame)
     end
-    if not MV.IsInArena() then return end
+    if not MF.IsInArena() then return end
     if (event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH") then
-      MV.UpdateHealthBar(arenaFrame)
+      MF.UpdateHealthBar(arenaFrame)
     elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
-      MV.UpdateAbsorbBar(arenaFrame)
+      MF.UpdateAbsorbBar(arenaFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-      MV.SetRangeAlpha(arenaFrame)
+      MF.SetRangeAlpha(arenaFrame)
     elseif event == "PLAYER_TARGET_CHANGED" then
-      MV.UpdateTargetHighlight(arenaFrame, MV_ArenaTestMode)
+      MF.UpdateTargetHighlight(arenaFrame, MF_ArenaTestMode)
     elseif event == "PVP_MATCH_STATE_CHANGED"
         or event == "GROUP_ROSTER_UPDATE"
         or event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS"
@@ -264,17 +264,17 @@ local function SetArenaFrame(index)
     then
       if arg1 == unit then
         SetMemberFrame(index)
-        MV.UpdateTrinket(arenaFrame, true)
-        MV.ResetDR(arenaFrame)
+        MF.UpdateTrinket(arenaFrame, true)
+        MF.ResetDR(arenaFrame)
         HookDR(arenaFrame)
       end
     elseif event == "UNIT_AURA" then
-      MV.UpdateAuras(arenaFrame)
+      MF.UpdateAuras(arenaFrame)
     elseif event == "ARENA_COOLDOWNS_UPDATE" or event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then -- These are the only two needed: Trinket
-      MV.UpdateTrinket(arenaFrame, true)
+      MF.UpdateTrinket(arenaFrame, true)
     elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
-      if not MV.DRFallback then
-        MV.TryAndUpdateDRStateFromEvent(arenaFrame, arg2)
+      if not MF.DRFallback then
+        MF.TryAndUpdateDRStateFromEvent(arenaFrame, arg2)
       end
     end
   end)

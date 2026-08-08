@@ -1,8 +1,8 @@
-## Interface: 120000, 120001, 120005
-## Title: Mega Villos
+## Interface: 120000, 120001, 120005, 120100
+## Title: MidnightFrames
 ## Notes: Custom frames for almost everything.
-## IconTexture: Interface\AddOns\MVPF\Media\icon
-## SavedVariables: MV_DB
+## IconTexture: Interface\AddOns\MidnightFrames\Media\icon
+## SavedVariables: MF_DB
 ## Dependencies: Ace3
 ## Category: Matcha Latte
 
