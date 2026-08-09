@@ -12,8 +12,8 @@ local targetFrame = MF.CreateUnitFrame({
   name     = "MF_Target",
   unit     = "target",
   unitKey  = "target",
-  point    = { "CENTER", UIParent, "CENTER", MF.FrameXAlt, 0 },
-  size     = { MF.SizeX, MF.SizeY },
+  point    = { "CENTER", UIParent, "CENTER", MF.PrimaryFrameOffsetX, 0 },
+  size     = { MF.SizeX, MF.PrimaryFrameHeight },
   maxAuras = MAX_AURAS,
   iconSize = MF.DefaultSize,
 })
@@ -32,29 +32,23 @@ end
 
 function targetFrame:UpdateVisibility() UpdateVisibility() end
 
--- DEFAULTS
 targetFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 targetFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
--- UNIT FRAMES
 targetFrame:RegisterUnitEvent("UNIT_HEALTH", targetFrame.unit)
 targetFrame:RegisterUnitEvent("UNIT_MAXHEALTH", targetFrame.unit)
 targetFrame:RegisterUnitEvent("UNIT_AURA", targetFrame.unit)
 targetFrame:RegisterUnitEvent("UNIT_NAME_UPDATE", targetFrame.unit)
 targetFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", targetFrame.unit)
 
--- PLAYER HIGHLIGHT
 targetFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 
--- RANGE CHECK
 targetFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
 targetFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
 targetFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
--- RAID TARGET MARK
 targetFrame:RegisterEvent("RAID_TARGET_UPDATE")
 
--- CAST INDICATOR
 targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", targetFrame.unit)
 targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", targetFrame.unit)
 targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", targetFrame.unit)

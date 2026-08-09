@@ -1,13 +1,6 @@
 local _, MF = ...
 
--- Soft-bloom approximation for the highlight borders: a larger, softer-alpha
--- BackdropTemplate ring layered behind the crisp 2px border, bleeding a few
--- pixels past it. WoW textures have no real blur, so this isn't a true
--- gaussian glow - it's a second edge, thicker and more transparent, using the
--- exact same BackdropTemplate technique already proven throughout this file
--- rather than something unproven (blend-mode-layered textures). Parented to
--- the border frame itself so it shows/hides for free whenever the border
--- does, with no changes needed anywhere the borders are already toggled.
+-- A larger, softer copy of the border behind it, for a glow/bloom look.
 local function AddGlow(borderFrame, r, g, b, bleed, edgeSize, alpha)
   local glow = CreateFrame("Frame", nil, borderFrame, "BackdropTemplate")
   glow:SetPoint("TOPLEFT", -bleed, bleed)
@@ -17,10 +10,7 @@ local function AddGlow(borderFrame, r, g, b, bleed, edgeSize, alpha)
     edgeSize = edgeSize,
   })
   glow:SetBackdropBorderColor(r, g, b, alpha)
-  -- Explicit rather than relying on the implicit child-defaults-to-parent+1
-  -- behavior: still call this AFTER borderFrame's own SetFrameLevel has
-  -- already been set to its final value (see call sites), since this reads
-  -- borderFrame's level at the moment AddGlow runs, not continuously.
+  -- must run after borderFrame's own SetFrameLevel, or this reads the wrong level
   glow:SetFrameLevel(borderFrame:GetFrameLevel() + 1)
   return glow
 end
@@ -29,20 +19,17 @@ local function CreateAuraButton(parent, index)
   local btn = CreateFrame("Button", parent:GetName() .. "Aura" .. index, parent)
   btn:SetSize(parent.iconSize, parent.iconSize)
 
-  -- Border behind the icon
   btn.border = btn:CreateTexture(nil, "BACKGROUND")
   btn.border:SetTexture("Interface\\Buttons\\WHITE8x8")
   btn.border:SetVertexColor(0, 0, 0, 1)
   btn.border:SetPoint("TOPLEFT", -1, 1)
   btn.border:SetPoint("BOTTOMRIGHT", 1, -1)
 
-  -- Icon above border
   btn.icon = btn:CreateTexture(nil, "BORDER")
   btn.icon:SetAllPoints(btn)
   btn.icon:SetAlpha(0.8)
   btn.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 
-  -- Cooldown
   btn.cooldown = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
   btn.cooldown:SetAllPoints(btn)
   btn.cooldown:Hide()
@@ -78,20 +65,17 @@ local function CreateGenericButton(parent, index)
   local btn = CreateFrame("Button", parent:GetName() .. "Aura" .. index, parent)
   btn:SetSize(parent.iconSize, parent.iconSize)
 
-  -- Border behind the icon
   btn.border = btn:CreateTexture(nil, "BACKGROUND", nil, 0)
   btn.border:SetTexture("Interface\\Buttons\\WHITE8x8")
   btn.border:SetVertexColor(0, 0, 0, 1)
   btn.border:SetPoint("TOPLEFT", -1, 1)
   btn.border:SetPoint("BOTTOMRIGHT", 1, -1)
 
-  -- Icon above border
   btn.icon = btn:CreateTexture(nil, "BORDER")
   btn.icon:SetAllPoints(btn)
   btn.icon:SetAlpha(0.8)
   btn.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 
-  -- Cooldown
   btn.cooldown = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
   btn.cooldown:SetAllPoints(btn)
   btn:Hide()
@@ -149,15 +133,13 @@ function MF.CreateUnitFrame(params)
   f.unitKey = unitKey
   f.maxAuras = maxAuras
 
-  -- Background
   f.bg = f:CreateTexture(nil, "BACKGROUND")
   f.bg:SetAllPoints(f)
   f.bg:SetColorTexture(0, 0, 0, 0.6)
 
-  local inset      = 0 -- on the frame edge
-  local innerInset = 2 -- 2px inside
+  local inset      = 0
+  local innerInset = MF.HighlightInset
 
-  -- Base border (on edge)
   f.border         = CreateFrame("Frame", nil, f, "BackdropTemplate")
   f.border:SetPoint("TOPLEFT", inset, -inset)
   f.border:SetPoint("BOTTOMRIGHT", -inset, inset)
@@ -167,18 +149,7 @@ function MF.CreateUnitFrame(params)
   })
   f.border:SetBackdropBorderColor(0, 0, 0, 1)
 
-  -- Highlight stacking order (low to high): inner (ally-targeted) < outer (my
-  -- target) < mouseover - mouseover is the active, momentary signal, so it
-  -- should always read on top of the more ambient/persistent target and
-  -- ally-target state, never get buried by them. Each border's SetFrameLevel
-  -- MUST run before its AddGlow call - the glow is a child, and an unset-
-  -- level child snapshots its default level (parent's level *at creation
-  -- time*) rather than tracking the parent's level live, so calling AddGlow
-  -- first silently glued the glow to the parent's pre-adjustment level
-  -- instead of its real, final one. (That ordering bug is exactly why the
-  -- outer glow was landing above the mouseover highlight instead of below it.)
-
-  -- Inner border
+  -- highlight order low to high: inner (ally target) < outer (my target) < mouseover
   f.innerBorder = CreateFrame("Frame", nil, f, "BackdropTemplate")
   f.innerBorder:SetPoint("TOPLEFT", innerInset, -innerInset)
   f.innerBorder:SetPoint("BOTTOMRIGHT", -innerInset, innerInset)
@@ -191,12 +162,6 @@ function MF.CreateUnitFrame(params)
   AddGlow(f.innerBorder, 0.2, 0.8, 0.2, 2, 6, 0.25)
   f.innerBorder:Hide()
 
-  -- Outer border. Glow sized to match mouseover's bloom exactly (bleed/edge
-  -- below) so target and mouseover read as the same weight of highlight -
-  -- alpha stays a touch lower than mouseover's so mouseover still reads as
-  -- the "brighter" of the two when both are visible. With the ordering fix
-  -- above, this now correctly layers below the mouseover highlight instead
-  -- of painting over it.
   f.outerBorder = CreateFrame("Frame", nil, f, "BackdropTemplate")
   f.outerBorder:SetPoint("TOPLEFT", inset, -inset)
   f.outerBorder:SetPoint("BOTTOMRIGHT", -inset, inset)
@@ -206,11 +171,9 @@ function MF.CreateUnitFrame(params)
   })
   f.outerBorder:SetBackdropBorderColor(1, 1, 1, 1)
   f.outerBorder:SetFrameLevel(f.border:GetFrameLevel() + 2)
-  AddGlow(f.outerBorder, 1, 1, 1, 3, 8, 0.26)
+  AddGlow(f.outerBorder, 1, 1, 1, 2, 6, 0.26)
   f.outerBorder:Hide()
 
-  -- Mouseover border (on edge, above everything else - see stacking-order
-  -- note above)
   f.mouseoverBorder = CreateFrame("Frame", nil, f, "BackdropTemplate")
   f.mouseoverBorder:SetPoint("TOPLEFT", inset, -inset)
   f.mouseoverBorder:SetPoint("BOTTOMRIGHT", -inset, inset)
@@ -223,10 +186,9 @@ function MF.CreateUnitFrame(params)
   AddGlow(f.mouseoverBorder, 0.694, 0.372, 0.98, 3, 8, 0.30)
   f.mouseoverBorder:Hide()
 
-  -- Health bar
   f.health = CreateFrame("StatusBar", name .. "Health", f)
-  f.health:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 4, 4)
-  f.health:SetPoint("TOPRIGHT", f, "TOPRIGHT", -4, -4)
+  f.health:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", MF.FillInset, MF.FillInset)
+  f.health:SetPoint("TOPRIGHT", f, "TOPRIGHT", -MF.FillInset, -MF.FillInset)
   f.health:SetStatusBarTexture("Interface\\Buttons\\WHITE8x8")
   if not horizontal then
     f.health:SetOrientation("VERTICAL")
@@ -237,9 +199,47 @@ function MF.CreateUnitFrame(params)
   f.health:SetAlpha(0.8)
   f.health:SetFrameLevel(f:GetFrameLevel() + 1)
 
+  -- shimmer overlay bar, mirrors f.health's value so it never has to read the real percent
+  f.healthLiquid = CreateFrame("StatusBar", name .. "HealthLiquid", f)
+  f.healthLiquid:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", MF.FillInset, MF.FillInset)
+  f.healthLiquid:SetPoint("TOPRIGHT", f, "TOPRIGHT", -MF.FillInset, -MF.FillInset)
+  f.healthLiquid:SetStatusBarTexture("Interface\\AddOns\\MidnightFrames\\Media\\HealthLiquid.tga")
+  if not horizontal then
+    f.healthLiquid:SetOrientation("VERTICAL")
+  end
+  f.healthLiquid:SetRotatesTexture(true)
+  f.healthLiquid:SetFrameStrata("MEDIUM")
+  f.healthLiquid:SetFrameLevel(f.health:GetFrameLevel() + 1)
+  f.healthLiquid:SetMinMaxValues(0, 1)
+  f.healthLiquid:SetValue(1)
+  do
+    local liquidTexture = f.healthLiquid:GetStatusBarTexture()
+    liquidTexture:SetTexture(
+      "Interface\\AddOns\\MidnightFrames\\Media\\HealthLiquid.tga", "REPEAT", "REPEAT")
+    liquidTexture:SetBlendMode("ADD")
+  end
+  MF.TintHealthLiquid(f.healthLiquid, 0.25, 0.88, 0.82)
+
+  -- scrolls the texture for a flowing look; unverified whether vertical
+  -- frames need the axes swapped (no live client to test rotated bars)
+  f.healthLiquid.scrollOffset = 0
+  f.healthLiquid.scrollElapsed = 0
+  f.healthLiquid:SetScript("OnUpdate", function(self, elapsed)
+    self.scrollElapsed = self.scrollElapsed + elapsed
+    if self.scrollElapsed < 0.05 then return end
+    self.scrollElapsed = 0
+    self.scrollOffset = (self.scrollOffset + 0.010) % 1
+    local tex = self:GetStatusBarTexture()
+    if horizontal then
+      tex:SetTexCoord(self.scrollOffset, self.scrollOffset + 1, 0, 1)
+    else
+      tex:SetTexCoord(0, 1, self.scrollOffset, self.scrollOffset + 1)
+    end
+  end)
+
   f.absorb = CreateFrame("StatusBar", name .. "Absorb", f)
-  f.absorb:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 4, 4)
-  f.absorb:SetPoint("TOPRIGHT", f, "TOPRIGHT", -4, -4)
+  f.absorb:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", MF.FillInset, MF.FillInset)
+  f.absorb:SetPoint("TOPRIGHT", f, "TOPRIGHT", -MF.FillInset, -MF.FillInset)
   f.absorb:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
   if not horizontal then
     f.absorb:SetOrientation("VERTICAL")
@@ -247,7 +247,7 @@ function MF.CreateUnitFrame(params)
   f.absorb:SetRotatesTexture(true)
   f.absorb:SetFrameStrata("MEDIUM")
   f.absorb:SetStatusBarColor(0.2, 0.45, 0.85, 0.6)
-  f.absorb:SetFrameLevel(f.health:GetFrameLevel() + 1)
+  f.absorb:SetFrameLevel(f.healthLiquid:GetFrameLevel() + 1)
   f.absorb:SetMinMaxValues(0, 1)
   f.absorb:SetValue(0)
 
@@ -274,53 +274,29 @@ function MF.CreateUnitFrame(params)
     f.orbIcon:Hide()
   end
 
-  -- Raid target mark (skull/cross/etc.) and cast indicator share one corner
-  -- treatment: centered ON a health-bar corner (not tucked inside it) so only
-  -- one quadrant of the icon ever overlaps the bar - health-color legibility
-  -- takes priority over either indicator, which just needs to be glanceable.
-  -- Sized off iconSize so both scale down naturally on the small raid frames
-  -- instead of needing their own per-frame-type constant.
+  -- raid mark centers on the health bar's top-right corner; confirmed clear
+  -- of roleIcon/orbIcon/auraContainer on every frame type
   local cornerIconSize = math.floor(iconSize / 2)
 
-  -- Top-right corner. Confirmed clear on every frame type: roleIcon is always
-  -- CENTER-anchored, orbIcon/otherContainer sit entirely outside the frame,
-  -- and auraContainer never reaches this corner (BOTTOM-anchored well below
-  -- it on vertical frames, LEFT-anchored on horizontal/raid frames).
   f.raidMark = CreateFrame("Frame", name .. "RaidMark", f)
   f.raidMark:SetSize(cornerIconSize, cornerIconSize)
   f.raidMark:SetPoint("CENTER", f.health, "TOPRIGHT", 0, 0)
   f.raidMark:SetFrameStrata("MEDIUM")
-  -- Above every highlight border, including mouseover (its old level -
-  -- f.absorb:GetFrameLevel()+1 - worked out to the same f.border-relative
-  -- offset as mouseoverBorder's, so which one painted on top was undefined
-  -- instead of guaranteed to be this).
   f.raidMark:SetFrameLevel(f.mouseoverBorder:GetFrameLevel() + 1)
   f.raidMark.icon = f.raidMark:CreateTexture(nil, "OVERLAY")
   f.raidMark.icon:SetAllPoints(f.raidMark)
   f.raidMark.icon:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
   f.raidMark:Hide()
 
-  -- Top-left corner, mirroring the mark - a radial cast indicator instead of
-  -- a bar (no orientation problem to solve, reuses the same Cooldown-sweep
-  -- language as the aura/DR/trinket icons). Raid frames are excluded: their
-  -- auraContainer is LEFT-anchored across roughly the frame's left half (see
-  -- below), which overlaps this corner the same way it would have broken a
-  -- mirrored raid mark there.
-  --
-  -- Sized a bit larger than the raid mark, and nudged right of dead-center
-  -- on the corner (rather than centered exactly on it like the mark) - at
-  -- default frame spacing, two adjacent frames are only a few pixels apart,
-  -- so a corner badge centered exactly on the top-left point bled far enough
-  -- left to collide with the neighboring frame's top-right raid mark, which
-  -- bleeds the same distance right from its own corner.
+  -- cast indicator mirrors the raid mark on the top-left corner. Skipped on
+  -- raid frames since their aura icons already sit there. Sized up a bit and
+  -- nudged off-center so it doesn't collide with the next frame's raid mark.
   if not horizontal then
     local castIconSize = math.floor(cornerIconSize * 1.2)
     f.castIndicator = CreateFrame("Frame", name .. "CastIndicator", f)
     f.castIndicator:SetSize(castIconSize, castIconSize)
     f.castIndicator:SetPoint("CENTER", f.health, "TOPLEFT", castIconSize * 0.35, 0)
     f.castIndicator:SetFrameStrata("MEDIUM")
-    -- Same reasoning as f.raidMark above: must sit above every highlight
-    -- border, mouseover included.
     f.castIndicator:SetFrameLevel(f.mouseoverBorder:GetFrameLevel() + 1)
     f.castIndicator.border = f.castIndicator:CreateTexture(nil, "BACKGROUND")
     f.castIndicator.border:SetTexture("Interface\\Buttons\\WHITE8x8")
@@ -343,7 +319,6 @@ function MF.CreateUnitFrame(params)
     self.mouseoverBorder:Hide()
   end)
 
-  -- Aura container
   f.auraContainer = CreateFrame("Frame", name .. "Auras", f)
   f.auraContainer.maxAuras = maxAuras
   f.auraContainer.iconSize = iconSize
@@ -353,7 +328,7 @@ function MF.CreateUnitFrame(params)
     f.auraContainer:SetPoint("LEFT", f, "LEFT", 10, 0)
   else
     f.auraContainer:SetSize(28, totalHeight)
-    f.auraContainer:SetPoint("BOTTOM", f, "TOP", 0, -190)
+    f.auraContainer:SetPoint("BOTTOM", f, "TOP", 0, -MF.AuraOffsetY)
   end
   f.auraContainer:SetFrameLevel(f.absorb:GetFrameLevel() + 1)
   f.auraContainer.icons = {}

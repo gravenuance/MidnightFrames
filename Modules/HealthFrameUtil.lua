@@ -3,13 +3,8 @@ local _, MF = ...
 local healthCurveType = Enum.LuaCurveType.Linear
 local healthCurve
 
--- Mirrors MF.UpdatePowerLabel's pattern (FrameUtil.lua): UnitHealth/UnitHealthMax
--- can return secret values for units other than the player, so the health bar
--- is driven off UnitHealthPercent through a curve instead of raw absolute
--- numbers. The curve's 0.0->0.0 / 1.0->1.0 mapping lines up with a plain
--- SetMinMaxValues(0, 1), and the result is only ever handed to StatusBar:SetValue
--- (a sanctioned secret-accepting sink) - it's never read, compared, or formatted,
--- so it doesn't matter whether it comes back secret or not.
+-- Health can be a secret value for other units, so we drive the bar off a
+-- curve instead of reading the raw number.
 local function GetHealthCurve()
   if not MF.IsNil(healthCurve) then
     return healthCurve
@@ -81,10 +76,7 @@ local function GetClassColor(unit, fr, fg, fb)
   return fr or 0, fg or 0.8, fb or 0, false
 end
 
--- Deep: darker/richer toward the back of the fill. Bright: lifted toward
--- white at the leading edge. Same base hue throughout (class color, hostile
--- red, whatever GetClassColor produced) - just two derived shades instead of
--- one flat tone, for a bit of depth instead of a flat fill.
+-- Darker shade for the back of the fill, brighter for the front.
 local function DeriveGradientShades(r, g, b)
   local deepR, deepG, deepB = r * 0.35, g * 0.35, b * 0.35
   local brightR = r + (1 - r) * 0.55
@@ -93,22 +85,11 @@ local function DeriveGradientShades(r, g, b)
   return deepR, deepG, deepB, brightR, brightG, brightB
 end
 
--- Alpha is deliberately NOT part of this: it used to be baked into
--- SetStatusBarColor's 4th argument and re-read/re-applied by MF.SetRangeAlpha
--- (RangeUtil.lua) on every range check. A gradient texture has no equivalent
--- "read the current color back" operation, so alpha (range-in/out-of-range,
--- prep/stealth dimming in Arena.lua) is now its own concern, applied via
--- statusBar:SetAlpha() independently of color. See MF.SetRangeAlpha and
--- Arena.lua's SetClassColor for the two other callers this affects.
---
--- CAVEAT: SetGradient's orientation parameter operates in the status bar
--- texture's own coordinate space. Vertical frames combine
--- SetOrientation("VERTICAL") with SetRotatesTexture(true) (see Setup.lua),
--- and it wasn't possible to confirm against a live client whether the
--- rotation changes which SetGradient orientation string produces a visually
--- vertical gradient. This reads statusBar:GetOrientation() directly (the
--- simpler, more likely mapping) - if a vertical frame's gradient renders
--- sideways in-game, swap the two branches below.
+-- Alpha isn't set here - a gradient texture can't be read back like a solid
+-- color, so alpha is handled separately via statusBar:SetAlpha() (see
+-- MF.SetRangeAlpha and Arena.lua's SetClassColor).
+-- Unverified: whether vertical frames need the orientation flipped here,
+-- since rotated bars weren't tested on a live client.
 function MF.ApplyHealthGradient(statusBar, r, g, b)
   if not statusBar then return end
   local texture = statusBar:GetStatusBarTexture()
@@ -119,11 +100,22 @@ function MF.ApplyHealthGradient(statusBar, r, g, b)
   texture:SetGradient(orientation, CreateColor(deepR, deepG, deepB), CreateColor(brightR, brightG, brightB))
 end
 
+-- The liquid texture is greyscale, so its color comes entirely from this tint.
+function MF.TintHealthLiquid(overlayBar, r, g, b)
+  if not overlayBar then return end
+  local texture = overlayBar:GetStatusBarTexture()
+  if not texture then return end
+
+  local _, _, _, brightR, brightG, brightB = DeriveGradientShades(r, g, b)
+  texture:SetVertexColor(brightR, brightG, brightB, 0.24)
+end
+
 function MF.ApplyClassColor(frame)
   if not frame.health then return end
   local r, g, b = GetClassColor(frame.unit)
 
   MF.ApplyHealthGradient(frame.health, r, g, b)
+  MF.TintHealthLiquid(frame.healthLiquid, r, g, b)
   frame.health:SetAlpha(MF.RegAlpha)
   if frame.power then
     local dr, dg, db = r * 0.7, g * 0.7, b * 0.7
@@ -132,42 +124,49 @@ function MF.ApplyClassColor(frame)
   if frame.pet then
     if frame.pet.health then
       MF.ApplyHealthGradient(frame.pet.health, r, g, b)
+      MF.TintHealthLiquid(frame.pet.healthLiquid, r, g, b)
       frame.pet.health:SetAlpha(MF.RegAlpha)
     end
   end
 end
 
+-- Keeps the liquid overlay's fill in sync with the health bar's.
+local function SetHealthValue(frame, value)
+  frame.health:SetValue(value)
+  if frame.healthLiquid then
+    frame.healthLiquid:SetValue(value)
+  end
+end
+
 function MF.UpdateHealthBar(frame)
   frame.health:SetMinMaxValues(0, 1)
+  if frame.healthLiquid then
+    frame.healthLiquid:SetMinMaxValues(0, 1)
+  end
 
   if IsDeadOrGhost(frame.unit) then
-    frame.health:SetValue(0)
+    SetHealthValue(frame, 0)
     return
   elseif not IsLegalUnit(frame.unit) then
-    frame.health:SetValue(1)
+    SetHealthValue(frame, 1)
     return
   end
 
   local curve = GetHealthCurve()
   if not curve then
-    frame.health:SetValue(0)
+    SetHealthValue(frame, 0)
     return
   end
 
   local ok, percent = MF.UnitHealthPercent(frame.unit, curve)
   if not ok then
-    frame.health:SetValue(0)
+    SetHealthValue(frame, 0)
     return
   end
-  frame.health:SetValue(percent)
+  SetHealthValue(frame, percent)
 end
 
 function MF.UpdateAbsorbBar(frame)
-  -- Same secrecy concern as UnitHealth/UnitHealthMax above: go through the
-  -- SecureUtil-wrapped calls instead of the raw globals so a secret/erroring
-  -- result can't propagate an uncaught error into this frame's event
-  -- handler. The fallback is an explicit type check rather than `x or
-  -- default`, since truthiness-testing a secret value directly is unsafe.
   local ok1, maxHealth = MF.UnitHealthMax(frame.unit)
   if not ok1 or not MF.IsNumber(maxHealth) then
     maxHealth = 1

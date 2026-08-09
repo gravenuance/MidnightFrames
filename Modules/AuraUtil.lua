@@ -120,9 +120,6 @@ local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
   local seen = {}
 
   local function AddAuras(filter)
-    -- Secret-vector safety (12.1's aura-container restrictions) is handled
-    -- inside MF.GetUnitAuras (SecureUtil.lua) so every caller gets it
-    -- automatically instead of re-deriving it at each call site.
     local ok, auraList, totalAuras = MF.GetUnitAuras(
       unit, filter, maxRemaining, Enum.UnitAuraSortRule.BigDefensive, Enum.UnitAuraSortDirection.Reverse
     )
@@ -139,10 +136,6 @@ local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
         break
       end
 
-      -- auraInstanceID isn't expected to ever be secret, but table-key
-      -- indexing by a secret value is unreliable, so guard it anyway rather
-      -- than assume: if it can't be trusted, just skip the dedup check for
-      -- this aura instead of risking a bad break/no-op.
       local instanceID = auraData.auraInstanceID
       if MF.IsNumber(instanceID) and not MF.IsSecretSafe(instanceID) then
         if seen[instanceID] then
@@ -186,16 +179,10 @@ local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
 end
 
 function MF.UpdateAuras(frame)
-  --[[ if not UnitExists(frame.unit) then
-    GetAndUpdateAuras(frame.auraContainer, frame.unit, {}, 0)
-    return
-  end ]]
   local filters = {}
   local cfg = MF.GetUnitFilters(frame.unitKey)
 
-  -- Iterate MF.FilterOrder (not pairs(cfg)) so which enabled filters win the
-  -- limited icon slots is deterministic and priority-ranked, rather than
-  -- depending on Lua's unspecified hash-table iteration order.
+  -- fixed order so which filters win the limited icon slots is predictable
   for _, filter in ipairs(MF.FilterOrder or {}) do
     if cfg[filter] then
       table.insert(filters, filter)

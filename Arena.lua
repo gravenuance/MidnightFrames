@@ -64,8 +64,8 @@ local function SetArenaFrame(index)
     name = name,
     unit = unit,
     unitKey = "arena",
-    point = { "CENTER", UIParent, "CENTER", MF.FrameX + (index - 1) * MF.FrameSpace, 0 },
-    size = { MF.SizeX, MF.SizeYAlt },
+    point = { "CENTER", UIParent, "CENTER", MF.RosterFrameOffsetX + (index - 1) * MF.RosterFrameSpacing, 0 },
+    size = { MF.SizeX, MF.GroupFrameHeight },
     maxAuras = MAX_AURAS,
     iconSize = MF.DefaultSize,
     pvpIcons = true,
@@ -86,7 +86,10 @@ local function SetArenaFrame(index)
       local r, g, b = GetClassColors(class)
       if r then
         MF.ApplyHealthGradient(arenaFrame.health, r, g, b)
-        arenaFrame.health:SetAlpha(alpha or regAlpha)
+        MF.TintHealthLiquid(arenaFrame.healthLiquid, r, g, b)
+        local a = alpha or regAlpha
+        arenaFrame.health:SetAlpha(a)
+        arenaFrame.healthLiquid:SetAlpha(a)
         return true
       end
     end
@@ -197,45 +200,37 @@ local function SetArenaFrame(index)
     end
   end
 
-  -- SET DEFAULTS
   arenaFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
   arenaFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
-  -- APPROXIMATE RANGE CHECKER
-  arenaFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED") -- Range
+  arenaFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
   arenaFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   arenaFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
-  -- UNIT INFORMATION
   arenaFrame:RegisterUnitEvent("UNIT_HEALTH", unit)
   arenaFrame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
   arenaFrame:RegisterUnitEvent("UNIT_AURA", unit)
   arenaFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
 
-  --HIGHLIGHT
-  arenaFrame:RegisterEvent("PLAYER_TARGET_CHANGED") -- Target highlight
+  arenaFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 
-  --CHECK STATE CHANGES
-  arenaFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS") -- No payload, must scan all
-  arenaFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")             -- Start/End of the game
+  -- no payload, so we rescan everyone
+  arenaFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+  arenaFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
   arenaFrame:RegisterEvent("UPDATE_BATTLEFIELD_SCORE")
   arenaFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
-  --CHECK ARENA UPDATES
-  arenaFrame:RegisterUnitEvent("UNIT_OTHER_PARTY_CHANGED", unit) -- Triggers for arenaX
-  arenaFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")              -- Unseen = left.
+  -- fires with no payload when an opponent leaves
+  arenaFrame:RegisterUnitEvent("UNIT_OTHER_PARTY_CHANGED", unit)
+  arenaFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
 
-  --CHECK TRINKET UPDATES
-  arenaFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE") -- Trinket
+  arenaFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
   arenaFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
 
-  --DR
   arenaFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit)
 
-  --RAID TARGET MARK
   arenaFrame:RegisterEvent("RAID_TARGET_UPDATE")
 
-  --CAST INDICATOR
   arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
   arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
   arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
@@ -288,7 +283,7 @@ local function SetArenaFrame(index)
       end
     elseif event == "UNIT_AURA" then
       MF.UpdateAuras(arenaFrame)
-    elseif event == "ARENA_COOLDOWNS_UPDATE" or event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then -- These are the only two needed: Trinket
+    elseif event == "ARENA_COOLDOWNS_UPDATE" or event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then
       MF.UpdateTrinket(arenaFrame, true)
     elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
       if not MF.DRFallback then

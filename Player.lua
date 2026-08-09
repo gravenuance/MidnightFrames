@@ -8,8 +8,8 @@ local playerFrame = MF.CreateUnitFrame({
   name = "MF_Player",
   unit = "player",
   unitKey = "player",
-  point = { "CENTER", UIParent, "CENTER", -MF.FrameXAlt, 0 },
-  size = { MF.SizeX, MF.SizeY },
+  point = { "CENTER", UIParent, "CENTER", -MF.PrimaryFrameOffsetX, 0 },
+  size = { MF.SizeX, MF.PrimaryFrameHeight },
   maxAuras = MAX_AURAS,
   iconSize = MF.DefaultSize,
   roleIcon = true,
@@ -18,12 +18,13 @@ RegisterUnitWatch(playerFrame)
 
 local power
 if playerFrame.health then
-  power = playerFrame.health:CreateFontString(nil, "OVERLAY")
+  -- parented to absorb (topmost of health/healthLiquid/absorb) so it renders above all three
+  power = playerFrame.absorb:CreateFontString(nil, "OVERLAY")
   power:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
   power:SetPoint("BOTTOM", playerFrame.health, "TOP", 0, -20)
   power:SetJustifyH("CENTER")
   power:SetJustifyV("MIDDLE")
-  power:SetAlpha(1)
+  power:SetAlpha(0.75)
   playerFrame.power = power
 end
 
@@ -47,13 +48,11 @@ local function UpdatePetHealthBar()
   MF.UpdateHealthBar(petFrame)
 end
 
--- DEFAULTS
 playerFrame:RegisterEvent("PLAYER_LOGIN")
 playerFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 playerFrame:RegisterEvent("PLAYER_ALIVE")
 playerFrame:RegisterEvent("ZONE_CHANGED")
 
--- UNIT FRAMES
 playerFrame:RegisterUnitEvent("UNIT_HEALTH", playerFrame.unit, petFrame.unit)
 playerFrame:RegisterUnitEvent("UNIT_MAXHEALTH", playerFrame.unit, petFrame.unit)
 playerFrame:RegisterUnitEvent("UNIT_AURA", playerFrame.unit)
@@ -61,23 +60,17 @@ playerFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", playerFrame.unit)
 playerFrame:RegisterEvent("PLAYER_DEAD")
 playerFrame:RegisterEvent("PLAYER_UNGHOST")
 
--- PLAYER HIGHLIGHT
 playerFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 
--- UNIT POWER
 playerFrame:RegisterUnitEvent("UNIT_POWER_UPDATE", playerFrame.unit)
 playerFrame:RegisterUnitEvent("UNIT_MAXPOWER", playerFrame.unit)
 
--- PET
 playerFrame:RegisterUnitEvent("UNIT_PET", playerFrame.unit)
 
--- REGISTER RANGE CHECK
 playerFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
--- RAID TARGET MARK
 playerFrame:RegisterEvent("RAID_TARGET_UPDATE")
 
--- CAST INDICATOR
 playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", playerFrame.unit)
 playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", playerFrame.unit)
 playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", playerFrame.unit)

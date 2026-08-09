@@ -1,10 +1,6 @@
 local _, MF = ...
 
--- notInterruptible comes straight from an event payload / API return, so it
--- must be sanitized before use like everything else in DRUtil/AuraUtil that
--- touches secret-capable cast/cooldown data. Defaults to "interruptible"
--- (false) when unknown, matching DRUtil's SanitizeBoolean(isImmune, false)
--- precedent - assume the non-blocking state rather than the alarming one.
+-- defaults to "interruptible" when we can't tell
 local function SanitizeBoolean(value, default)
   if MF.IsSecretSafe(value) then
     return default

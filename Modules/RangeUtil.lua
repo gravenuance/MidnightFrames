@@ -8,10 +8,7 @@ local RangeSpells     = {}
 local RangeSpellsSize = 0
 local RangeThreshold  = 0
 
--- CheckMultiSpellRange later does raw comparisons (spell.helpful == true,
--- spell.range == false) on whatever gets cached here, so only ever cache a
--- confirmed non-secret value - guard at write time so every read site downstream
--- stays safe automatically.
+-- only cache values we know aren't secret
 function MF.RegisterRangeSpell(id)
   if RangeSpells and RangeSpells[id] then return end
   RangeSpells[id] = {}
@@ -80,15 +77,10 @@ end
 
 function MF.SetRangeAlpha(frame)
   if not frame:IsShown() then return end
-  -- Used to read the bar's current color back via GetStatusBarColor() and
-  -- re-apply it with a different alpha. Health color is now a gradient
-  -- texture (MF.ApplyHealthGradient), which has no equivalent "read it back"
-  -- operation, so alpha is now a fully separate concern from color - just
-  -- fade the whole textured bar via SetAlpha instead.
   local inRange = CheckMultiSpellRange(frame.unit)
-  if inRange then
-    frame.health:SetAlpha(MF.RegAlpha)
-  else
-    frame.health:SetAlpha(MF.OtherAlpha)
+  local alpha = inRange and MF.RegAlpha or MF.OtherAlpha
+  frame.health:SetAlpha(alpha)
+  if frame.healthLiquid then
+    frame.healthLiquid:SetAlpha(alpha)
   end
 end

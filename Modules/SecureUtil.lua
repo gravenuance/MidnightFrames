@@ -6,10 +6,7 @@ local C_PvP = _G.C_PvP
 local C_Spell = _G.C_Spell
 local C_LossOfControl = _G.C_LossOfControl
 
--- Secret values can't be compared or boolean-tested by insecure code (a
--- boolean-typed secret can't even be truthiness-tested), so any value that
--- came back from an external API must be run through this before it's used
--- in ==, <, >, arithmetic, string concatenation, or as a table key.
+-- checks if a value is "secret" (WoW blocks reading/comparing these) before we use it
 function MF.IsSecretSafe(value)
   if not issecretvalue then
     return false
@@ -27,9 +24,7 @@ local function IsSecretUnit(unit)
   return type(unit) == "string" and IsSecretSafe(unit)
 end
 
--- Resolves an (ok, value) pair from CallExternalFunction that is expected to
--- be a plain boolean into a definite true/false, refusing to truthiness-test
--- the raw value directly (unsafe if it turns out to be a secret boolean).
+-- turns an (ok, value) pair into a plain true/false, safely
 function MF.SafeBoolResult(ok, value)
   if not ok or IsSecretSafe(value) then
     return false
@@ -100,14 +95,9 @@ function MF.IsTexture(value)
   return MF.IsOfObjectType("Texture", value)
 end
 
--- Shared, never-mutated stand-in for calls with no args, so every no-arg
--- CallExternalFunction call doesn't allocate its own throwaway table.
 local NO_ARGS = {}
 
---@params.args can be nil
---@params.argumentValidators can be nil
---@params.namespace can be nil, accepts a table or userdata
---@params.functionName cannot be nil, must be a string
+-- params.functionName is required; everything else is optional
 function MF.CallExternalFunction(params)
   local namespace = params.namespace
   local argumentValidators = params.argumentValidators
@@ -139,10 +129,7 @@ function MF.CallExternalFunction(params)
       end
     end
   end
-  -- 9 slots to cover UnitCastingInfo (name, text, texture, startTimeMS,
-  -- endTimeMS, isTradeSkill, castID, notInterruptible, spellID) - the widest
-  -- return signature any wrapper in this file needs; existing callers with
-  -- fewer return values are unaffected.
+  -- 9 return values covers the widest call we make (UnitCastingInfo)
   local ok, r1, r2, r3, r4, r5, r6, r7, r8, r9 = pcall(func, unpack(args))
   if not ok then
     local errorMessage = r1
@@ -294,16 +281,11 @@ function MF.UnitGetTotalAbsorbs(unit)
   return ok, result
 end
 
--- Validator arrays are static per call site; hoisted so these run on every
--- UNIT_AURA (per aura button, per frame) without reallocating them per call.
 local GET_UNIT_AURAS_VALIDATORS = { MF.IsString, MF.IsString, MF.IsNumber, MF.IsNumber, MF.IsNumber }
 local DISPEL_COLOR_VALIDATORS = { MF.IsString, MF.IsNumber, MF.IsUserData }
 local AURA_DURATION_VALIDATORS = { MF.IsString, MF.IsNumber }
 
--- GetUnitAuras is expected to start returning an opaque/secret vector while
--- the unit's aura data is restricted (combat/encounters/PvP, coming in patch
--- 12.1). MF.IsSecretSafe(result) catches that up front so callers only ever
--- get handed a table already confirmed safe to # and index into.
+-- aura data can come back secret when restricted (combat/PvP), so check that first
 function MF.GetUnitAuras(unit, filter, maxRemaining, sortRule, sortDirection)
   local ok, result = MF.CallExternalFunction({
     namespace = C_UnitAuras,
@@ -335,9 +317,6 @@ function MF.GetAuraDuration(unit, auraInstanceID)
   })
 end
 
--- Cooldown widget wrappers (Cooldown:SetCooldown / :SetShowCountdownNumbers /
--- :SetCooldownFromDurationObject) - shared by DRUtil, TrinketUtil and AuraUtil,
--- which all drive the same handful of Blizzard Cooldown widget methods.
 function MF.SetCooldown(cooldown, start, duration)
   return MF.CallExternalFunction({
     namespace = cooldown,
@@ -356,10 +335,8 @@ function MF.SetShowCountdownNumbers(cooldown, show)
   })
 end
 
--- forceShowDrawEdge is optional: TrinketUtil's caller omits it (2-arg call),
--- AuraUtil's passes true (3-arg call) - preserve both call shapes rather than
--- always sending a 3rd literal nil, since "argument omitted" and "argument
--- explicitly nil" aren't guaranteed equivalent for this API.
+-- forceShowDrawEdge is optional - keep the 2-arg and 3-arg calls separate,
+-- since "omitted" and "explicitly nil" aren't always the same to this API
 function MF.SetCooldownFromDurationObject(cooldown, durationObject, forceShowDrawEdge)
   if forceShowDrawEdge == nil then
     return MF.CallExternalFunction({
@@ -377,8 +354,6 @@ function MF.SetCooldownFromDurationObject(cooldown, durationObject, forceShowDra
   })
 end
 
--- C_CurveUtil wrappers - shared by AuraUtil (dispel-color curve), FrameUtil
--- (power curve) and HealthFrameUtil (health curve).
 function MF.CreateCurve()
   return MF.CallExternalFunction({
     namespace = C_CurveUtil,
@@ -402,8 +377,6 @@ function MF.SetCurveType(curve, curveType)
   })
 end
 
--- value's type varies by caller (a plain number for the health/power curves,
--- a Color object for the dispel-type curve), so only curve/key are validated.
 function MF.AddCurvePoint(curve, key, value)
   return MF.CallExternalFunction({
     namespace = curve,
@@ -464,8 +437,7 @@ function MF.GetNumArenaOpponentSpecs()
   return MF.CallExternalFunction({ functionName = "GetNumArenaOpponentSpecs" })
 end
 
--- Wraps Blizzard's ArenaUtil.UnitExists namespace API - distinct from
--- MF.UnitExists above, which wraps the global UnitExists function.
+-- wraps ArenaUtil.UnitExists, not the same as MF.UnitExists above
 function MF.ArenaUtilUnitExists(unit)
   return MF.CallExternalFunction({
     namespace = _G.ArenaUtil,
@@ -537,9 +509,7 @@ function MF.GetRaidTargetIndex(unit)
   })
 end
 
--- name, text, texture, startTimeMS, endTimeMS, isTradeSkill, castID,
--- notInterruptible, spellID - the 9-value signature CallExternalFunction's
--- r1..r9 capture above exists specifically to carry in full.
+-- returns: name, text, texture, startTimeMS, endTimeMS, isTradeSkill, castID, notInterruptible, spellID
 function MF.UnitCastingInfo(unit)
   return MF.CallExternalFunction({
     functionName = "UnitCastingInfo",
@@ -548,8 +518,7 @@ function MF.UnitCastingInfo(unit)
   })
 end
 
--- name, text, texture, startTimeMS, endTimeMS, isTradeSkill, notInterruptible,
--- spellID - one fewer field than UnitCastingInfo (no castID).
+-- same as UnitCastingInfo but no castID
 function MF.UnitChannelInfo(unit)
   return MF.CallExternalFunction({
     functionName = "UnitChannelInfo",
@@ -608,8 +577,6 @@ function MF.GetActiveLossOfControlDataByUnit(unit, index)
   })
 end
 
--- tray varies per call site (each frame's own SpellDiminishStatusTray), so
--- unlike the C_-namespace wrappers above this takes the namespace as a param.
 function MF.GetLayoutChildren(tray)
   return MF.CallExternalFunction({
     namespace = tray,

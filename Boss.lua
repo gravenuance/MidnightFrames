@@ -17,8 +17,8 @@ local function SetBossFrame(index)
     name     = name,
     unit     = unit,
     unitKey  = "boss",
-    point    = { "CENTER", UIParent, "CENTER", MF.FrameX + (index - 1) * MF.FrameSpace, 0 },
-    size     = { MF.SizeX, MF.SizeYAlt },
+    point    = { "CENTER", UIParent, "CENTER", MF.RosterFrameOffsetX + (index - 1) * MF.RosterFrameSpacing, 0 },
+    size     = { MF.SizeX, MF.GroupFrameHeight },
     maxAuras = MAX_AURAS,
     iconSize = MF.DefaultSize,
   })
@@ -92,29 +92,23 @@ local function SetBossFrame(index)
     HideBossContainer()
   end
 
-  -- DEFAULTS
   bossFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
   bossFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
   bossFrame:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
 
-  -- UNIT FRAMES
   bossFrame:RegisterUnitEvent("UNIT_HEALTH", unit)
   bossFrame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
   bossFrame:RegisterUnitEvent("UNIT_AURA", unit)
   bossFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
 
-  -- PLAYER HIGHLIGHT
   bossFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 
-  -- RANGE CHECK
   bossFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
   bossFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   bossFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
-  -- RAID TARGET MARK
   bossFrame:RegisterEvent("RAID_TARGET_UPDATE")
 
-  -- CAST INDICATOR
   bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
   bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
   bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
@@ -131,10 +125,7 @@ local function SetBossFrame(index)
       UpdateVisibility()
       SetupBossHooks()
       MF.ResetTargetIndicator(bossFrame)
-      -- Mirrors Arena/Party/Raid.lua: if the boss unit already exists here
-      -- (e.g. /reload or reconnect mid-pull), populate the frame immediately
-      -- instead of leaving it blank until the next native UNIT_HEALTH/
-      -- UNIT_AURA/etc. event happens to fire.
+      -- fill in the frame right away if we reload mid-pull
       if MF.UnitExists(unit) then
         MF.ApplyClassColor(bossFrame)
         MF.UpdateHealthBar(bossFrame)

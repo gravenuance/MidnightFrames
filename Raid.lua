@@ -35,7 +35,7 @@ local function LayoutRaidFrames()
 
       frame:ClearAllPoints()
       frame:SetPoint("CENTER", UIParent, "CENTER",
-        -MF.FrameX * 1.5,
+        -MF.RaidOffsetX,
         startY - (shown - 1) * spacingY)
     end
   end
@@ -50,28 +50,20 @@ local function CreateRaidFrame(index)
     name       = name,
     unit       = unit,
     unitKey    = "raid",
-    point      = { "CENTER", UIParent, "CENTER", -MF.FrameX * 1.5, 0 },
+    point      = { "CENTER", UIParent, "CENTER", -MF.RaidOffsetX, 0 },
     size       = { MF.RaidSizeX, MF.RaidSizeY },
     maxAuras   = MAX_AURAS,
     iconSize   = MF.DefaultSizeSmall,
     pvpIcons   = true,
     horizontal = true,
     roleIcon   = true,
-    -- 1 trinket + 4 DR slots. Raid frames are the widest-fanned-out frame
-    -- type (up to MF.MaxRaidMembers instances), so this trades a bit of
-    -- simultaneous DR-category visibility for meaningfully fewer eagerly
-    -- created widgets; arena/party keep the full MF.DRSize default.
+    -- fewer DR slots than arena/party since raid can have up to 20 frames
     otherSlots = 5,
   })
   raidFrame.IsDriverRegistered = false
   raidFrame.HasBroadcastEvents = false
 
-  -- PLAYER_TARGET_CHANGED / PLAYER_SOFT_ENEMY_CHANGED / PLAYER_SOFT_INTERACT_CHANGED /
-  -- SPELL_RANGE_CHECK_UPDATE / RAID_TARGET_UPDATE are broadcast (non-unit)
-  -- events: with up to 20 raid frames all listening, every firing re-runs
-  -- their handlers in every frame, including ones with no live unit. Only
-  -- keep them registered on frames whose unit currently exists, re-evaluated
-  -- whenever the roster changes.
+  -- these events aren't tied to a unit, so only listen on frames that have one - avoids 20 frames all reacting to one event
   local function UpdateBroadcastEvents()
     local shouldRegister = MF.UnitExists(unit)
     if shouldRegister and not raidFrame.HasBroadcastEvents then
@@ -112,35 +104,27 @@ local function CreateRaidFrame(index)
 
   function raidFrame:UpdateVisibility() UpdateVisibility() end
 
-  --DEFAULTS
   raidFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
   raidFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
   raidFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
   raidFrame:RegisterUnitEvent("UNIT_OTHER_PARTY_CHANGED", unit)
 
-  --UNIT FRAMES
   raidFrame:RegisterUnitEvent("UNIT_HEALTH", unit)
   raidFrame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
   raidFrame:RegisterUnitEvent("UNIT_NAME_UPDATE", unit)
   raidFrame:RegisterUnitEvent("UNIT_AURA", unit)
   raidFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
 
-  -- PLAYER HIGHLIGHT + RANGE CHECK
-  -- (PLAYER_TARGET_CHANGED / PLAYER_SOFT_ENEMY_CHANGED / PLAYER_SOFT_INTERACT_CHANGED /
-  -- SPELL_RANGE_CHECK_UPDATE are registered conditionally by UpdateBroadcastEvents)
+  -- target highlight/range events are registered conditionally, see UpdateBroadcastEvents
 
-  -- TRINKET
   raidFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
   raidFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
 
-  -- UNIT TARGET
   raidFrame:RegisterUnitEvent("UNIT_TARGET", unit)
 
-  -- DR
   raidFrame:RegisterEvent("LOSS_OF_CONTROL_ADDED")
   raidFrame:RegisterEvent("LOSS_OF_CONTROL_UPDATE")
 
-  -- Objective update
   raidFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
 
   local function OnReset()

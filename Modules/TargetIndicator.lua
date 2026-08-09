@@ -20,8 +20,6 @@ for i = 1, 5 do
   bossUnits[i] = "boss" .. i
 end
 
--- UnitIsUnit is already safe to call with a nonexistent unit token (returns
--- false), so there is no need to pay for a separate UnitExists check first.
 local function CheckUnits(unit, otherUnit)
   return MF.IsUnitUnit(unit, otherUnit)
 end
@@ -29,8 +27,6 @@ end
 local function GetTargetUnit(frame)
   local targetUnit = frame.unit .. "target"
   local tempUnit
-  -- MF.NumGroupMembers is kept fresh by Party.lua's roster-change handler;
-  -- reuse it instead of paying for another wrapped GetNumGroupMembers call.
   local numGroup = MF.NumGroupMembers
   if numGroup > 5 then
     for index = 1, numGroup do

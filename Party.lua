@@ -12,13 +12,12 @@ local function CreatePartyFrame(index)
   local unit = "party" .. index
   local name = baseName .. index
 
-  -- Set up frames
   local partyFrame = MF.CreateUnitFrame({
     name     = name,
     unit     = unit,
     unitKey  = "party",
-    point    = { "CENTER", UIParent, "CENTER", -MF.FrameX - (index - 1) * MF.FrameSpace, 0 },
-    size     = { MF.SizeX, MF.SizeYAlt },
+    point    = { "CENTER", UIParent, "CENTER", -MF.RosterFrameOffsetX - (index - 1) * MF.RosterFrameSpacing, 0 },
+    size     = { MF.SizeX, MF.GroupFrameHeight },
     maxAuras = MAX_AURAS,
     iconSize = MF.DefaultSize,
     pvpIcons = true,
@@ -44,42 +43,33 @@ local function CreatePartyFrame(index)
 
   function partyFrame:UpdateVisibility() UpdateVisibility() end
 
-  --DEFAULTS
   partyFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
   partyFrame:RegisterUnitEvent("UNIT_OTHER_PARTY_CHANGED", unit)
   partyFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
   partyFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
-  --UNIT FRAMES
   partyFrame:RegisterUnitEvent("UNIT_HEALTH", unit)
   partyFrame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
   partyFrame:RegisterUnitEvent("UNIT_NAME_UPDATE", unit)
   partyFrame:RegisterUnitEvent("UNIT_AURA", unit)
   partyFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
 
-  -- PLAYER HIGHLIGHT
   partyFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 
-  -- RANGE CHECK
   partyFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
   partyFrame:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED")
   partyFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
-  -- TRINKET
   partyFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
   partyFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
 
-  -- UNIT TARGET
   partyFrame:RegisterUnitEvent("UNIT_TARGET", unit)
 
-  -- DR
   partyFrame:RegisterEvent("LOSS_OF_CONTROL_ADDED")
   partyFrame:RegisterEvent("LOSS_OF_CONTROL_UPDATE")
 
-  -- RAID TARGET MARK
   partyFrame:RegisterEvent("RAID_TARGET_UPDATE")
 
-  -- CAST INDICATOR
   partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
   partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
   partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)

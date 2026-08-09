@@ -11,10 +11,7 @@ local ENEMY_DR_ORDER = {
 }
 
 MF.DRFallback = true
--- Default otherContainer slot count: 1 trinket slot + 1 slot per tracked DR
--- category (stun/incap/disorient/silence/disarm/root). CreateUnitFrame()
--- callers can override via params.otherSlots (see Raid.lua, which uses a
--- smaller count to cut down on the 20x widget overhead of the full set).
+-- 1 trinket slot + 1 per tracked DR category; can be overridden via params.otherSlots
 MF.DRSize = 7
 MF.DRStartIndex = 2
 
@@ -56,8 +53,7 @@ local function CheckTrayButton(button, frame)
   local candidate
   if button.MF_Button then
     candidate = button.MF_Button
-    -- Re-application while the previous window is still running means this
-    -- is a stacked/reduced hit, not a fresh one; treat it as the "immune" state.
+    -- reapplied before the window expired = stacked hit, not a fresh one
     local wasActive = candidate.lastStartTime and (candidate.lastStartTime + ENEMY_DR_RESET_TIME) > startTime
     candidate.lastStartTime = startTime
     SetSafeButton(candidate, iconTexture, wasActive, startTime)
@@ -197,12 +193,6 @@ local function IsTracked(category)
   return false
 end
 
--- SetButtons (shared by both DR paths) does raw arithmetic/comparison on
--- categoryTable.startTime/.duration (startTime + duration <= now). Those are
--- exactly the kind of cooldown/debuff data that can come back secret, so
--- anything populated from an external event payload must be sanitized
--- before it reaches that table - never store a value there that hasn't been
--- confirmed non-secret first.
 local function SanitizeBoolean(value, default)
   if MF.IsSecretSafe(value) then
     return default
