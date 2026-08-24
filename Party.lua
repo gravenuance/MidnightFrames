@@ -12,11 +12,12 @@ local function CreatePartyFrame(index)
   local unit = "party" .. index
   local name = baseName .. index
 
+  local px, py = MF.GetRosterMemberPoint("party", index)
   local partyFrame = MF.CreateUnitFrame({
     name     = name,
     unit     = unit,
     unitKey  = "party",
-    point    = { "CENTER", UIParent, "CENTER", -MF.RosterFrameOffsetX - (index - 1) * MF.RosterFrameSpacing, 0 },
+    point    = { "CENTER", UIParent, "CENTER", px, py },
     size     = { MF.SizeX, MF.GroupFrameHeight },
     maxAuras = MAX_AURAS,
     iconSize = MF.DefaultSize,
@@ -24,6 +25,7 @@ local function CreatePartyFrame(index)
     roleIcon = true,
   })
   partyFrame.IsDriverRegistered = false
+  MF.RegisterMovableGroupMember("party", partyFrame)
 
   local function UpdateVisibility()
     if MF_PartyTestMode then

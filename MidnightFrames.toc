@@ -1,6 +1,8 @@
 ## Interface: 120000, 120001, 120005, 120007, 120100
 ## Title: MidnightFrames
 ## Notes: Custom frames for almost everything.
+## Author: gravenuance
+## Version: 1.0
 ## IconTexture: Interface\AddOns\MidnightFrames\Media\icon
 ## SavedVariables: MF_DB
 ## Dependencies: Ace3
@@ -28,6 +30,8 @@ Core.lua
 Party.lua
 Player.lua
 Target.lua
+Focus.lua
 Arena.lua
 Boss.lua
 Raid.lua
+Modules/MoveMode.lua

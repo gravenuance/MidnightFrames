@@ -65,12 +65,20 @@ local function GetTargetUnit(frame)
   return CheckUnits("player", targetUnit) and "player" or nil
 end
 
+-- Reuses Move Mode's frame registries (Modules/FrameUtil.lua) instead of
+-- rebuilding a "MF_Party1"-style global name and looking it up in _G on
+-- every call - this runs on every UNIT_TARGET for every tracked frame.
 local function GetTargetByUnit(unit)
-  unit = unit:gsub("^%l", string.upper)
-  local f = _G["MF_" .. unit]
-  if f then
-    return f
+  local single = MF.MovableSingles[unit]
+  if single then
+    return single
   end
+
+  local kind, index = unit:match("^(%a+)(%d+)$")
+  if kind and MF.MovableGroups[kind] then
+    return MF.MovableGroups[kind][tonumber(index)]
+  end
+
   return nil
 end
 

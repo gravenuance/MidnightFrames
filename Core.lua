@@ -17,10 +17,21 @@ SLASH_MF1       = "/mf"
 SlashCmdList.MF = function(msg)
   msg = msg and msg:lower() or ""
 
-  if msg == "target" then
+  if msg == "" or msg == "options" or msg == "config" then
+    MF.OpenOptions()
+  elseif msg == "move" then
+    RunOrDefer("MF_move_mode", function()
+      MF.ToggleMoveMode()
+    end)
+  elseif msg == "target" then
     RunOrDefer("MF_target_test", function()
       MF.ToggleTestMode("target", not MF_TargetTestMode)
       print("MF: target test mode " .. (MF_TargetTestMode and "ON" or "OFF"))
+    end)
+  elseif msg == "focus" then
+    RunOrDefer("MF_focus_test", function()
+      MF.ToggleTestMode("focus", not MF_FocusTestMode)
+      print("MF: focus test mode " .. (MF_FocusTestMode and "ON" or "OFF"))
     end)
   elseif msg == "party" then
     RunOrDefer("MF_party_test", function()
@@ -43,7 +54,7 @@ SlashCmdList.MF = function(msg)
       print("MF: raid test mode " .. (MF_RaidTestMode and "ON" or "OFF"))
     end)
   else
-    print("Usage: /mf target | party | raid | arena | boss")
+    print("Usage: /mf [options] | move | target | focus | party | raid | arena | boss")
   end
 end
 
@@ -57,6 +68,8 @@ local DEFAULT_FILTERS = {
     ["HELPFUL|BIG_DEFENSIVE"] = true,
     ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
     ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["HARMFUL|DISPELLABLE"] = true,
+    ["HELPFUL|DISPELLABLE"] = true,
     ["PLAYER|RAID_IN_COMBAT"] = true,
   },
 
@@ -69,6 +82,8 @@ local DEFAULT_FILTERS = {
     ["HELPFUL|BIG_DEFENSIVE"] = true,
     ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
     ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["HARMFUL|DISPELLABLE"] = true,
+    ["HELPFUL|DISPELLABLE"] = true,
     ["PLAYER|RAID_IN_COMBAT"] = true,
   },
 
@@ -81,6 +96,8 @@ local DEFAULT_FILTERS = {
     ["HELPFUL|BIG_DEFENSIVE"] = true,
     ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
     ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["HARMFUL|DISPELLABLE"] = true,
+    ["HELPFUL|DISPELLABLE"] = true,
     ["PLAYER|RAID_IN_COMBAT"] = true,
   },
 
@@ -93,6 +110,8 @@ local DEFAULT_FILTERS = {
     ["HELPFUL|BIG_DEFENSIVE"] = true,
     ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
     ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["HARMFUL|DISPELLABLE"] = true,
+    ["HELPFUL|DISPELLABLE"] = true,
     ["PLAYER|RAID_IN_COMBAT"] = true,
   },
 
@@ -105,6 +124,8 @@ local DEFAULT_FILTERS = {
     ["HELPFUL|BIG_DEFENSIVE"] = true,
     ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
     ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["HARMFUL|DISPELLABLE"] = true,
+    ["HELPFUL|DISPELLABLE"] = true,
     ["PLAYER|RAID_IN_COMBAT"] = true,
   },
 
@@ -117,6 +138,8 @@ local DEFAULT_FILTERS = {
     ["HELPFUL|BIG_DEFENSIVE"] = true,
     ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
     ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
+    ["HARMFUL|DISPELLABLE"] = true,
+    ["HELPFUL|DISPELLABLE"] = true,
     ["PLAYER|RAID_IN_COMBAT"] = true,
   }
 }
@@ -130,33 +153,83 @@ local FILTER_LABELS = {
   ["HARMFUL|BIG_DEFENSIVE"] = "Harmful Big Defensives",
   ["HELPFUL|EXTERNAL_DEFENSIVE"] = "Helpful External Defensives",
   ["HARMFUL|EXTERNAL_DEFENSIVE"] = "Harmful External Defensives",
+  ["HARMFUL|DISPELLABLE"] = "Harmful Dispellable",
+  ["HELPFUL|DISPELLABLE"] = "Helpful Dispellable",
   ["PLAYER|RAID_IN_COMBAT"] = "HoTs and DoTs",
 }
 
--- Fixed display order, since pairs() order isn't guaranteed.
+-- Priority order for which filter wins a limited aura-icon slot when more
+-- than one matches (AuraUtil.lua's ResolveFilters/AddAuras) - first wins.
+-- Player/HoTs-DoTs is most reliable (self-tracked, always relevant) so it
+-- goes first here, even though it displays last in the options pane (see
+-- FILTER_DISPLAY_GROUPS below) - these two orderings are deliberately not
+-- the same list.
 local FILTER_ORDER = {
+  "PLAYER|RAID_IN_COMBAT",
   "HARMFUL|IMPORTANT",
   "HELPFUL|IMPORTANT",
-  "HARMFUL|CROWD_CONTROL",
-  "HELPFUL|CROWD_CONTROL",
-  "HARMFUL|BIG_DEFENSIVE",
-  "HELPFUL|BIG_DEFENSIVE",
   "HARMFUL|EXTERNAL_DEFENSIVE",
   "HELPFUL|EXTERNAL_DEFENSIVE",
-  "PLAYER|RAID_IN_COMBAT",
+  "HARMFUL|BIG_DEFENSIVE",
+  "HELPFUL|BIG_DEFENSIVE",
+  "HARMFUL|CROWD_CONTROL",
+  "HELPFUL|CROWD_CONTROL",
+  "HARMFUL|DISPELLABLE",
+  "HELPFUL|DISPELLABLE",
 }
 -- AuraUtil.lua uses this same order for aura-slot priority.
 MF.FilterOrder = FILTER_ORDER
 
+-- Options-pane checkbox order (BuildFilterArgs below) - independent of
+-- FILTER_ORDER's priority meaning above. Each entry is a group of filter
+-- keys rendered together, top to bottom; Important/External Defensive/Big
+-- Defensive/Crowd Control/Dispellable lead, Player/HoTs-DoTs trails at the
+-- bottom (it's the single oddball category, least intuitive to a new
+-- reader). Any filter key that's in FILTER_ORDER but not listed in any
+-- group here still gets shown - just appended after everything below -
+-- so a filter added later without updating this list doesn't silently
+-- disappear from the options pane.
+local FILTER_DISPLAY_GROUPS = {
+  { "HARMFUL|IMPORTANT", "HELPFUL|IMPORTANT" },
+  { "HARMFUL|EXTERNAL_DEFENSIVE", "HELPFUL|EXTERNAL_DEFENSIVE" },
+  { "HARMFUL|BIG_DEFENSIVE", "HELPFUL|BIG_DEFENSIVE" },
+  { "HARMFUL|CROWD_CONTROL", "HELPFUL|CROWD_CONTROL" },
+  { "HARMFUL|DISPELLABLE", "HELPFUL|DISPELLABLE" },
+  { "PLAYER|RAID_IN_COMBAT" },
+}
+
+-- Flattened FILTER_DISPLAY_GROUPS for BuildFilterArgs to iterate, with any
+-- filter present in FILTER_ORDER but missing from a group appended last.
+local FILTER_DISPLAY_ORDER = {}
+do
+  local seen = {}
+  for _, group in ipairs(FILTER_DISPLAY_GROUPS) do
+    for _, filterKey in ipairs(group) do
+      table.insert(FILTER_DISPLAY_ORDER, filterKey)
+      seen[filterKey] = true
+    end
+  end
+  for _, filterKey in ipairs(FILTER_ORDER) do
+    if not seen[filterKey] then
+      table.insert(FILTER_DISPLAY_ORDER, filterKey)
+    end
+  end
+end
+
 local UNIT_LABELS = {
   player = "Player",
   target = "Target",
+  focus  = "Focus",
+  pet    = "Pet",
   party  = "Party",
   arena  = "Arena",
   boss   = "Boss",
   raid   = "Raid",
 }
 
+-- no "focus" here - it doesn't track auras (see Focus.lua), so it has no
+-- Auras-tab sub-tab; UNIT_LABELS.focus is still used elsewhere (Sizing
+-- tab's manually-positioned note)
 local UNIT_ORDER = { "player", "target", "party", "arena", "boss", "raid" }
 
 function MF.GetUnitFilters(unit)
@@ -211,14 +284,39 @@ function MF.InitDB()
     sizeDefaults[def.key] = def.default
   end
 
+  local positionDefaults = {}
+  for _, key in ipairs({ "player", "target", "pet", "focus", "party", "arena", "boss", "raid" }) do
+    positionDefaults[key] = { x = 0, y = 0, manual = false }
+  end
+
   local defaults = {
     profile = {
       filters = DEFAULT_FILTERS,
       sizes = sizeDefaults,
+      positions = positionDefaults,
     },
   }
 
-  MF.db = AceDB:New("MF_DB", defaults, true)
+  -- A literal profile name, not AceDB's "true = one profile per character"
+  -- shortcut - keeps every character on one shared "Default" profile
+  -- unless they explicitly create their own via the Profiles tab's New/
+  -- Copy/Delete UI, which still fully supports character-specific setups.
+  --
+  -- This call runs twice per session: once here (unconditional, at
+  -- file-load time - required, since Party/Player/Arena/Boss/Raid/Target/
+  -- Focus.lua construct frames immediately at load and need MF.db/MF.*
+  -- ready first), and again from the PLAYER_LOGIN handler below. On this
+  -- setup the real MF_DB SavedVariables global ends up bound to a
+  -- different table by PLAYER_LOGIN than it was at this first call
+  -- (confirmed by comparing table identity directly) - without the second
+  -- call, every write here lands on an orphaned table that never gets
+  -- saved, which is exactly what was happening before this was found:
+  -- every option looked like it "worked" in-session but silently reverted
+  -- on the next reload. The second call rebinds MF.db to whatever MF_DB
+  -- actually is by PLAYER_LOGIN, which is early enough that the options
+  -- panel (the only place the user can actually edit anything) is built
+  -- against the correct, persistable table.
+  MF.db = AceDB:New("MF_DB", defaults, "Default")
 
   if legacyFilters then
     for unit, filters in pairs(legacyFilters) do
@@ -233,6 +331,7 @@ function MF.InitDB()
   end
 
   MF.ApplySizeSettings()
+  MF.ApplyPositionSettings()
 
   MF.db.RegisterCallback(MF, "OnProfileChanged", "OnProfileChanged")
   MF.db.RegisterCallback(MF, "OnProfileCopied", "OnProfileChanged")
@@ -241,6 +340,11 @@ end
 
 function MF.OnProfileChanged()
   OnSizesMayHaveChanged()
+  MF.InvalidateFilterCache()
+  MF.ApplyPositionSettings()
+  if MF.RepositionAllFrames then
+    MF.RepositionAllFrames()
+  end
   AceConfigRegistry:NotifyChange("MF")
 end
 
@@ -251,11 +355,12 @@ end
 MF.InitDB()
 
 local TEST_MODE_TOGGLES = {
-  { key = "target", var = "MF_TargetTestMode", label = "Toggle Target Test Mode" },
-  { key = "party",  var = "MF_PartyTestMode",  label = "Toggle Party Test Mode" },
-  { key = "arena",  var = "MF_ArenaTestMode",  label = "Toggle Arena Test Mode" },
-  { key = "boss",   var = "MF_BossTestMode",   label = "Toggle Boss Test Mode" },
-  { key = "raid",   var = "MF_RaidTestMode",   label = "Toggle Raid Test Mode" },
+  { key = "target", var = "MF_TargetTestMode", unitLabel = "Target" },
+  { key = "focus",  var = "MF_FocusTestMode",  unitLabel = "Focus" },
+  { key = "party",  var = "MF_PartyTestMode",  unitLabel = "Party" },
+  { key = "arena",  var = "MF_ArenaTestMode",  unitLabel = "Arena" },
+  { key = "boss",   var = "MF_BossTestMode",   unitLabel = "Boss" },
+  { key = "raid",   var = "MF_RaidTestMode",   unitLabel = "Raid" },
 }
 
 local function BuildGeneralArgs()
@@ -264,7 +369,8 @@ local function BuildGeneralArgs()
       type = "description",
       order = 1,
       name = "Select which aura filters to track per frame under the Auras tab. " ..
-          "Use the buttons below to preview frame layouts without needing a live target.",
+          "Use the buttons below to preview frame layouts without needing a live target. " ..
+          "Type /mf any time to reopen this window.",
     },
     testingHeader = { type = "header", name = "Testing", order = 2 },
   }
@@ -273,15 +379,82 @@ local function BuildGeneralArgs()
   for _, entry in ipairs(TEST_MODE_TOGGLES) do
     args[entry.key .. "Test"] = {
       type = "execute",
-      name = entry.label,
+      name = function()
+        return (_G[entry.var] and "Disable " or "Enable ") .. entry.unitLabel .. " Test Mode"
+      end,
       order = order,
       func = function() MF.ToggleTestMode(entry.key, not _G[entry.var]) end,
     }
     order = order + 1
   end
 
+  args.layoutHeader = { type = "header", name = "Layout", order = order }
+  order = order + 1
+
+  args.moveMode = {
+    type = "execute",
+    name = function() return MF.MoveModeActive and "Exit Move Mode" or "Enter Move Mode" end,
+    desc = "Drag frames to reposition them. Party/arena/boss/raid move as one locked group; " ..
+        "player, target, and pet move individually.",
+    order = order,
+    func = function() MF.ToggleMoveMode() end,
+  }
+  order = order + 1
+
+  args.resetPositions = {
+    type = "execute",
+    name = "Reset All Positions",
+    order = order,
+    confirm = true,
+    confirmText = "Reset every frame/group back to its slider-driven default position?",
+    func = function()
+      for _, key in ipairs({ "player", "target", "pet", "focus", "party", "arena", "boss", "raid" }) do
+        MF.db.profile.positions[key].manual = false
+      end
+      MF.ApplyPositionSettings()
+      if MF.RepositionAllFrames then
+        MF.RepositionAllFrames()
+      end
+      AceConfigRegistry:NotifyChange("MF")
+    end,
+  }
+
   return args
 end
+
+-- Which position keys (MF.db.profile.positions) a given "position"-group
+-- slider stops affecting once that key has been manually placed in Move
+-- Mode. Only the keys that actually share one of these sliders need an
+-- entry - RosterFrameSpacing, for instance, keeps applying regardless of
+-- manual placement (it's intra-group spacing, not the group's origin).
+local POSITION_SLIDER_KEYS = {
+  RosterFrameOffsetX = { "party", "arena", "boss", "raid" },
+  PrimaryFrameOffsetX = { "player", "target" },
+  PetSpace = { "pet" },
+  FocusSpace = { "focus" },
+}
+
+local function ManuallyPositionedNote(positionKeys)
+  if not positionKeys then return "" end
+  local names = {}
+  for _, key in ipairs(positionKeys) do
+    local pos = MF.db.profile.positions[key]
+    if pos and pos.manual then
+      table.insert(names, UNIT_LABELS[key] or key)
+    end
+  end
+  if #names == 0 then return "" end
+  return "\n\n|cffff8800Currently has no effect on: " .. table.concat(names, ", ") ..
+      " - manually positioned via Move Mode. Reset All Positions (below) restores this slider for them.|r"
+end
+
+local SIZING_GROUPS = {
+  { key = "size", header = "Frame Sizes" },
+  { key = "position", header = "Position & Spacing",
+    desc = "Where each frame or group starts out. Dragging something in Move Mode (General tab) " ..
+        "overrides its slider here until you use Reset All Positions." },
+  { key = "finetune", header = "Fine-Tuning" },
+}
 
 local function BuildSizingArgs()
   local args = {
@@ -293,22 +466,35 @@ local function BuildSizingArgs()
   }
 
   local order = 2
-  for _, def in ipairs(MF.SizeDefinitions) do
-    args[def.key] = {
-      type = "range",
-      name = def.name,
-      desc = def.desc,
-      min = def.min,
-      max = def.max,
-      step = 1,
-      order = order,
-      get = function() return MF.db.profile.sizes[def.key] end,
-      set = function(_, val)
-        MF.db.profile.sizes[def.key] = val
-        OnSizesMayHaveChanged()
-      end,
-    }
+  for _, groupInfo in ipairs(SIZING_GROUPS) do
+    args[groupInfo.key .. "Header"] = { type = "header", name = groupInfo.header, order = order }
     order = order + 1
+
+    if groupInfo.desc then
+      args[groupInfo.key .. "GroupDesc"] = { type = "description", name = groupInfo.desc, order = order }
+      order = order + 1
+    end
+
+    for _, def in ipairs(MF.SizeDefinitions) do
+      if def.group == groupInfo.key then
+        local positionKeys = POSITION_SLIDER_KEYS[def.key]
+        args[def.key] = {
+          type = "range",
+          name = def.name,
+          desc = positionKeys and function() return def.desc .. ManuallyPositionedNote(positionKeys) end or def.desc,
+          min = def.min,
+          max = def.max,
+          step = 1,
+          order = order,
+          get = function() return MF.db.profile.sizes[def.key] end,
+          set = function(_, val)
+            MF.db.profile.sizes[def.key] = val
+            OnSizesMayHaveChanged()
+          end,
+        }
+        order = order + 1
+      end
+    end
   end
 
   args.resetSizes = {
@@ -330,9 +516,16 @@ local function BuildSizingArgs()
 end
 
 local function BuildFilterArgs(unitKey)
-  local args = {}
-  local order = 1
-  for _, filterKey in ipairs(FILTER_ORDER) do
+  local args = {
+    desc = {
+      type = "description",
+      order = 1,
+      name = "These are narrow, Blizzard-curated categories, not \"every buff/debuff\" - " ..
+          "with none of them checked, every buff and debuff shows instead of nothing.",
+    },
+  }
+  local order = 2
+  for _, filterKey in ipairs(FILTER_DISPLAY_ORDER) do
     args[filterKey] = {
       type = "toggle",
       name = FILTER_LABELS[filterKey] or filterKey,
@@ -344,6 +537,7 @@ local function BuildFilterArgs(unitKey)
       set = function(_, val)
         MF.db.profile.filters[unitKey] = MF.db.profile.filters[unitKey] or {}
         MF.db.profile.filters[unitKey][filterKey] = val
+        MF.InvalidateFilterCache(unitKey)
       end,
     }
     order = order + 1
@@ -398,7 +592,23 @@ end
 function MF.InitConfigAndOptions()
   local Options = BuildOptionsTable()
   AceConfig:RegisterOptionsTable("MF", Options)
+  -- Blizzard Settings entry, for anyone who goes looking there out of habit -
+  -- it just points at /mf, which opens the real (standalone, resizable,
+  -- not squeezed into Blizzard's settings frame) window below.
   AceConfigDialog:AddToBlizOptions("MF", "MidnightFrames")
+  AceConfigDialog:SetDefaultSize("MF", 520, 520)
+end
+
+-- The Blizzard-Settings-embedded panel above is kept for discoverability,
+-- but this standalone AceGUI window is the actual polished experience:
+-- its own title bar, draggable, resizable, not fighting Blizzard's cramped
+-- settings frame for space.
+function MF.OpenOptions()
+  if AceConfigDialog.OpenFrames["MF"] then
+    AceConfigDialog:Close("MF")
+  else
+    AceConfigDialog:Open("MF")
+  end
 end
 
 local ef = CreateFrame("Frame", baseName .. "Events")
@@ -413,6 +623,17 @@ ef:SetScript("OnEvent", function(self, event)
       pendingPostCombat[key] = nil
     end
   elseif event == "PLAYER_LOGIN" then
+    -- Rebind MF.db: on this setup, the real MF_DB global ends up a
+    -- different table by PLAYER_LOGIN than it was when MF.InitDB() first
+    -- ran at file-load time (confirmed via identity checks - MF.db.sv and
+    -- _G.MF_DB point at two different tables by this point), so anything
+    -- written through the first MF.db never reaches what actually gets
+    -- saved. Frame construction already ran on whatever the first call
+    -- resolved (unavoidable - those files load before this event fires),
+    -- but everything the user can actually edit lives in the options
+    -- panel, built below, so rebinding here before that happens is enough
+    -- to fix persistence for all of it.
+    MF.InitDB()
     MF.InitConfigAndOptions()
   end
 end)

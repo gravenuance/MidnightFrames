@@ -7,8 +7,11 @@ local testCast = "Interface\\Icons\\Spell_Fire_Fireball02"
 local TEST_RAID_MARK = 8 -- Skull
 
 local function SetTestIcons(frame, test)
-  frame.auraContainer.icons[1]:SetShown(test)
-  frame.auraContainer.icons[1].icon:SetTexture(testAura)
+  local auraIcon = frame.auraContainer and frame.auraContainer.icons[1]
+  if auraIcon then
+    auraIcon:SetShown(test)
+    auraIcon.icon:SetTexture(testAura)
+  end
   if frame.otherContainer then
     frame.otherContainer.icons[1]:SetShown(test)
     frame.otherContainer.icons[1].icon:SetTexture(testTrinket)
@@ -37,6 +40,13 @@ function MF.ToggleTestMode(kind, on)
     if f then
       if f.UpdateVisibility then f:UpdateVisibility() end
       SetTestIcons(f, MF_TargetTestMode)
+    end
+  elseif kind == "focus" then
+    MF_FocusTestMode = on
+    local f          = _G["MF_Focus"]
+    if f then
+      if f.UpdateVisibility then f:UpdateVisibility() end
+      SetTestIcons(f, MF_FocusTestMode)
     end
   elseif kind == "party" then
     MF_PartyTestMode = on
@@ -78,4 +88,9 @@ function MF.ToggleTestMode(kind, on)
       end
     end
   end
+
+  -- the options window's test-mode buttons show current on/off state in
+  -- their label - refresh it regardless of who called this (slash command,
+  -- the button itself, or Move Mode auto-enabling/disabling one)
+  LibStub("AceConfigRegistry-3.0"):NotifyChange("MF")
 end

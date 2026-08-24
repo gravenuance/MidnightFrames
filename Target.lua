@@ -12,11 +12,12 @@ local targetFrame = MF.CreateUnitFrame({
   name     = "MF_Target",
   unit     = "target",
   unitKey  = "target",
-  point    = { "CENTER", UIParent, "CENTER", MF.PrimaryFrameOffsetX, 0 },
+  point    = { "CENTER", UIParent, "CENTER", MF.Positions.target.x, MF.Positions.target.y },
   size     = { MF.SizeX, MF.PrimaryFrameHeight },
   maxAuras = MAX_AURAS,
   iconSize = MF.DefaultSize,
 })
+MF.RegisterMovable("target", targetFrame)
 
 local function UpdateVisibility()
   if InCombatLockdown() then return end

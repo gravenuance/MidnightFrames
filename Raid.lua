@@ -27,6 +27,11 @@ local function LayoutRaidFrames()
   local startY = spacingY * math.floor(numRaid / 2)
   local shown = 0
 
+  -- exposed so Move Mode's raid drag handler can back the group's origin Y
+  -- out of raid1's dragged position (raid1 sits at origin.y + startY, not
+  -- at origin.y directly, because of this stack-centering math)
+  MF.RaidStackTopY = startY
+
   for index = 1, #RaidFrames do
     local frame = RaidFrames[index]
     local unit = frame.unit
@@ -35,12 +40,14 @@ local function LayoutRaidFrames()
 
       frame:ClearAllPoints()
       frame:SetPoint("CENTER", UIParent, "CENTER",
-        -MF.RaidOffsetX,
-        startY - (shown - 1) * spacingY)
+        MF.Positions.raid.x,
+        MF.Positions.raid.y + startY - (shown - 1) * spacingY)
     end
   end
   MF.MustUpdate = false
 end
+-- exposed for Move Mode's raid drag handler
+MF.LayoutRaidFrames = LayoutRaidFrames
 
 local function CreateRaidFrame(index)
   local unit = "raid" .. index
@@ -50,7 +57,7 @@ local function CreateRaidFrame(index)
     name       = name,
     unit       = unit,
     unitKey    = "raid",
-    point      = { "CENTER", UIParent, "CENTER", -MF.RaidOffsetX, 0 },
+    point      = { "CENTER", UIParent, "CENTER", MF.Positions.raid.x, MF.Positions.raid.y },
     size       = { MF.RaidSizeX, MF.RaidSizeY },
     maxAuras   = MAX_AURAS,
     iconSize   = MF.DefaultSizeSmall,
@@ -62,6 +69,7 @@ local function CreateRaidFrame(index)
   })
   raidFrame.IsDriverRegistered = false
   raidFrame.HasBroadcastEvents = false
+  MF.RegisterMovableGroupMember("raid", raidFrame)
 
   -- these events aren't tied to a unit, so only listen on frames that have one - avoids 20 frames all reacting to one event
   local function UpdateBroadcastEvents()

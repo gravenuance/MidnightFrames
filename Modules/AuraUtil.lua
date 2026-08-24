@@ -178,10 +178,26 @@ local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
   end
 end
 
-function MF.UpdateAuras(frame)
-  local filters = {}
-  local cfg = MF.GetUnitFilters(frame.unitKey)
+-- Resolving a unit's enabled-filter list only changes when its checkboxes
+-- change (Core.lua's Auras tab) or the profile switches - cache it instead
+-- of rebuilding on every UNIT_AURA, which is the hottest event this addon
+-- handles (fires per stack/refresh, on up to ~36 visible frames at once).
+local resolvedFilterCache = {}
 
+function MF.InvalidateFilterCache(unitKey)
+  if unitKey then
+    resolvedFilterCache[unitKey] = nil
+  else
+    wipe(resolvedFilterCache)
+  end
+end
+
+local function ResolveFilters(unitKey)
+  local cached = resolvedFilterCache[unitKey]
+  if cached then return cached end
+
+  local cfg = MF.GetUnitFilters(unitKey)
+  local filters = {}
   -- fixed order so which filters win the limited icon slots is predictable
   for _, filter in ipairs(MF.FilterOrder or {}) do
     if cfg[filter] then
@@ -189,10 +205,23 @@ function MF.UpdateAuras(frame)
     end
   end
 
+  -- the curated categories (IMPORTANT/CROWD_CONTROL/etc.) are narrow,
+  -- Blizzard-tagged subsets, not "every buff" - with none of them checked
+  -- there's nothing to narrow down from, so fall back to plain HELPFUL/
+  -- HARMFUL (everything) instead of showing nothing
+  if #filters == 0 then
+    filters = { "HELPFUL", "HARMFUL" }
+  end
+
+  resolvedFilterCache[unitKey] = filters
+  return filters
+end
+
+function MF.UpdateAuras(frame)
   GetAndUpdateAuras(
     frame.auraContainer,
     frame.unit,
-    filters,
+    ResolveFilters(frame.unitKey),
     frame.maxAuras
   )
 end

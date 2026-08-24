@@ -8,13 +8,14 @@ local playerFrame = MF.CreateUnitFrame({
   name = "MF_Player",
   unit = "player",
   unitKey = "player",
-  point = { "CENTER", UIParent, "CENTER", -MF.PrimaryFrameOffsetX, 0 },
+  point = { "CENTER", UIParent, "CENTER", MF.Positions.player.x, MF.Positions.player.y },
   size = { MF.SizeX, MF.PrimaryFrameHeight },
   maxAuras = MAX_AURAS,
   iconSize = MF.DefaultSize,
   roleIcon = true,
 })
 RegisterUnitWatch(playerFrame)
+MF.RegisterMovable("player", playerFrame)
 
 local power
 if playerFrame.health then
@@ -28,17 +29,26 @@ if playerFrame.health then
   playerFrame.power = power
 end
 
+local petPos = MF.db.profile.positions.pet
+local petPoint
+if petPos.manual then
+  petPoint = { "CENTER", UIParent, "CENTER", petPos.x, petPos.y }
+else
+  petPoint = { "TOPLEFT", playerFrame, "TOPRIGHT", MF.PetSpace, 0 }
+end
+
 local petFrame = MF.CreateUnitFrame({
   name     = "MF_PetFrame",
   unit     = "pet",
   unitKey  = "pet",
-  point    = { "TOPLEFT", playerFrame, "TOPRIGHT", MF.PetSpace, 0 },
+  point    = petPoint,
   size     = { MF.PetX, MF.PetY },
   maxAuras = 0,
   iconSize = 0,
 })
 RegisterUnitWatch(petFrame)
 playerFrame.pet = petFrame
+MF.RegisterMovable("pet", petFrame)
 
 local function UpdateHealthBar()
   MF.UpdateHealthBar(playerFrame)

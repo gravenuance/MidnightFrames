@@ -60,17 +60,19 @@ local function SetArenaFrame(index)
   local unit = "arena" .. index
   local unitFrame = _G[blizzFrame .. "Member" .. index]
   local name = baseName .. index
+  local ax, ay = MF.GetRosterMemberPoint("arena", index)
   local arenaFrame = MF.CreateUnitFrame({
     name = name,
     unit = unit,
     unitKey = "arena",
-    point = { "CENTER", UIParent, "CENTER", MF.RosterFrameOffsetX + (index - 1) * MF.RosterFrameSpacing, 0 },
+    point = { "CENTER", UIParent, "CENTER", ax, ay },
     size = { MF.SizeX, MF.GroupFrameHeight },
     maxAuras = MAX_AURAS,
     iconSize = MF.DefaultSize,
     pvpIcons = true,
   })
   arenaFrame:SetFrameLevel(10)
+  MF.RegisterMovableGroupMember("arena", arenaFrame)
   local function SetAnchor(type, point, relative, x, y, sizeX, sizeY)
     local anchor = CreateFrame("Frame", baseName .. type, arenaFrame)
     anchor:SetSize(sizeX or 1, sizeY or 1)

@@ -13,16 +13,18 @@ local function SetBossFrame(index)
   local unit = "boss" .. index
   local name = baseName .. index
 
+  local bx, by = MF.GetRosterMemberPoint("boss", index)
   local bossFrame = MF.CreateUnitFrame({
     name     = name,
     unit     = unit,
     unitKey  = "boss",
-    point    = { "CENTER", UIParent, "CENTER", MF.RosterFrameOffsetX + (index - 1) * MF.RosterFrameSpacing, 0 },
+    point    = { "CENTER", UIParent, "CENTER", bx, by },
     size     = { MF.SizeX, MF.GroupFrameHeight },
     maxAuras = MAX_AURAS,
     iconSize = MF.DefaultSize,
   })
   bossFrame:SetFrameLevel(10)
+  MF.RegisterMovableGroupMember("boss", bossFrame)
 
   local HAS_REGISTERED_WATCH = false
   local function UpdateVisibility()
