@@ -3,7 +3,8 @@ local _, MF                     = ...
 MF.DefaultSize                  = 32
 MF.DefaultSizeSmall             = 22
 
-Enum.DispelType                 = {
+-- local shim: the client exposes Enum.AuraDispelType, not Enum.DispelType
+local DispelType                = {
   None    = 0,
   Magic   = 1,
   Curse   = 2,
@@ -16,13 +17,13 @@ Enum.DispelType                 = {
 local curveType                 = Enum.LuaCurveType.Step
 
 local dispel                    = {}
-dispel[Enum.DispelType.None]    = _G.DEBUFF_TYPE_NONE_COLOR
-dispel[Enum.DispelType.Magic]   = _G.DEBUFF_TYPE_MAGIC_COLOR
-dispel[Enum.DispelType.Curse]   = _G.DEBUFF_TYPE_CURSE_COLOR
-dispel[Enum.DispelType.Disease] = _G.DEBUFF_TYPE_DISEASE_COLOR
-dispel[Enum.DispelType.Poison]  = _G.DEBUFF_TYPE_POISON_COLOR
-dispel[Enum.DispelType.Bleed]   = _G.DEBUFF_TYPE_BLEED_COLOR
-dispel[Enum.DispelType.Enrage]  = CreateColor(243 / 255, 95 / 255, 245 / 255, 1)
+dispel[DispelType.None]         = _G.DEBUFF_TYPE_NONE_COLOR
+dispel[DispelType.Magic]        = _G.DEBUFF_TYPE_MAGIC_COLOR
+dispel[DispelType.Curse]        = _G.DEBUFF_TYPE_CURSE_COLOR
+dispel[DispelType.Disease]      = _G.DEBUFF_TYPE_DISEASE_COLOR
+dispel[DispelType.Poison]       = _G.DEBUFF_TYPE_POISON_COLOR
+dispel[DispelType.Bleed]        = _G.DEBUFF_TYPE_BLEED_COLOR
+dispel[DispelType.Enrage]       = CreateColor(243 / 255, 95 / 255, 245 / 255, 1)
 
 local dispelTypeCurve
 
@@ -35,7 +36,7 @@ local function GetDispelTypeCurve()
   if not ok then return end
   ok = MF.SetCurveType(curve, curveType)
   if not ok then return end
-  for _, dispelIndex in next, Enum.DispelType do
+  for _, dispelIndex in next, DispelType do
     local color = dispel[dispelIndex]
     if color then
       MF.AddCurvePoint(curve, dispelIndex, color)
@@ -57,7 +58,6 @@ local function ApplyAuraDispelBorderColor(btn, unit, auraData)
 
   local curve = GetDispelTypeCurve()
   if not curve then
-    print("No curve object")
     return
   end
   local ok, dispelTypeColor = MF.GetAuraDispelTypeColor(unit, auraData.auraInstanceID, curve)

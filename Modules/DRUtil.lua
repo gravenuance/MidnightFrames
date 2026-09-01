@@ -95,12 +95,10 @@ local function SetButtonIcon(button, icon, showCountdown, isImmune)
   end
 
   if button.duration and button.duration > 0 then
-    local ok, result = MF.SetCooldown(button.cooldown, button.startTime, button.duration)
+    local ok = MF.SetCooldown(button.cooldown, button.startTime, button.duration)
     if ok then
       MF.SetShowCountdownNumbers(button.cooldown, showCountdown)
       button:Show()
-    else
-      print(ok, "Result:", result)
     end
   end
 end
@@ -181,10 +179,8 @@ local function GetAndInterpretField(table, field)
   local ok, result = MF.GetField(table, field)
   if ok then
     return result
-  else
-    print(ok, "Result:", result)
-    return nil
   end
+  return nil
 end
 
 local function IsTracked(category)
@@ -206,9 +202,8 @@ function MF.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
   end
   if not frame or not frame.unit then return end
   local category = GetAndInterpretField(trackerInfo, "category")
-  local ok, info = MF.IsNumber(category)
+  local ok = MF.IsNumber(category)
   if not ok then
-    print(ok, info)
     return
   end
   if MF.IsSecretSafe(category) then return end
@@ -244,9 +239,8 @@ local function SetDRInfoFromLOC(frame, trackerInfo)
   if MF.IsString(category) and issecretvalue(category) then
     return
   end
-  local ok, info = MF.IsString(category)
+  local ok = MF.IsString(category)
   if not ok then
-    print(ok, info)
     return
   end
 
@@ -278,7 +272,6 @@ function MF.TryAndUpdateDRStateFromLOC(frame)
   if not frame or not frame.unit then return end
   local ok, count = MF.GetActiveLossOfControlDataCountByUnit(frame.unit)
   if not ok then
-    print(ok, "Result:", count)
     return
   end
   if MF.IsNumber(count) and count > 0 then
@@ -286,8 +279,6 @@ function MF.TryAndUpdateDRStateFromLOC(frame)
       local ok2, trackerInfo = MF.GetActiveLossOfControlDataByUnit(frame.unit, index)
       if ok2 then
         SetDRInfoFromLOC(frame, trackerInfo)
-      else
-        print(ok2, "Result:", trackerInfo)
       end
     end
   end
