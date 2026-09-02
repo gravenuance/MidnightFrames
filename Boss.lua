@@ -1,9 +1,7 @@
 local _, MF = ...
 local baseName = "MF_Boss"
 
-MF_BossTestMode = false
-
-local MAX_BOSS_FRAMES = 5
+local MAX_BOSS_FRAMES = MF.GroupSize.boss
 local MAX_AURAS = 4
 
 local blizzContainerName = "BossTargetFrameContainer"
@@ -30,13 +28,13 @@ local function SetBossFrame(index)
   local function UpdateVisibility()
     local hasUnit = MF.UnitExists(unit)
 
-    if not MF.InInstance() or not hasUnit or MF_BossTestMode then
+    if not MF.InInstance() or not hasUnit or MF.Test.Is("boss") then
       if HAS_REGISTERED_WATCH and not InCombatLockdown() then
         UnregisterUnitWatch(bossFrame)
         HAS_REGISTERED_WATCH = false
       end
       if not InCombatLockdown() then
-        if MF_BossTestMode then
+        if MF.Test.Is("boss") then
           bossFrame:Show()
         else
           bossFrame:Hide()
@@ -57,12 +55,12 @@ local function SetBossFrame(index)
     frame:SetAlpha(0)
   end
 
-  local function HideBossFrameAndSpellBar(index)
-    local frame = _G[blizzFrameBase .. index .. "TargetFrame"]
+  local function HideBossFrameAndSpellBar(blizzIndex)
+    local frame = _G[blizzFrameBase .. blizzIndex .. "TargetFrame"]
     if not frame then return end
     if frame.MF_Hooked then return end
     local spellBar = frame.spellBar or _G[frame:GetName() .. "SpellBar"] or
-        _G[blizzFrameBase .. index .. "TargetFrameSpellBar"]
+        _G[blizzFrameBase .. blizzIndex .. "TargetFrameSpellBar"]
     if spellBar then
       if spellBar.UpdateShownState then
         hooksecurefunc(spellBar, "UpdateShownState", ForceHide)
@@ -111,19 +109,12 @@ local function SetBossFrame(index)
 
   bossFrame:RegisterEvent("RAID_TARGET_UPDATE")
 
-  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
-  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
-  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
-  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit)
-  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
-  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
-  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE", unit)
-  bossFrame:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", unit)
+  MF.RegisterCastEvents(bossFrame)
 
 
   bossFrame:SetScript("OnEvent", function(self, event)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
-      MF_BossTestMode = false
+      MF.Test.Clear("boss")
       UpdateVisibility()
       SetupBossHooks()
       MF.ResetTargetIndicator(bossFrame)
@@ -146,7 +137,7 @@ local function SetBossFrame(index)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
       MF.SetRangeAlpha(bossFrame)
     elseif event == "PLAYER_TARGET_CHANGED" then
-      MF.UpdateTargetHighlight(bossFrame, MF_BossTestMode)
+      MF.UpdateTargetHighlight(bossFrame, MF.Test.Is("boss"))
     elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" then
       MF.ApplyClassColor(bossFrame)
       MF.UpdateRaidMark(bossFrame)
@@ -154,15 +145,7 @@ local function SetBossFrame(index)
       MF.UpdateAuras(bossFrame)
     elseif event == "RAID_TARGET_UPDATE" then
       MF.UpdateRaidMark(bossFrame)
-    elseif event == "UNIT_SPELLCAST_START"
-        or event == "UNIT_SPELLCAST_STOP"
-        or event == "UNIT_SPELLCAST_FAILED"
-        or event == "UNIT_SPELLCAST_INTERRUPTED"
-        or event == "UNIT_SPELLCAST_CHANNEL_START"
-        or event == "UNIT_SPELLCAST_CHANNEL_STOP"
-        or event == "UNIT_SPELLCAST_INTERRUPTIBLE"
-        or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE"
-    then
+    elseif MF.IsCastEvent(event) then
       MF.UpdateCastIndicator(bossFrame)
     end
   end)

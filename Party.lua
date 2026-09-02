@@ -4,8 +4,6 @@ MF.HideBlizzardFrame("CompactPartyFrame")
 
 local baseName   = "MF_Party"
 
-MF_PartyTestMode = false
-
 local MAX_AURAS  = 3
 
 local function CreatePartyFrame(index)
@@ -28,7 +26,7 @@ local function CreatePartyFrame(index)
   MF.RegisterMovableGroupMember("party", partyFrame)
 
   local function UpdateVisibility()
-    if MF_PartyTestMode then
+    if MF.Test.Is("party") then
       if InCombatLockdown() then return end
       UnregisterUnitWatch(partyFrame)
       partyFrame.IsDriverRegistered = false
@@ -72,14 +70,7 @@ local function CreatePartyFrame(index)
 
   partyFrame:RegisterEvent("RAID_TARGET_UPDATE")
 
-  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
-  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
-  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
-  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit)
-  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
-  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
-  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE", unit)
-  partyFrame:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", unit)
+  MF.RegisterCastEvents(partyFrame)
 
   partyFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "GROUP_ROSTER_UPDATE"
@@ -88,7 +79,7 @@ local function CreatePartyFrame(index)
         or event == "UNIT_OTHER_PARTY_CHANGED"
     then
       MF.NumGroupMembers = GetNumGroupMembers() or 0
-      MF_PartyTestMode = false
+      MF.Test.Clear("party")
       UpdateVisibility()
       if MF.UnitExists(unit) then
         MF.ApplyClassColor(partyFrame)
@@ -96,7 +87,7 @@ local function CreatePartyFrame(index)
         MF.UpdateAbsorbBar(partyFrame)
         MF.UpdateAuras(partyFrame)
         MF.UpdateTrinket(partyFrame, true)
-        MF.UpdateRoleIcon(partyFrame, MF_PartyTestMode)
+        MF.UpdateRoleIcon(partyFrame, MF.Test.Is("party"))
         MF.UpdateTargetHighlight(partyFrame)
         MF.UpdateTargetIndicator(partyFrame)
         MF.ResetDR(partyFrame)
@@ -107,7 +98,7 @@ local function CreatePartyFrame(index)
         MF.ResetTargetIndicator(partyFrame)
       end
     end
-    if MF_PartyTestMode or (MF.NumGroupMembers > 5 or MF.NumGroupMembers == 0) then return end
+    if MF.Test.Is("party") or (MF.NumGroupMembers > 5 or MF.NumGroupMembers == 0) then return end
     if event == "PLAYER_TARGET_CHANGED" then
       MF.UpdateTargetHighlight(partyFrame)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
@@ -132,20 +123,12 @@ local function CreatePartyFrame(index)
       end
     elseif event == "RAID_TARGET_UPDATE" then
       MF.UpdateRaidMark(partyFrame)
-    elseif event == "UNIT_SPELLCAST_START"
-        or event == "UNIT_SPELLCAST_STOP"
-        or event == "UNIT_SPELLCAST_FAILED"
-        or event == "UNIT_SPELLCAST_INTERRUPTED"
-        or event == "UNIT_SPELLCAST_CHANNEL_START"
-        or event == "UNIT_SPELLCAST_CHANNEL_STOP"
-        or event == "UNIT_SPELLCAST_INTERRUPTIBLE"
-        or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE"
-    then
+    elseif MF.IsCastEvent(event) then
       MF.UpdateCastIndicator(partyFrame)
     end
   end)
 end
 
-for i = 1, 4 do
+for i = 1, MF.GroupSize.party do
   CreatePartyFrame(i)
 end

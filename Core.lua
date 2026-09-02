@@ -2,6 +2,11 @@ local _, MF             = ...
 
 local baseName          = "MF_Core"
 
+-- Bump when the persisted shape of MF_DB changes, and add a migration
+-- branch in InitDB. 1 = pre-AceDB flat { version, filters }. 2 = AceDB
+-- profile store.
+local DB_SCHEMA_VERSION = 2
+
 local pendingPostCombat = {}
 
 local function RunOrDefer(key, func, ...)
@@ -19,43 +24,25 @@ SlashCmdList.MF = function(msg)
 
   if msg == "" or msg == "options" or msg == "config" then
     MF.OpenOptions()
-  elseif msg == "move" then
-    RunOrDefer("MF_move_mode", function()
-      MF.ToggleMoveMode()
-    end)
-  elseif msg == "target" then
-    RunOrDefer("MF_target_test", function()
-      MF.ToggleTestMode("target", not MF_TargetTestMode)
-      print("MF: target test mode " .. (MF_TargetTestMode and "ON" or "OFF"))
-    end)
-  elseif msg == "focus" then
-    RunOrDefer("MF_focus_test", function()
-      MF.ToggleTestMode("focus", not MF_FocusTestMode)
-      print("MF: focus test mode " .. (MF_FocusTestMode and "ON" or "OFF"))
-    end)
-  elseif msg == "party" then
-    RunOrDefer("MF_party_test", function()
-      MF.ToggleTestMode("party", not MF_PartyTestMode)
-      print("MF: party test mode " .. (MF_PartyTestMode and "ON" or "OFF"))
-    end)
-  elseif msg == "arena" then
-    RunOrDefer("MF_arena_test", function()
-      MF.ToggleTestMode("arena", not MF_ArenaTestMode)
-      print("MF: arena test mode " .. (MF_ArenaTestMode and "ON" or "OFF"))
-    end)
-  elseif msg == "boss" then
-    RunOrDefer("MF_boss_test", function()
-      MF.ToggleTestMode("boss", not MF_BossTestMode)
-      print("MF: boss test mode " .. (MF_BossTestMode and "ON" or "OFF"))
-    end)
-  elseif msg == "raid" then
-    RunOrDefer("MF_raid_test", function()
-      MF.ToggleTestMode("raid", not MF_RaidTestMode)
-      print("MF: raid test mode " .. (MF_RaidTestMode and "ON" or "OFF"))
-    end)
-  else
-    print("Usage: /mf [options] | move | target | focus | party | raid | arena | boss")
+    return
   end
+
+  if msg == "move" then
+    RunOrDefer("MF_move_mode", function() MF.ToggleMoveMode() end)
+    return
+  end
+
+  for _, kind in ipairs(MF.Test.Kinds) do
+    if msg == kind then
+      RunOrDefer("MF_" .. kind .. "_test", function()
+        MF.Test.Toggle(kind)
+        print("MF: " .. kind .. " test mode " .. (MF.Test.Is(kind) and "ON" or "OFF"))
+      end)
+      return
+    end
+  end
+
+  print("Usage: /mf [options] | move | target | focus | party | raid | arena | boss")
 end
 
 local DEFAULT_FILTERS = {
@@ -290,6 +277,9 @@ function MF.InitDB()
   end
 
   local defaults = {
+    global = {
+      schemaVersion = DB_SCHEMA_VERSION,
+    },
     profile = {
       filters = DEFAULT_FILTERS,
       sizes = sizeDefaults,
@@ -330,6 +320,14 @@ function MF.InitDB()
     MF_DB.version = nil
   end
 
+  -- Schema check: migrate an older shape forward, warn (don't crash) on a
+  -- newer one. The pre-AceDB filter salvage above is the only step so far.
+  local stored = MF.db.global.schemaVersion or (legacyFilters and 1) or DB_SCHEMA_VERSION
+  if stored > DB_SCHEMA_VERSION then
+    print("MidnightFrames: settings are from a newer version; some may reset.")
+  end
+  MF.db.global.schemaVersion = DB_SCHEMA_VERSION
+
   MF.ApplySizeSettings()
   MF.ApplyPositionSettings()
 
@@ -354,36 +352,21 @@ end
 -- values ready first.
 MF.InitDB()
 
-local TEST_MODE_TOGGLES = {
-  { key = "target", var = "MF_TargetTestMode", unitLabel = "Target" },
-  { key = "focus",  var = "MF_FocusTestMode",  unitLabel = "Focus" },
-  { key = "party",  var = "MF_PartyTestMode",  unitLabel = "Party" },
-  { key = "arena",  var = "MF_ArenaTestMode",  unitLabel = "Arena" },
-  { key = "boss",   var = "MF_BossTestMode",   unitLabel = "Boss" },
-  { key = "raid",   var = "MF_RaidTestMode",   unitLabel = "Raid" },
-}
-
 local function BuildGeneralArgs()
   local args = {
-    desc = {
-      type = "description",
-      order = 1,
-      name = "Select which aura filters to track per frame under the Auras tab. " ..
-          "Use the buttons below to preview frame layouts without needing a live target. " ..
-          "Type /mf any time to reopen this window.",
-    },
     testingHeader = { type = "header", name = "Testing", order = 2 },
   }
 
   local order = 3
-  for _, entry in ipairs(TEST_MODE_TOGGLES) do
-    args[entry.key .. "Test"] = {
+  for _, kind in ipairs(MF.Test.Kinds) do
+    local label = UNIT_LABELS[kind] or kind
+    args[kind .. "Test"] = {
       type = "execute",
       name = function()
-        return (_G[entry.var] and "Disable " or "Enable ") .. entry.unitLabel .. " Test Mode"
+        return (MF.Test.Is(kind) and "Disable " or "Enable ") .. label .. " Test Mode"
       end,
       order = order,
-      func = function() MF.ToggleTestMode(entry.key, not _G[entry.var]) end,
+      func = function() MF.Test.Toggle(kind) end,
     }
     order = order + 1
   end
@@ -394,8 +377,6 @@ local function BuildGeneralArgs()
   args.moveMode = {
     type = "execute",
     name = function() return MF.MoveModeActive and "Exit Move Mode" or "Enter Move Mode" end,
-    desc = "Drag frames to reposition them. Party/arena/boss/raid move as one locked group; " ..
-        "player, target, and pet move individually.",
     order = order,
     func = function() MF.ToggleMoveMode() end,
   }
@@ -422,66 +403,26 @@ local function BuildGeneralArgs()
   return args
 end
 
--- Which position keys (MF.db.profile.positions) a given "position"-group
--- slider stops affecting once that key has been manually placed in Move
--- Mode. Only the keys that actually share one of these sliders need an
--- entry - RosterFrameSpacing, for instance, keeps applying regardless of
--- manual placement (it's intra-group spacing, not the group's origin).
-local POSITION_SLIDER_KEYS = {
-  RosterFrameOffsetX = { "party", "arena", "boss", "raid" },
-  PrimaryFrameOffsetX = { "player", "target" },
-  PetSpace = { "pet" },
-  FocusSpace = { "focus" },
-}
-
-local function ManuallyPositionedNote(positionKeys)
-  if not positionKeys then return "" end
-  local names = {}
-  for _, key in ipairs(positionKeys) do
-    local pos = MF.db.profile.positions[key]
-    if pos and pos.manual then
-      table.insert(names, UNIT_LABELS[key] or key)
-    end
-  end
-  if #names == 0 then return "" end
-  return "\n\n|cffff8800Currently has no effect on: " .. table.concat(names, ", ") ..
-      " - manually positioned via Move Mode. Reset All Positions (below) restores this slider for them.|r"
-end
-
 local SIZING_GROUPS = {
   { key = "size", header = "Frame Sizes" },
-  { key = "position", header = "Position & Spacing",
-    desc = "Where each frame or group starts out. Dragging something in Move Mode (General tab) " ..
-        "overrides its slider here until you use Reset All Positions." },
+  { key = "position", header = "Position & Spacing" },
   { key = "finetune", header = "Fine-Tuning" },
 }
 
 local function BuildSizingArgs()
-  local args = {
-    desc = {
-      type = "description",
-      order = 1,
-      name = "Frames are built once when the UI loads, so changes here need a UI reload to take effect.",
-    },
-  }
+  local args = {}
 
   local order = 2
   for _, groupInfo in ipairs(SIZING_GROUPS) do
     args[groupInfo.key .. "Header"] = { type = "header", name = groupInfo.header, order = order }
     order = order + 1
 
-    if groupInfo.desc then
-      args[groupInfo.key .. "GroupDesc"] = { type = "description", name = groupInfo.desc, order = order }
-      order = order + 1
-    end
-
     for _, def in ipairs(MF.SizeDefinitions) do
       if def.group == groupInfo.key then
-        local positionKeys = POSITION_SLIDER_KEYS[def.key]
         args[def.key] = {
           type = "range",
           name = def.name,
-          desc = positionKeys and function() return def.desc .. ManuallyPositionedNote(positionKeys) end or def.desc,
+          desc = def.desc,
           min = def.min,
           max = def.max,
           step = 1,
@@ -516,14 +457,7 @@ local function BuildSizingArgs()
 end
 
 local function BuildFilterArgs(unitKey)
-  local args = {
-    desc = {
-      type = "description",
-      order = 1,
-      name = "These are narrow, Blizzard-curated categories, not \"every buff/debuff\" - " ..
-          "with none of them checked, every buff and debuff shows instead of nothing.",
-    },
-  }
+  local args = {}
   local order = 2
   for _, filterKey in ipairs(FILTER_DISPLAY_ORDER) do
     args[filterKey] = {

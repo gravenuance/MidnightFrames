@@ -8,8 +8,6 @@ MF.HideBlizzardFrame("FocusFrame")
 -- top-left - until manually dragged in Move Mode). No aura tracking though
 -- (maxAuras = 0, matching pet) - the frame is too small to fit icons.
 
-MF_FocusTestMode = false
-
 local IsDriverRegistered = false
 
 local targetFrame = _G["MF_Target"]
@@ -35,7 +33,7 @@ MF.RegisterMovable("focus", focusFrame)
 
 local function UpdateVisibility()
   if InCombatLockdown() then return end
-  if MF_FocusTestMode then
+  if MF.Test.Is("focus") then
     UnregisterUnitWatch(focusFrame)
     focusFrame:Show()
     IsDriverRegistered = false
@@ -63,22 +61,15 @@ focusFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
 focusFrame:RegisterEvent("RAID_TARGET_UPDATE")
 
-focusFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", focusFrame.unit)
-focusFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", focusFrame.unit)
-focusFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", focusFrame.unit)
-focusFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", focusFrame.unit)
-focusFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", focusFrame.unit)
-focusFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", focusFrame.unit)
-focusFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE", focusFrame.unit)
-focusFrame:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", focusFrame.unit)
+MF.RegisterCastEvents(focusFrame)
 
 
 focusFrame:SetScript("OnEvent", function(_, event, arg1)
   if (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
-    MF_FocusTestMode = false
+    MF.Test.Clear("focus")
     UpdateVisibility()
   end
-  if MF_FocusTestMode then return end
+  if MF.Test.Is("focus") then return end
   if event == "PLAYER_FOCUS_CHANGED"
       or (event == "UNIT_NAME_UPDATE" and arg1 == focusFrame.unit) then
     UpdateVisibility()
@@ -98,15 +89,7 @@ focusFrame:SetScript("OnEvent", function(_, event, arg1)
     MF.SetRangeAlpha(focusFrame)
   elseif event == "RAID_TARGET_UPDATE" then
     MF.UpdateRaidMark(focusFrame)
-  elseif event == "UNIT_SPELLCAST_START"
-      or event == "UNIT_SPELLCAST_STOP"
-      or event == "UNIT_SPELLCAST_FAILED"
-      or event == "UNIT_SPELLCAST_INTERRUPTED"
-      or event == "UNIT_SPELLCAST_CHANNEL_START"
-      or event == "UNIT_SPELLCAST_CHANNEL_STOP"
-      or event == "UNIT_SPELLCAST_INTERRUPTIBLE"
-      or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE"
-  then
+  elseif MF.IsCastEvent(event) then
     MF.UpdateCastIndicator(focusFrame)
   end
 end)

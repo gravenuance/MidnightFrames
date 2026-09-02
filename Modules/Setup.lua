@@ -1,5 +1,9 @@
 local _, MF = ...
 
+-- Highlight border colors, each reused for its border and its glow.
+local ALLY_TARGET_R, ALLY_TARGET_G, ALLY_TARGET_B = 0.2, 0.8, 0.2
+local MOUSEOVER_R, MOUSEOVER_G, MOUSEOVER_B = 0.694, 0.372, 0.98
+
 -- A larger, softer copy of the border behind it, for a glow/bloom look.
 local function AddGlow(borderFrame, r, g, b, bleed, edgeSize, alpha)
   local glow = CreateFrame("Frame", nil, borderFrame, "BackdropTemplate")
@@ -157,9 +161,9 @@ function MF.CreateUnitFrame(params)
     edgeFile = "Interface\\Buttons\\WHITE8x8",
     edgeSize = 2,
   })
-  f.innerBorder:SetBackdropBorderColor(0.2, 0.8, 0.2, 1)
+  f.innerBorder:SetBackdropBorderColor(ALLY_TARGET_R, ALLY_TARGET_G, ALLY_TARGET_B, 1)
   f.innerBorder:SetFrameLevel(f.border:GetFrameLevel() + 1)
-  AddGlow(f.innerBorder, 0.2, 0.8, 0.2, 2, 6, 0.25)
+  AddGlow(f.innerBorder, ALLY_TARGET_R, ALLY_TARGET_G, ALLY_TARGET_B, 2, 6, 0.25)
   f.innerBorder:Hide()
 
   f.outerBorder = CreateFrame("Frame", nil, f, "BackdropTemplate")
@@ -181,9 +185,9 @@ function MF.CreateUnitFrame(params)
     edgeFile = "Interface\\Buttons\\WHITE8x8",
     edgeSize = 2,
   })
-  f.mouseoverBorder:SetBackdropBorderColor(0.694, 0.372, 0.98, 1)
+  f.mouseoverBorder:SetBackdropBorderColor(MOUSEOVER_R, MOUSEOVER_G, MOUSEOVER_B, 1)
   f.mouseoverBorder:SetFrameLevel(f.border:GetFrameLevel() + 3)
-  AddGlow(f.mouseoverBorder, 0.694, 0.372, 0.98, 3, 8, 0.30)
+  AddGlow(f.mouseoverBorder, MOUSEOVER_R, MOUSEOVER_G, MOUSEOVER_B, 3, 8, 0.30)
   f.mouseoverBorder:Hide()
 
   f.health = CreateFrame("StatusBar", name .. "Health", f)

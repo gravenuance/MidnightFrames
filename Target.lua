@@ -2,8 +2,6 @@ local _, MF = ...
 
 MF.HideBlizzardFrame("TargetFrame")
 
-MF_TargetTestMode = false
-
 local IsDriverRegistered = false
 
 local MAX_AURAS = 4
@@ -21,7 +19,7 @@ MF.RegisterMovable("target", targetFrame)
 
 local function UpdateVisibility()
   if InCombatLockdown() then return end
-  if MF_TargetTestMode then
+  if MF.Test.Is("target") then
     UnregisterUnitWatch(targetFrame)
     targetFrame:Show()
     IsDriverRegistered = false
@@ -50,22 +48,15 @@ targetFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
 targetFrame:RegisterEvent("RAID_TARGET_UPDATE")
 
-targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", targetFrame.unit)
-targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", targetFrame.unit)
-targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", targetFrame.unit)
-targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", targetFrame.unit)
-targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", targetFrame.unit)
-targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", targetFrame.unit)
-targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE", targetFrame.unit)
-targetFrame:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", targetFrame.unit)
+MF.RegisterCastEvents(targetFrame)
 
 
 targetFrame:SetScript("OnEvent", function(_, event, arg1)
   if (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
-    MF_TargetTestMode = false
+    MF.Test.Clear("target")
     UpdateVisibility()
   end
-  if MF_TargetTestMode then return end
+  if MF.Test.Is("target") then return end
   if event == "PLAYER_TARGET_CHANGED"
       or (event == "UNIT_NAME_UPDATE" and arg1 == targetFrame.unit) then
     UpdateVisibility()
@@ -88,15 +79,7 @@ targetFrame:SetScript("OnEvent", function(_, event, arg1)
     MF.UpdateAuras(targetFrame)
   elseif event == "RAID_TARGET_UPDATE" then
     MF.UpdateRaidMark(targetFrame)
-  elseif event == "UNIT_SPELLCAST_START"
-      or event == "UNIT_SPELLCAST_STOP"
-      or event == "UNIT_SPELLCAST_FAILED"
-      or event == "UNIT_SPELLCAST_INTERRUPTED"
-      or event == "UNIT_SPELLCAST_CHANNEL_START"
-      or event == "UNIT_SPELLCAST_CHANNEL_STOP"
-      or event == "UNIT_SPELLCAST_INTERRUPTIBLE"
-      or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE"
-  then
+  elseif MF.IsCastEvent(event) then
     MF.UpdateCastIndicator(targetFrame)
   end
 end)

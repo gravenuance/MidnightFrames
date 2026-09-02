@@ -2,8 +2,6 @@ local _, MF = ...
 local baseName = "MF_Arena"
 local SOLID_TEXTURE = "Interface\\Buttons\\WHITE8x8"
 
-MF_ArenaTestMode = false
-
 local blizzFrame = "CompactArenaFrame"
 
 local altAlpha = MF.OtherAlpha
@@ -137,7 +135,7 @@ local function SetArenaFrame(index)
   end
 
   local function UpdateVisibility()
-    if MF_ArenaTestMode then
+    if MF.Test.Is("arena") then
       if InCombatLockdown() then return end
       arenaFrame:Show()
       return
@@ -233,24 +231,17 @@ local function SetArenaFrame(index)
 
   arenaFrame:RegisterEvent("RAID_TARGET_UPDATE")
 
-  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
-  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
-  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
-  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit)
-  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
-  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
-  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE", unit)
-  arenaFrame:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", unit)
+  MF.RegisterCastEvents(arenaFrame)
 
   arenaFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
-      MF_ArenaTestMode = false
+      MF.Test.Clear("arena")
       UpdateVisibility()
       MF.UpdateHealthBar(arenaFrame)
       MF.UpdateAbsorbBar(arenaFrame)
       MF.UpdateAuras(arenaFrame)
       MF.UpdateTrinket(arenaFrame)
-      MF.UpdateTargetHighlight(arenaFrame, MF_ArenaTestMode)
+      MF.UpdateTargetHighlight(arenaFrame, MF.Test.Is("arena"))
       MF.ResetDR(arenaFrame)
       MF.SetRangeAlpha(arenaFrame)
       MF.UpdateRaidMark(arenaFrame)
@@ -265,7 +256,7 @@ local function SetArenaFrame(index)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
       MF.SetRangeAlpha(arenaFrame)
     elseif event == "PLAYER_TARGET_CHANGED" then
-      MF.UpdateTargetHighlight(arenaFrame, MF_ArenaTestMode)
+      MF.UpdateTargetHighlight(arenaFrame, MF.Test.Is("arena"))
     elseif event == "PVP_MATCH_STATE_CHANGED"
         or event == "GROUP_ROSTER_UPDATE"
         or event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS"
@@ -293,21 +284,13 @@ local function SetArenaFrame(index)
       end
     elseif event == "RAID_TARGET_UPDATE" then
       MF.UpdateRaidMark(arenaFrame)
-    elseif event == "UNIT_SPELLCAST_START"
-        or event == "UNIT_SPELLCAST_STOP"
-        or event == "UNIT_SPELLCAST_FAILED"
-        or event == "UNIT_SPELLCAST_INTERRUPTED"
-        or event == "UNIT_SPELLCAST_CHANNEL_START"
-        or event == "UNIT_SPELLCAST_CHANNEL_STOP"
-        or event == "UNIT_SPELLCAST_INTERRUPTIBLE"
-        or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE"
-    then
+    elseif MF.IsCastEvent(event) then
       MF.UpdateCastIndicator(arenaFrame)
     end
   end)
 end
 
 
-for i = 1, 3 do
+for i = 1, MF.GroupSize.arena do
   SetArenaFrame(i)
 end

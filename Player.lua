@@ -81,14 +81,7 @@ playerFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 
 playerFrame:RegisterEvent("RAID_TARGET_UPDATE")
 
-playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", playerFrame.unit)
-playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", playerFrame.unit)
-playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", playerFrame.unit)
-playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", playerFrame.unit)
-playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", playerFrame.unit)
-playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", playerFrame.unit)
-playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE", playerFrame.unit)
-playerFrame:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", playerFrame.unit)
+MF.RegisterCastEvents(playerFrame)
 
 
 
@@ -132,15 +125,7 @@ playerFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     MF.RegisterRangeSpell(arg1)
   elseif event == "RAID_TARGET_UPDATE" then
     MF.UpdateRaidMark(playerFrame)
-  elseif event == "UNIT_SPELLCAST_START"
-      or event == "UNIT_SPELLCAST_STOP"
-      or event == "UNIT_SPELLCAST_FAILED"
-      or event == "UNIT_SPELLCAST_INTERRUPTED"
-      or event == "UNIT_SPELLCAST_CHANNEL_START"
-      or event == "UNIT_SPELLCAST_CHANNEL_STOP"
-      or event == "UNIT_SPELLCAST_INTERRUPTIBLE"
-      or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE"
-  then
+  elseif MF.IsCastEvent(event) then
     MF.UpdateCastIndicator(playerFrame)
   end
 end)

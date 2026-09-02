@@ -236,7 +236,7 @@ local function SetDRInfoFromLOC(frame, trackerInfo)
     return
   end
   local category = GetAndInterpretField(trackerInfo, "locType")
-  if MF.IsString(category) and issecretvalue(category) then
+  if MF.IsString(category) and MF.IsSecretSafe(category) then
     return
   end
   local ok = MF.IsString(category)

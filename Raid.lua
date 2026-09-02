@@ -5,7 +5,6 @@ MF.HideBlizzardFrame("CompactRaidFrameManager")
 
 local baseName      = "MF_Raid"
 
-MF_RaidTestMode     = false
 MF.MaxRaidMembers   = 20
 MF.MustUpdate       = false
 
@@ -18,7 +17,7 @@ local function LayoutRaidFrames()
     MF.MustUpdate = true; return
   end
   local numRaid = GetNumGroupMembers() or 0
-  if MF_RaidTestMode then numRaid = MF.MaxRaidMembers end
+  if MF.Test.Is("raid") then numRaid = MF.MaxRaidMembers end
   if numRaid < 6 or numRaid > MF.MaxRaidMembers then
     return
   end
@@ -35,7 +34,7 @@ local function LayoutRaidFrames()
   for index = 1, #RaidFrames do
     local frame = RaidFrames[index]
     local unit = frame.unit
-    if MF.UnitExists(unit) or MF_RaidTestMode then
+    if MF.UnitExists(unit) or MF.Test.Is("raid") then
       shown = shown + 1
 
       frame:ClearAllPoints()
@@ -92,7 +91,7 @@ local function CreateRaidFrame(index)
   end
 
   local function UpdateVisibility()
-    if MF_RaidTestMode then
+    if MF.Test.Is("raid") then
       if InCombatLockdown() then return end
       UnregisterUnitWatch(raidFrame)
       raidFrame.IsDriverRegistered = false
@@ -136,7 +135,7 @@ local function CreateRaidFrame(index)
   raidFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
 
   local function OnReset()
-    MF_RaidTestMode = false
+    MF.Test.Clear("raid")
     UpdateVisibility()
     UpdateBroadcastEvents()
     if MF.UnitExists(unit) then
@@ -145,7 +144,7 @@ local function CreateRaidFrame(index)
       MF.UpdateAbsorbBar(raidFrame)
       MF.UpdateAuras(raidFrame)
       MF.UpdateTrinket(raidFrame, true)
-      MF.UpdateRoleIcon(raidFrame, MF_RaidTestMode)
+      MF.UpdateRoleIcon(raidFrame, MF.Test.Is("raid"))
       MF.UpdateTargetHighlight(raidFrame)
       MF.UpdateTargetIndicator(raidFrame)
       MF.ResetDR(raidFrame)
@@ -170,7 +169,7 @@ local function CreateRaidFrame(index)
         MF.ResetOrbs(raidFrame)
       end
     end
-    if MF_RaidTestMode or (MF.NumGroupMembers < 6 or MF.NumGroupMembers == 0) then return end
+    if MF.Test.Is("raid") or (MF.NumGroupMembers < 6 or MF.NumGroupMembers == 0) then return end
     if MF.MustUpdate then
       LayoutRaidFrames()
     end

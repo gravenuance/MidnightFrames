@@ -22,7 +22,7 @@ function MF.IsInArena()
 end
 
 function MF.IsInPrep()
-  return MF.IsInArena() and not IsMatchEngaged() and not IsMatchComplete() and not MF_ArenaTestMode
+  return MF.IsInArena() and not IsMatchEngaged() and not IsMatchComplete() and not MF.Test.Is("arena")
 end
 
 function MF.IsArenaInProgress()

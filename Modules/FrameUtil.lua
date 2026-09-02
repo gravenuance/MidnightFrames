@@ -36,6 +36,10 @@ for _, def in ipairs(MF.SizeDefinitions) do
   MF[def.key] = def.default
 end
 
+-- How many frames this addon builds per group (party1-4, arena1-3, etc.),
+-- not the game's max unit count. Raid uses MF.MaxRaidMembers (Raid.lua).
+MF.GroupSize = { party = 4, arena = 3, boss = 5 }
+
 -- Raid frames sit further out than roster frames - derived, not its own
 -- setting, so it can't drift out of sync with RosterFrameOffsetX.
 MF.RaidOffsetX = MF.RosterFrameOffsetX * 1.5

@@ -7,17 +7,9 @@ MF.MoveModeActive = false
 
 local GROUP_KEYS = { "party", "arena", "boss", "raid" }
 
--- test-mode globals to force on while dragging, so group/target frames are
--- visible even with no live target/group - matches the /mf <kind> commands
-local TEST_MODE_VARS = {
-  target = "MF_TargetTestMode",
-  focus  = "MF_FocusTestMode",
-  party  = "MF_PartyTestMode",
-  arena  = "MF_ArenaTestMode",
-  boss   = "MF_BossTestMode",
-  raid   = "MF_RaidTestMode",
-}
-
+-- test modes we force on while dragging (so group/target frames stay
+-- visible with no live target/group), tracked here so ExitMoveMode only
+-- turns back off the ones it turned on
 local autoEnabledTestModes = {}
 
 -- Several options-window controls show dynamic state (Move Mode's button
@@ -115,9 +107,9 @@ end
 
 local function EnterMoveMode()
   autoEnabledTestModes = {}
-  for key, var in pairs(TEST_MODE_VARS) do
-    if not _G[var] then
-      MF.ToggleTestMode(key, true)
+  for _, key in ipairs(MF.Test.Kinds) do
+    if not MF.Test.Is(key) then
+      MF.Test.Set(key, true)
       autoEnabledTestModes[key] = true
     end
   end
@@ -146,7 +138,7 @@ local function ExitMoveMode()
   end
 
   for key in pairs(autoEnabledTestModes) do
-    MF.ToggleTestMode(key, false)
+    MF.Test.Set(key, false)
   end
   autoEnabledTestModes = {}
 

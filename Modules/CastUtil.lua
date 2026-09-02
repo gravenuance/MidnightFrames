@@ -1,5 +1,34 @@
 local _, MF = ...
 
+-- Every UNIT_SPELLCAST_* event the cast indicator reacts to, in one place.
+-- The six vertical unit frames (player/target/focus/party/arena/boss) all
+-- watch this same set; raid frames have no cast indicator and skip it.
+local CAST_EVENTS = {
+  "UNIT_SPELLCAST_START",
+  "UNIT_SPELLCAST_STOP",
+  "UNIT_SPELLCAST_FAILED",
+  "UNIT_SPELLCAST_INTERRUPTED",
+  "UNIT_SPELLCAST_CHANNEL_START",
+  "UNIT_SPELLCAST_CHANNEL_STOP",
+  "UNIT_SPELLCAST_INTERRUPTIBLE",
+  "UNIT_SPELLCAST_NOT_INTERRUPTIBLE",
+}
+
+local castEventLookup = {}
+for _, castEvent in ipairs(CAST_EVENTS) do
+  castEventLookup[castEvent] = true
+end
+
+function MF.RegisterCastEvents(frame)
+  for _, castEvent in ipairs(CAST_EVENTS) do
+    frame:RegisterUnitEvent(castEvent, frame.unit)
+  end
+end
+
+function MF.IsCastEvent(event)
+  return castEventLookup[event] == true
+end
+
 -- defaults to "interruptible" when we can't tell
 local function SanitizeBoolean(value, default)
   if MF.IsSecretSafe(value) then

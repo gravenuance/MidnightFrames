@@ -6,6 +6,62 @@ local testCast = "Interface\\Icons\\Spell_Fire_Fireball02"
 
 local TEST_RAID_MARK = 8 -- Skull
 
+-- One entry per toggleable frame group. `name` is an exact frame global
+-- (single frames); `prefix` + a count source covers the indexed groups.
+local UNIT_CONFIG = {
+  target = { name = "MF_Target" },
+  focus  = { name = "MF_Focus" },
+  party  = { prefix = "MF_Party", sizeKey = "party" },
+  arena  = { prefix = "MF_Arena", sizeKey = "arena" },
+  boss   = { prefix = "MF_Boss", sizeKey = "boss" },
+  raid   = { prefix = "MF_Raid", countKey = "MaxRaidMembers" },
+}
+
+-- Stable order, for callers that iterate every toggle.
+MF.Test = { Kinds = { "target", "focus", "party", "arena", "boss", "raid" } }
+
+local state = {}
+for _, kind in ipairs(MF.Test.Kinds) do
+  state[kind] = false
+end
+
+function MF.Test.Is(kind)
+  return state[kind] == true
+end
+
+-- Pure state reset, no frame side effects - for the per-frame event
+-- handlers that clear test mode on zone change and then refresh
+-- themselves. Set/Toggle below are the ones that redraw.
+function MF.Test.Clear(kind)
+  if state[kind] ~= nil then
+    state[kind] = false
+  end
+end
+
+local function FrameCount(cfg)
+  if cfg.countKey then
+    return MF[cfg.countKey] or 0
+  end
+  if cfg.sizeKey then
+    return (MF.GroupSize and MF.GroupSize[cfg.sizeKey]) or 0
+  end
+  return 0
+end
+
+local function EachFrame(kind, fn)
+  local cfg = UNIT_CONFIG[kind]
+  if not cfg then return end
+  if cfg.name then
+    local f = _G[cfg.name]
+    if f then fn(f) end
+    return
+  end
+  for i = 1, FrameCount(cfg) do
+    local f = _G[cfg.prefix .. i]
+    if f then fn(f) end
+  end
+end
+
 local function SetTestIcons(frame, test)
   local auraIcon = frame.auraContainer and frame.auraContainer.icons[1]
   if auraIcon then
@@ -33,64 +89,25 @@ local function SetTestIcons(frame, test)
   frame.outerBorder:SetShown(test)
 end
 
-function MF.ToggleTestMode(kind, on)
-  if kind == "target" then
-    MF_TargetTestMode = on
-    local f           = _G["MF_Target"]
-    if f then
-      if f.UpdateVisibility then f:UpdateVisibility() end
-      SetTestIcons(f, MF_TargetTestMode)
+function MF.Test.Set(kind, on)
+  if state[kind] == nil then return end
+  on = on == true
+  state[kind] = on
+
+  EachFrame(kind, function(f)
+    if f.UpdateVisibility then f:UpdateVisibility() end
+    SetTestIcons(f, on)
+    if kind == "raid" and f.orbIcon then
+      f.orbIcon:SetShown(on)
     end
-  elseif kind == "focus" then
-    MF_FocusTestMode = on
-    local f          = _G["MF_Focus"]
-    if f then
-      if f.UpdateVisibility then f:UpdateVisibility() end
-      SetTestIcons(f, MF_FocusTestMode)
-    end
-  elseif kind == "party" then
-    MF_PartyTestMode = on
-    for i = 1, 4 do
-      local f = _G["MF_Party" .. i]
-      if f then
-        if f.UpdateVisibility then f:UpdateVisibility() end
-        SetTestIcons(f, MF_PartyTestMode)
-      end
-    end
-  elseif kind == "arena" then
-    MF_ArenaTestMode = on
-    for i = 1, 3 do
-      local f = _G["MF_Arena" .. i]
-      if f then
-        if f.UpdateVisibility then f:UpdateVisibility() end
-        SetTestIcons(f, MF_ArenaTestMode)
-      end
-    end
-  elseif kind == "boss" then
-    MF_BossTestMode = on
-    for i = 1, 5 do
-      local f = _G["MF_Boss" .. i]
-      if f then
-        if f.UpdateVisibility then f:UpdateVisibility() end
-        SetTestIcons(f, MF_BossTestMode)
-      end
-    end
-  elseif kind == "raid" then
-    MF_RaidTestMode = on
-    for i = 1, MF.MaxRaidMembers do
-      local f = _G["MF_Raid" .. i]
-      if f then
-        if f.UpdateVisibility then f:UpdateVisibility() end
-        SetTestIcons(f, MF_RaidTestMode)
-        if f.orbIcon then
-          f.orbIcon:SetShown(MF_RaidTestMode)
-        end
-      end
-    end
-  end
+  end)
 
   -- the options window's test-mode buttons show current on/off state in
-  -- their label - refresh it regardless of who called this (slash command,
-  -- the button itself, or Move Mode auto-enabling/disabling one)
+  -- their label - refresh regardless of who toggled (slash command, the
+  -- button itself, or Move Mode auto-enabling one)
   LibStub("AceConfigRegistry-3.0"):NotifyChange("MF")
+end
+
+function MF.Test.Toggle(kind)
+  MF.Test.Set(kind, not MF.Test.Is(kind))
 end
