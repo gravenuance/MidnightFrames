@@ -6,6 +6,8 @@ All notable changes to MidnightFrames are recorded here. Format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-03
+
 ### Changed
 - Options panel stripped of explanatory paragraphs — controls now stand on
   their labels and layout alone.

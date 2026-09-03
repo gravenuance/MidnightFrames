@@ -25,8 +25,8 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           awk -v v="$version" '
-            $0 ~ ("^## \\[" v "\\]") { grab = 1; next }
-            grab && /^## \[/ { exit }
+            $0 == "## [" v "]" || index($0, "## [" v "] ") == 1 { grab = 1; next }
+            grab && index($0, "## [") == 1 { exit }
             grab { print }
           ' CHANGELOG.md > RELEASE_NOTES.md
           if [ ! -s RELEASE_NOTES.md ]; then
