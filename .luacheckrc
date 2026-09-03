@@ -24,6 +24,4 @@ ignore = {
   "112", -- mutating an undefined global
   "113", -- accessing an undefined global (WoW API surface)
   "143", -- accessing an undefined field of a global
-  "431", -- shadowing an upvalue (common in the nested widget closures here)
-  "432", -- shadowing an upvalue argument
 }
