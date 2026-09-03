@@ -2,7 +2,7 @@
 ## Title: MidnightFrames
 ## Notes: Custom frames for almost everything.
 ## Author: gravenuance
-## Version: 1.0
+## Version: 1.1.0
 ## IconTexture: Interface\AddOns\MidnightFrames\Media\icon
 ## SavedVariables: MF_DB
 ## Dependencies: Ace3

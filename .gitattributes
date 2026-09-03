@@ -1,0 +1,8 @@
+# Development-only files, kept out of `git archive` (the release zips)
+/.github         export-ignore
+/.vscode         export-ignore
+/.claude         export-ignore
+/.gitignore      export-ignore
+/.gitattributes  export-ignore
+/.luacheckrc     export-ignore
+/CONTRIBUTING.md export-ignore
