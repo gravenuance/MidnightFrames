@@ -6,6 +6,18 @@ All notable changes to MidnightFrames are recorded here. Format follows
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-09-12
+
+### Fixed
+- Raid frames could stay stacked at a stale position after a roster change
+  landed mid-combat, if combat ended without any other raid-frame event
+  following to retry the layout.
+
+### Changed
+- `UNIT_AURA` (the hottest event this addon handles) no longer allocates a
+  fresh table and closure per call; the aura-icon builder reuses one shared
+  scratch table instead.
+
 ## [1.1.0] - 2026-09-03
 
 ### Changed

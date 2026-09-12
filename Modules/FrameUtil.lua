@@ -26,7 +26,7 @@ MF.SizeDefinitions = {
   { key = "RaidSizeY", name = "Raid Frame Height", desc = "Height of each raid frame.", default = 35, min = 15, max = 100, group = "size" },
   { key = "FillInset", name = "Health/Absorb Bar Inset", desc = "How far the health/absorb fill sits inside the frame edge.", default = 4, min = 0, max = 15, group = "finetune" },
   { key = "HighlightInset", name = "Highlight Inset", desc = "How far the ally-target highlight border sits inside the frame edge.", default = 2, min = 0, max = 15, group = "finetune" },
-  { key = "AuraOffsetY", name = "Aura Icon Offset", desc = "How far the aura icons sit below the top of a vertical frame.", default = 190, min = 0, max = 400, group = "finetune" },
+  { key = "AuraOffsetY", name = "Aura Icon Offset", desc = "How far the aura icons sit below the frame's top edge.", default = 190, min = 0, max = 400, group = "finetune" },
 }
 
 -- Set to the hardcoded defaults above so anything that loads before

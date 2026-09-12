@@ -104,6 +104,61 @@ local function SetAuraTexture(btn, auraData)
   return true
 end
 
+-- Shared across calls and wiped at the start of each one, instead of a
+-- fresh table per call - UNIT_AURA is the hottest event this addon handles
+-- (see ResolveFilters below), firing on up to ~36 visible frames at once.
+local seenInstanceIDs = {}
+
+-- Hoisted out of GetAndUpdateAuras (was a per-call closure) for the same
+-- reason: avoid allocating on every UNIT_AURA. `shown` threads through as a
+-- return value instead of an upvalue.
+local function AddAurasForFilter(container, unit, filter, maxRemaining, shown)
+  local ok, auraList, totalAuras = MF.GetUnitAuras(
+    unit, filter, maxRemaining, Enum.UnitAuraSortRule.BigDefensive, Enum.UnitAuraSortDirection.Reverse
+  )
+  if not ok or not auraList or totalAuras == 0 then
+    return shown
+  end
+  for listIndex = 1, totalAuras do
+    if shown > container.maxAuras then
+      break
+    end
+
+    local auraData = auraList[listIndex]
+    if not auraData then
+      break
+    end
+
+    local instanceID = auraData.auraInstanceID
+    if MF.IsNumber(instanceID) and not MF.IsSecretSafe(instanceID) then
+      if seenInstanceIDs[instanceID] then
+        break
+      else
+        seenInstanceIDs[instanceID] = true
+      end
+    end
+
+    if auraData.icon then
+      local btn = container.icons[shown]
+
+      if not SetAuraTexture(btn, auraData) then
+        break
+      end
+
+      btn.unit = unit
+      btn.auraFilter = filter
+      btn.auraInstanceID = auraData.auraInstanceID
+      btn.auraIndex = auraData.auraIndex or auraData.index or listIndex
+
+      ApplyAuraCooldown(btn, unit, auraData)
+      ApplyAuraDispelBorderColor(btn, unit, auraData)
+      shown = shown + 1
+      btn:Show()
+    end
+  end
+  return shown
+end
+
 local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
   if not MF.UnitExists(unit) then
     for i = 1, container.maxAuras do
@@ -117,56 +172,10 @@ local function GetAndUpdateAuras(container, unit, filters, maxRemaining)
   end
   local shown = 1
   maxRemaining = maxRemaining or 4
-  local seen = {}
-
-  local function AddAuras(filter)
-    local ok, auraList, totalAuras = MF.GetUnitAuras(
-      unit, filter, maxRemaining, Enum.UnitAuraSortRule.BigDefensive, Enum.UnitAuraSortDirection.Reverse
-    )
-    if not ok or not auraList or totalAuras == 0 then
-      return
-    end
-    for listIndex = 1, totalAuras do
-      if shown > container.maxAuras then
-        break
-      end
-
-      local auraData = auraList[listIndex]
-      if not auraData then
-        break
-      end
-
-      local instanceID = auraData.auraInstanceID
-      if MF.IsNumber(instanceID) and not MF.IsSecretSafe(instanceID) then
-        if seen[instanceID] then
-          break
-        else
-          seen[instanceID] = true
-        end
-      end
-
-      if auraData.icon then
-        local btn = container.icons[shown]
-
-        if not SetAuraTexture(btn, auraData) then
-          break
-        end
-
-        btn.unit = unit
-        btn.auraFilter = filter
-        btn.auraInstanceID = auraData.auraInstanceID
-        btn.auraIndex = auraData.auraIndex or auraData.index or listIndex
-
-        ApplyAuraCooldown(btn, unit, auraData)
-        ApplyAuraDispelBorderColor(btn, unit, auraData)
-        shown = shown + 1
-        btn:Show()
-      end
-    end
-  end
+  wipe(seenInstanceIDs)
 
   for _, filter in ipairs(filters) do
-    AddAuras(filter)
+    shown = AddAurasForFilter(container, unit, filter, maxRemaining, shown)
   end
 
   for i = shown, container.maxAuras do

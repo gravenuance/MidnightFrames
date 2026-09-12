@@ -48,6 +48,18 @@ end
 -- exposed for Move Mode's raid drag handler
 MF.LayoutRaidFrames = LayoutRaidFrames
 
+-- A roster change that arrives mid-combat sets MF.MustUpdate but can't
+-- reposition secure frames until combat ends, and nothing guarantees another
+-- raid-frame event fires afterward to retry it (a fight can simply end with
+-- no further health/roster events) - so retry directly off combat ending.
+local raidCombatWatcher = CreateFrame("Frame")
+raidCombatWatcher:RegisterEvent("PLAYER_REGEN_ENABLED")
+raidCombatWatcher:SetScript("OnEvent", function()
+  if MF.MustUpdate then
+    LayoutRaidFrames()
+  end
+end)
+
 local function CreateRaidFrame(index)
   local unit = "raid" .. index
   local name = baseName .. index
