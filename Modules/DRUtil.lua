@@ -123,6 +123,15 @@ local function HookTrayItems(frame, ...)
   end
 end
 
+local function SyncShownTrayItems(frame, ...)
+  for index = 1, select("#", ...) do
+    local item = select(index, ...)
+    if hookedTrayItems[item] and item:IsShown() and not item.isEditModePreview then
+      SyncTrayItem(item, frame)
+    end
+  end
+end
+
 -- Blizzard finished this item's cooldown and released it: clear only its button.
 function MF.OnTrayItemCooldownDone(item)
   local button = item and buttonForTrayItem[item]
@@ -132,9 +141,14 @@ function MF.OnTrayItemCooldownDone(item)
 end
 
 -- Mirrors a Blizzard SpellDiminishStatusTray onto `frame`'s DR buttons.
--- Safe to call repeatedly; each tray is hooked once.
+-- Safe to call repeatedly; each tray is hooked once, and a repeat call
+-- re-mirrors the running items, since the caller may just have reset `frame`.
 function MF.HookDRTray(tray, frame)
-  if not tray or not frame or hookedTrays[tray] then return end
+  if not tray or not frame then return end
+  if hookedTrays[tray] then
+    SyncShownTrayItems(frame, tray:GetChildren())
+    return
+  end
   if not tray.UpdateOrAddTrayItem or not tray.OnTrayItemCooldownDone
       or not tray.RemoveAllTrayItems or not tray.GetChildren then
     return
