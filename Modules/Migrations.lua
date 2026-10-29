@@ -68,10 +68,14 @@ local MIGRATIONS = {
     sv.version = nil
   end,
   [2] = function(sv)
+    -- Hand-edited or corrupt data: skip anything that isn't a table.
+    if type(sv.profiles) ~= "table" then return end
     for _, profile in pairs(sv.profiles) do
-      if type(profile.filters) == "table" then
+      if type(profile) == "table" and type(profile.filters) == "table" then
         for _, unitFilters in pairs(profile.filters) do
-          RenameFilterKeys(unitFilters)
+          if type(unitFilters) == "table" then
+            RenameFilterKeys(unitFilters)
+          end
         end
       end
     end

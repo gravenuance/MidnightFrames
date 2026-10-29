@@ -133,6 +133,26 @@ t.test("a profile without filters migrates without error", function()
   t.eq(sv.profiles.Default.sizes.SizeX, 80)
 end)
 
+t.test("a malformed profile or per-unit filter value is skipped, not fatal", function()
+  local MF = Migrations()
+  local sv = { global = { schemaVersion = 2 }, profiles = {
+    Broken = 5,
+    Odd = { filters = { player = true, target = { ["HARMFUL|DISPELLABLE"] = false } } },
+  } }
+  local status = MF.MigrateSavedVariables(sv)
+  t.eq(status, "migrated")
+  t.eq(sv.profiles.Broken, 5, "malformed profile is left as it was")
+  t.eq(sv.profiles.Odd.filters.player, true, "malformed unit filter is left as it was")
+  t.eq(sv.profiles.Odd.filters.target["HARMFUL|RAID_PLAYER_DISPELLABLE"], false, "valid siblings still migrate")
+end)
+
+t.test("a profiles value that is not a table does not stop the migration", function()
+  local MF = Migrations()
+  local sv = { global = { schemaVersion = 2 }, profiles = "broken" }
+  t.eq(MF.MigrateSavedVariables(sv), "migrated")
+  t.eq(sv.global.schemaVersion, 3)
+end)
+
 t.test("an existing value under the new key wins over the old key", function()
   local MF = Migrations()
   local sv = { global = { schemaVersion = 2 }, profiles = { Default = { filters = {
