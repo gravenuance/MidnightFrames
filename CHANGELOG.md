@@ -17,6 +17,12 @@ All notable changes to MidnightFrames are recorded here. Format follows
   profile database and every unit frame were built while the files loaded,
   before WoW had assigned the saved variables; both now run from this
   addon's `ADDON_LOADED`, and the second `InitDB` at `PLAYER_LOGIN` is gone.
+- Target and focus frames register their unit watch at load, like the player
+  frame, and retry a test-mode toggle made in combat once it ends. Before,
+  the watch was only registered from an out-of-combat visibility update.
+- Target and focus frames now refresh health, class colour and auras on
+  entering the world, so a target kept across a reload no longer shows an
+  empty frame until it changes.
 - Arena DR icons no longer flag the first stun as immune. Four tray
   functions were hooked, so one DR update ran the "already active, so
   immune" check about four times; only `UpdateOrAddTrayItem` is hooked now

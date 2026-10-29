@@ -9,8 +9,6 @@ MF.HideBlizzardFrame("FocusFrame")
 -- (maxAuras = 0, matching pet) - the frame is too small to fit icons.
 
 local function BuildFocusFrame()
-  local IsDriverRegistered = false
-
   local targetFrame = _G["MF_Target"]
 
   local focusPos = MF.db.profile.positions.focus
@@ -32,15 +30,23 @@ local function BuildFocusFrame()
   })
   MF.RegisterMovable("focus", focusFrame)
 
+  -- The watch shows the frame whenever a focus exists; only test mode takes
+  -- it off, and that is retried after combat if it was asked for during it.
+  RegisterUnitWatch(focusFrame)
+  local hasWatch = true
+
   local function UpdateVisibility()
-    if InCombatLockdown() then return end
+    if InCombatLockdown() then
+      MF.RunAfterCombat("MF_Focus_visibility", UpdateVisibility)
+      return
+    end
     if MF.Test.Is("focus") then
       UnregisterUnitWatch(focusFrame)
+      hasWatch = false
       focusFrame:Show()
-      IsDriverRegistered = false
-    elseif not IsDriverRegistered then
+    elseif not hasWatch then
       RegisterUnitWatch(focusFrame)
-      IsDriverRegistered = true
+      hasWatch = true
     end
   end
 
@@ -70,9 +76,11 @@ local function BuildFocusFrame()
       UpdateVisibility()
     end
     if MF.Test.Is("focus") then return end
+    -- entering the world has no focus-changed event of its own, so a focus
+    -- kept across a reload or zone-in is filled in here
     if event == "PLAYER_FOCUS_CHANGED"
+        or event == "PLAYER_ENTERING_WORLD"
         or (event == "UNIT_NAME_UPDATE" and arg1 == focusFrame.unit) then
-      UpdateVisibility()
       if MF.UnitExists(focusFrame.unit) then
         MF.ApplyClassColor(focusFrame)
         MF.UpdateHealthBar(focusFrame)

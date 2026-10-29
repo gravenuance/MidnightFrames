@@ -5,8 +5,6 @@ MF.HideBlizzardFrame("TargetFrame")
 local MAX_AURAS = 4
 
 local function BuildTargetFrame()
-  local IsDriverRegistered = false
-
   local targetFrame = MF.CreateUnitFrame({
     name     = "MF_Target",
     unit     = "target",
@@ -18,15 +16,23 @@ local function BuildTargetFrame()
   })
   MF.RegisterMovable("target", targetFrame)
 
+  -- The watch shows the frame whenever a target exists; only test mode takes
+  -- it off, and that is retried after combat if it was asked for during it.
+  RegisterUnitWatch(targetFrame)
+  local hasWatch = true
+
   local function UpdateVisibility()
-    if InCombatLockdown() then return end
+    if InCombatLockdown() then
+      MF.RunAfterCombat("MF_Target_visibility", UpdateVisibility)
+      return
+    end
     if MF.Test.Is("target") then
       UnregisterUnitWatch(targetFrame)
+      hasWatch = false
       targetFrame:Show()
-      IsDriverRegistered = false
-    elseif not IsDriverRegistered then
+    elseif not hasWatch then
       RegisterUnitWatch(targetFrame)
-      IsDriverRegistered = true
+      hasWatch = true
     end
   end
 
@@ -57,9 +63,11 @@ local function BuildTargetFrame()
       UpdateVisibility()
     end
     if MF.Test.Is("target") then return end
+    -- entering the world has no target-changed event of its own, so a target
+    -- kept across a reload or zone-in is filled in here
     if event == "PLAYER_TARGET_CHANGED"
+        or event == "PLAYER_ENTERING_WORLD"
         or (event == "UNIT_NAME_UPDATE" and arg1 == targetFrame.unit) then
-      UpdateVisibility()
       if MF.UnitExists(targetFrame.unit) then
         MF.ApplyClassColor(targetFrame)
         MF.UpdateHealthBar(targetFrame)
