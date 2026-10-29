@@ -155,7 +155,7 @@ function MF.UpdatePowerLabel(frame)
     powerCurve = curve
   end
   local ok, power = MF.UnitPowerPercent(frame.unit, powerCurve)
-  if not ok or power == nil then
+  if not ok or MF.IsNil(power) then
     frame.power:SetText("")
     return
   end
