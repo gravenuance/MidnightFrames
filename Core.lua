@@ -2,11 +2,6 @@ local addonName, MF  = ...
 
 local baseName          = "MF_Core"
 
--- Bump when the persisted shape of MF_DB changes, and add a migration
--- branch in InitDB. 1 = pre-AceDB flat { version, filters }. 2 = AceDB
--- profile store.
-local DB_SCHEMA_VERSION = 2
-
 local pendingPostCombat = {}
 
 -- Queues func for PLAYER_REGEN_ENABLED, or runs it now when out of combat.
@@ -269,18 +264,12 @@ local function OnSizesMayHaveChanged()
   MF.PromptReload()
 end
 
--- MF_DB used to be a plain table ({ version, filters }), not an AceDB
--- profile store. Salvage any existing filter choices before AceDB:New
--- reshapes the saved variable, so upgrading doesn't reset them.
-local function MigrateLegacySavedVariables()
-  if type(MF_DB) ~= "table" or MF_DB.profiles or not MF_DB.filters then
-    return nil
-  end
-  return MF_DB.filters
-end
-
 function MF.InitDB()
-  local legacyFilters = MigrateLegacySavedVariables()
+  -- Migrate the raw saved table first (Modules/Migrations.lua), then bind it.
+  local status, storedVersion = MF.MigrateSavedVariables(MF_DB)
+  if status == "newer" then
+    print("MidnightFrames: settings are from a newer version (" .. storedVersion .. "); some may reset.")
+  end
 
   local sizeDefaults = {}
   for _, def in ipairs(MF.SizeDefinitions) do
@@ -292,10 +281,9 @@ function MF.InitDB()
     positionDefaults[key] = { x = 0, y = 0, manual = false }
   end
 
+  -- No global.schemaVersion default: AceDB strips values equal to their
+  -- default on logout, so the version would never be saved.
   local defaults = {
-    global = {
-      schemaVersion = DB_SCHEMA_VERSION,
-    },
     profile = {
       filters = DEFAULT_FILTERS,
       sizes = sizeDefaults,
@@ -312,25 +300,10 @@ function MF.InitDB()
   -- AceDB creates, and WoW then replaces it with the saved table.
   MF.db = AceDB:New("MF_DB", defaults, "Default")
 
-  if legacyFilters then
-    for unit, filters in pairs(legacyFilters) do
-      MF.db.profile.filters[unit] = MF.db.profile.filters[unit] or {}
-      for filterKey, val in pairs(filters) do
-        MF.db.profile.filters[unit][filterKey] = val
-      end
-    end
-    -- clear the old top-level keys now that they've been migrated in
-    MF_DB.filters = nil
-    MF_DB.version = nil
+  -- A fresh install has nothing to migrate; record the version explicitly.
+  if status == "fresh" then
+    MF.db.global.schemaVersion = MF.DB_SCHEMA_VERSION
   end
-
-  -- Schema check: migrate an older shape forward, warn (don't crash) on a
-  -- newer one. The pre-AceDB filter salvage above is the only step so far.
-  local stored = MF.db.global.schemaVersion or (legacyFilters and 1) or DB_SCHEMA_VERSION
-  if stored > DB_SCHEMA_VERSION then
-    print("MidnightFrames: settings are from a newer version; some may reset.")
-  end
-  MF.db.global.schemaVersion = DB_SCHEMA_VERSION
 
   MF.ApplySizeSettings()
   MF.ApplyPositionSettings()

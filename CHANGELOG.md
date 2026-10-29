@@ -11,6 +11,10 @@ All notable changes to MidnightFrames are recorded here. Format follows
   profile database and every unit frame were built while the files loaded,
   before WoW had assigned the saved variables; both now run from this
   addon's `ADDON_LOADED`, and the second `InitDB` at `PLAYER_LOGIN` is gone.
+- `MF_DB` now records its schema version (it had a default of 2, which
+  AceDB never writes, so the legacy-format branch could not run). The
+  migration works on the raw saved table before AceDB binds it, and keeps one
+  backup of the old data under `migrationBackup`.
 - The reload popup no longer references `STATICPOPUP_NUMDIALOGS`, a global
   that no longer exists in 12.1.5.
 - The addon now lists the 12.1.5 interface version (120105) in its `.toc`.
