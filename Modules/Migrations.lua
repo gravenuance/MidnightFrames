@@ -2,8 +2,8 @@ local _, MF = ...
 
 -- Bump when the persisted shape of MF_DB changes and add a step to
 -- MIGRATIONS below. 1 = pre-AceDB flat { version, filters }. 2 = AceDB
--- profile store.
-MF.DB_SCHEMA_VERSION = 2
+-- profile store. 3 = aura filter keys the API accepts (FILTER_KEY_RENAMES).
+MF.DB_SCHEMA_VERSION = 3
 
 local function DeepCopy(value)
   if type(value) ~= "table" then
@@ -36,12 +36,45 @@ function MF.GetStoredSchemaVersion(sv)
   return nil
 end
 
+-- Old filter key -> the key(s) that replace it. DISPELLABLE is not an aura
+-- filter token, and RAID_IN_COMBAT is only valid beside HELPFUL or HARMFUL.
+local FILTER_KEY_RENAMES = {
+  ["HARMFUL|DISPELLABLE"] = { "HARMFUL|RAID_PLAYER_DISPELLABLE" },
+  ["HELPFUL|DISPELLABLE"] = { "HELPFUL|RAID_PLAYER_DISPELLABLE" },
+  ["PLAYER|RAID_IN_COMBAT"] = { "HELPFUL|PLAYER|RAID_IN_COMBAT", "HARMFUL|PLAYER|RAID_IN_COMBAT" },
+}
+
+-- Moves each old key's on/off choice to its replacements. A replacement the
+-- user already set keeps its own value.
+local function RenameFilterKeys(unitFilters)
+  for oldKey, newKeys in pairs(FILTER_KEY_RENAMES) do
+    local choice = unitFilters[oldKey]
+    if choice ~= nil then
+      for _, newKey in ipairs(newKeys) do
+        if unitFilters[newKey] == nil then
+          unitFilters[newKey] = choice
+        end
+      end
+      unitFilters[oldKey] = nil
+    end
+  end
+end
+
 -- Each step upgrades a raw table from version [n] to [n + 1].
 local MIGRATIONS = {
   [1] = function(sv)
     sv.profiles = { Default = { filters = sv.filters } }
     sv.filters = nil
     sv.version = nil
+  end,
+  [2] = function(sv)
+    for _, profile in pairs(sv.profiles) do
+      if type(profile.filters) == "table" then
+        for _, unitFilters in pairs(profile.filters) do
+          RenameFilterKeys(unitFilters)
+        end
+      end
+    end
   end,
 }
 

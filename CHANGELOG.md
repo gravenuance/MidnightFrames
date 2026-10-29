@@ -11,6 +11,10 @@ All notable changes to MidnightFrames are recorded here. Format follows
   profile database and every unit frame were built while the files loaded,
   before WoW had assigned the saved variables; both now run from this
   addon's `ADDON_LOADED`, and the second `InitDB` at `PLAYER_LOGIN` is gone.
+- Aura filters the API rejected now work: `DISPELLABLE` became
+  `RAID_PLAYER_DISPELLABLE`, and the single `PLAYER|RAID_IN_COMBAT` entry
+  (which lacked `HELPFUL`/`HARMFUL`) split into separate HoTs and DoTs
+  filters. Saved on/off choices carry over to the new keys (schema version 3).
 - `MF_DB` now records its schema version (it had a default of 2, which
   AceDB never writes, so the legacy-format branch could not run). The
   migration works on the raw saved table before AceDB binds it, and keeps one

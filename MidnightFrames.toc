@@ -9,6 +9,7 @@
 ## Category: Matcha Latte
 
 Modules/Migrations.lua
+Modules/AuraLogic.lua
 Modules/SecureUtil.lua
 Modules/BlizzardUtil.lua
 Modules/DurationUtil.lua

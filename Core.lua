@@ -57,164 +57,6 @@ SlashCmdList.MF = function(msg)
   print("Usage: /mf [options] | move | target | focus | party | raid | arena | boss")
 end
 
-local DEFAULT_FILTERS = {
-  player = {
-    ["HARMFUL|IMPORTANT"] = true,
-    ["HELPFUL|IMPORTANT"] = true,
-    ["HARMFUL|CROWD_CONTROL"] = true,
-    ["HELPFUL|CROWD_CONTROL"] = true,
-    ["HARMFUL|BIG_DEFENSIVE"] = true,
-    ["HELPFUL|BIG_DEFENSIVE"] = true,
-    ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["HARMFUL|DISPELLABLE"] = true,
-    ["HELPFUL|DISPELLABLE"] = true,
-    ["PLAYER|RAID_IN_COMBAT"] = true,
-  },
-
-  target = {
-    ["HARMFUL|IMPORTANT"] = true,
-    ["HELPFUL|IMPORTANT"] = true,
-    ["HARMFUL|CROWD_CONTROL"] = true,
-    ["HELPFUL|CROWD_CONTROL"] = true,
-    ["HARMFUL|BIG_DEFENSIVE"] = true,
-    ["HELPFUL|BIG_DEFENSIVE"] = true,
-    ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["HARMFUL|DISPELLABLE"] = true,
-    ["HELPFUL|DISPELLABLE"] = true,
-    ["PLAYER|RAID_IN_COMBAT"] = true,
-  },
-
-  party = {
-    ["HARMFUL|IMPORTANT"] = true,
-    ["HELPFUL|IMPORTANT"] = true,
-    ["HARMFUL|CROWD_CONTROL"] = true,
-    ["HELPFUL|CROWD_CONTROL"] = true,
-    ["HARMFUL|BIG_DEFENSIVE"] = true,
-    ["HELPFUL|BIG_DEFENSIVE"] = true,
-    ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["HARMFUL|DISPELLABLE"] = true,
-    ["HELPFUL|DISPELLABLE"] = true,
-    ["PLAYER|RAID_IN_COMBAT"] = true,
-  },
-
-  arena = {
-    ["HARMFUL|IMPORTANT"] = true,
-    ["HELPFUL|IMPORTANT"] = true,
-    ["HARMFUL|CROWD_CONTROL"] = true,
-    ["HELPFUL|CROWD_CONTROL"] = true,
-    ["HARMFUL|BIG_DEFENSIVE"] = true,
-    ["HELPFUL|BIG_DEFENSIVE"] = true,
-    ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["HARMFUL|DISPELLABLE"] = true,
-    ["HELPFUL|DISPELLABLE"] = true,
-    ["PLAYER|RAID_IN_COMBAT"] = true,
-  },
-
-  boss = {
-    ["HARMFUL|IMPORTANT"] = true,
-    ["HELPFUL|IMPORTANT"] = true,
-    ["HARMFUL|CROWD_CONTROL"] = true,
-    ["HELPFUL|CROWD_CONTROL"] = true,
-    ["HARMFUL|BIG_DEFENSIVE"] = true,
-    ["HELPFUL|BIG_DEFENSIVE"] = true,
-    ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["HARMFUL|DISPELLABLE"] = true,
-    ["HELPFUL|DISPELLABLE"] = true,
-    ["PLAYER|RAID_IN_COMBAT"] = true,
-  },
-
-  raid = {
-    ["HARMFUL|IMPORTANT"] = true,
-    ["HELPFUL|IMPORTANT"] = true,
-    ["HARMFUL|CROWD_CONTROL"] = true,
-    ["HELPFUL|CROWD_CONTROL"] = true,
-    ["HARMFUL|BIG_DEFENSIVE"] = true,
-    ["HELPFUL|BIG_DEFENSIVE"] = true,
-    ["HELPFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["HARMFUL|EXTERNAL_DEFENSIVE"] = true,
-    ["HARMFUL|DISPELLABLE"] = true,
-    ["HELPFUL|DISPELLABLE"] = true,
-    ["PLAYER|RAID_IN_COMBAT"] = true,
-  }
-}
-
-local FILTER_LABELS = {
-  ["HARMFUL|IMPORTANT"] = "Harmful Important",
-  ["HELPFUL|IMPORTANT"] = "Helpful Important",
-  ["HARMFUL|CROWD_CONTROL"] = "Harmful Crowd Control",
-  ["HELPFUL|CROWD_CONTROL"] = "Helpful Crowd Control",
-  ["HELPFUL|BIG_DEFENSIVE"] = "Helpful Big Defensives",
-  ["HARMFUL|BIG_DEFENSIVE"] = "Harmful Big Defensives",
-  ["HELPFUL|EXTERNAL_DEFENSIVE"] = "Helpful External Defensives",
-  ["HARMFUL|EXTERNAL_DEFENSIVE"] = "Harmful External Defensives",
-  ["HARMFUL|DISPELLABLE"] = "Harmful Dispellable",
-  ["HELPFUL|DISPELLABLE"] = "Helpful Dispellable",
-  ["PLAYER|RAID_IN_COMBAT"] = "HoTs and DoTs",
-}
-
--- Priority order for which filter wins a limited aura-icon slot when more
--- than one matches (AuraUtil.lua's ResolveFilters/AddAuras) - first wins.
--- Player/HoTs-DoTs is most reliable (self-tracked, always relevant) so it
--- goes first here, even though it displays last in the options pane (see
--- FILTER_DISPLAY_GROUPS below) - these two orderings are deliberately not
--- the same list.
-local FILTER_ORDER = {
-  "PLAYER|RAID_IN_COMBAT",
-  "HARMFUL|IMPORTANT",
-  "HELPFUL|IMPORTANT",
-  "HARMFUL|EXTERNAL_DEFENSIVE",
-  "HELPFUL|EXTERNAL_DEFENSIVE",
-  "HARMFUL|BIG_DEFENSIVE",
-  "HELPFUL|BIG_DEFENSIVE",
-  "HARMFUL|CROWD_CONTROL",
-  "HELPFUL|CROWD_CONTROL",
-  "HARMFUL|DISPELLABLE",
-  "HELPFUL|DISPELLABLE",
-}
--- AuraUtil.lua uses this same order for aura-slot priority.
-MF.FilterOrder = FILTER_ORDER
-
--- Options-pane checkbox order (BuildFilterArgs below) - independent of
--- FILTER_ORDER's priority meaning above. Each entry is a group of filter
--- keys rendered together, top to bottom; Important/External Defensive/Big
--- Defensive/Crowd Control/Dispellable lead, Player/HoTs-DoTs trails at the
--- bottom (it's the single oddball category, least intuitive to a new
--- reader). Any filter key that's in FILTER_ORDER but not listed in any
--- group here still gets shown - just appended after everything below -
--- so a filter added later without updating this list doesn't silently
--- disappear from the options pane.
-local FILTER_DISPLAY_GROUPS = {
-  { "HARMFUL|IMPORTANT", "HELPFUL|IMPORTANT" },
-  { "HARMFUL|EXTERNAL_DEFENSIVE", "HELPFUL|EXTERNAL_DEFENSIVE" },
-  { "HARMFUL|BIG_DEFENSIVE", "HELPFUL|BIG_DEFENSIVE" },
-  { "HARMFUL|CROWD_CONTROL", "HELPFUL|CROWD_CONTROL" },
-  { "HARMFUL|DISPELLABLE", "HELPFUL|DISPELLABLE" },
-  { "PLAYER|RAID_IN_COMBAT" },
-}
-
--- Flattened FILTER_DISPLAY_GROUPS for BuildFilterArgs to iterate, with any
--- filter present in FILTER_ORDER but missing from a group appended last.
-local FILTER_DISPLAY_ORDER = {}
-do
-  local seen = {}
-  for _, group in ipairs(FILTER_DISPLAY_GROUPS) do
-    for _, filterKey in ipairs(group) do
-      table.insert(FILTER_DISPLAY_ORDER, filterKey)
-      seen[filterKey] = true
-    end
-  end
-  for _, filterKey in ipairs(FILTER_ORDER) do
-    if not seen[filterKey] then
-      table.insert(FILTER_DISPLAY_ORDER, filterKey)
-    end
-  end
-end
-
 local UNIT_LABELS = {
   player = "Player",
   target = "Target",
@@ -230,6 +72,66 @@ local UNIT_LABELS = {
 -- Auras-tab sub-tab; UNIT_LABELS.focus is still used elsewhere (Sizing
 -- tab's manually-positioned note)
 local UNIT_ORDER = { "player", "target", "party", "arena", "boss", "raid" }
+
+-- Every aura category starts enabled on every unit.
+local DEFAULT_FILTERS = {}
+for _, unitKey in ipairs(UNIT_ORDER) do
+  local enabled = {}
+  for _, filterKey in ipairs(MF.FilterOrder) do
+    enabled[filterKey] = true
+  end
+  DEFAULT_FILTERS[unitKey] = enabled
+end
+
+local FILTER_LABELS = {
+  ["HARMFUL|IMPORTANT"] = "Harmful Important",
+  ["HELPFUL|IMPORTANT"] = "Helpful Important",
+  ["HARMFUL|CROWD_CONTROL"] = "Harmful Crowd Control",
+  ["HELPFUL|CROWD_CONTROL"] = "Helpful Crowd Control",
+  ["HELPFUL|BIG_DEFENSIVE"] = "Helpful Big Defensives",
+  ["HARMFUL|BIG_DEFENSIVE"] = "Harmful Big Defensives",
+  ["HELPFUL|EXTERNAL_DEFENSIVE"] = "Helpful External Defensives",
+  ["HARMFUL|EXTERNAL_DEFENSIVE"] = "Harmful External Defensives",
+  ["HARMFUL|RAID_PLAYER_DISPELLABLE"] = "Harmful Dispellable",
+  ["HELPFUL|RAID_PLAYER_DISPELLABLE"] = "Helpful Dispellable",
+  ["HELPFUL|PLAYER|RAID_IN_COMBAT"] = "HoTs",
+  ["HARMFUL|PLAYER|RAID_IN_COMBAT"] = "DoTs",
+}
+
+-- Options-pane checkbox order (BuildFilterArgs below) - independent of
+-- MF.FilterOrder's priority meaning (Modules/AuraLogic.lua). Each entry is a
+-- group of filter keys rendered together, top to bottom; HoTs/DoTs trail at
+-- the bottom (the single oddball category, least intuitive to a new reader).
+-- Any filter key that's in MF.FilterOrder but not listed in any group here
+-- still gets shown - just appended after everything below - so a filter
+-- added later without updating this list doesn't silently disappear from
+-- the options pane.
+local FILTER_DISPLAY_GROUPS = {
+  { "HARMFUL|IMPORTANT", "HELPFUL|IMPORTANT" },
+  { "HARMFUL|EXTERNAL_DEFENSIVE", "HELPFUL|EXTERNAL_DEFENSIVE" },
+  { "HARMFUL|BIG_DEFENSIVE", "HELPFUL|BIG_DEFENSIVE" },
+  { "HARMFUL|CROWD_CONTROL", "HELPFUL|CROWD_CONTROL" },
+  { "HARMFUL|RAID_PLAYER_DISPELLABLE", "HELPFUL|RAID_PLAYER_DISPELLABLE" },
+  { "HELPFUL|PLAYER|RAID_IN_COMBAT", "HARMFUL|PLAYER|RAID_IN_COMBAT" },
+}
+
+-- Flattened FILTER_DISPLAY_GROUPS for BuildFilterArgs to iterate, with any
+-- filter present in MF.FilterOrder but missing from a group appended last.
+local FILTER_DISPLAY_ORDER = {}
+do
+  local seen = {}
+  for _, group in ipairs(FILTER_DISPLAY_GROUPS) do
+    for _, filterKey in ipairs(group) do
+      table.insert(FILTER_DISPLAY_ORDER, filterKey)
+      seen[filterKey] = true
+    end
+  end
+  for _, filterKey in ipairs(MF.FilterOrder) do
+    if not seen[filterKey] then
+      table.insert(FILTER_DISPLAY_ORDER, filterKey)
+    end
+  end
+end
 
 function MF.GetUnitFilters(unit)
   if not MF.db then return {} end
