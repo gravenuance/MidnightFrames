@@ -6,6 +6,8 @@ All notable changes to MidnightFrames are recorded here. Format follows
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-29
+
 ### Changed
 - Options window reorganised as a tree: General, one entry per frame type
   (player, pet, target, focus, party, arena, boss, raid) and Profiles. Each
