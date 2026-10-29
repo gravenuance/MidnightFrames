@@ -100,7 +100,10 @@ function MF.UpdateTargetIndicator(frame)
   else
     targetFrame = GetTargetByUnit(targetUnit)
   end
-  if not targetFrame then return end
+  if not targetFrame then
+    MF.ResetTargetIndicator(frame)
+    return
+  end
   targetFrame.targeted = targetFrame.targeted or {}
   targetFrame.targeted[frame.unit] = true
   targetFrame.innerBorder:SetShown(true)
