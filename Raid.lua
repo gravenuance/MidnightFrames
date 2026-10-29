@@ -216,6 +216,8 @@ local function CreateRaidFrame(index)
   RaidFrames[index] = raidFrame
 end
 
-for i = 1, MF.MaxRaidMembers do
-  CreateRaidFrame(i)
-end
+MF.OnInit(function()
+  for i = 1, MF.MaxRaidMembers do
+    CreateRaidFrame(i)
+  end
+end)

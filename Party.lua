@@ -129,6 +129,8 @@ local function CreatePartyFrame(index)
   end)
 end
 
-for i = 1, MF.GroupSize.party do
-  CreatePartyFrame(i)
-end
+MF.OnInit(function()
+  for i = 1, MF.GroupSize.party do
+    CreatePartyFrame(i)
+  end
+end)

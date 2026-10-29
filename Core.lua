@@ -1,4 +1,4 @@
-local _, MF             = ...
+local addonName, MF  = ...
 
 local baseName          = "MF_Core"
 
@@ -9,13 +9,30 @@ local DB_SCHEMA_VERSION = 2
 
 local pendingPostCombat = {}
 
-local function RunOrDefer(key, func, ...)
+-- Queues func for PLAYER_REGEN_ENABLED, or runs it now when out of combat.
+-- A later call with the same key replaces the queued one.
+function MF.RunAfterCombat(key, func, ...)
   if InCombatLockdown() then
-    print("In combat. Test will be executed after.")
     pendingPostCombat[key] = { func = func, args = { ... } }
   else
     func(...)
   end
+end
+
+local function RunOrDefer(key, func, ...)
+  if InCombatLockdown() then
+    print("In combat. Test will be executed after.")
+  end
+  MF.RunAfterCombat(key, func, ...)
+end
+
+-- Frame files register their construction here instead of building at file
+-- load: WoW assigns SavedVariables after the files load and before this
+-- addon's ADDON_LOADED, so sizes and positions are only readable from then on.
+local initCallbacks = {}
+
+function MF.OnInit(build)
+  table.insert(initCallbacks, build)
 end
 
 SLASH_MF1       = "/mf"
@@ -244,9 +261,9 @@ function MF.PromptReload()
   StaticPopup_Show("MF_RELOAD_UI")
 end
 
--- Frames are built once at load, from the flat MF.* values FrameUtil.lua
--- sets up - so a size change can't reflow existing frames live. Refresh the
--- flat values for the *next* load and prompt for one.
+-- Frames are built once at ADDON_LOADED, from the flat MF.* values
+-- FrameUtil.lua sets up - so a size change can't reflow existing frames
+-- live. Refresh the flat values for the *next* load and prompt for one.
 local function OnSizesMayHaveChanged()
   MF.ApplySizeSettings()
   MF.PromptReload()
@@ -291,20 +308,8 @@ function MF.InitDB()
   -- unless they explicitly create their own via the Profiles tab's New/
   -- Copy/Delete UI, which still fully supports character-specific setups.
   --
-  -- This call runs twice per session: once here (unconditional, at
-  -- file-load time - required, since Party/Player/Arena/Boss/Raid/Target/
-  -- Focus.lua construct frames immediately at load and need MF.db/MF.*
-  -- ready first), and again from the PLAYER_LOGIN handler below. On this
-  -- setup the real MF_DB SavedVariables global ends up bound to a
-  -- different table by PLAYER_LOGIN than it was at this first call
-  -- (confirmed by comparing table identity directly) - without the second
-  -- call, every write here lands on an orphaned table that never gets
-  -- saved, which is exactly what was happening before this was found:
-  -- every option looked like it "worked" in-session but silently reverted
-  -- on the next reload. The second call rebinds MF.db to whatever MF_DB
-  -- actually is by PLAYER_LOGIN, which is early enough that the options
-  -- panel (the only place the user can actually edit anything) is built
-  -- against the correct, persistable table.
+  -- Must run from ADDON_LOADED: before it, MF_DB is still the empty global
+  -- AceDB creates, and WoW then replaces it with the saved table.
   MF.db = AceDB:New("MF_DB", defaults, "Default")
 
   if legacyFilters then
@@ -344,12 +349,6 @@ function MF.OnProfileChanged()
   end
   AceConfigRegistry:NotifyChange("MF")
 end
-
--- Must run now, synchronously, not deferred to an event: Party/Player/
--- Arena/Boss/Raid/Target.lua call MF.CreateUnitFrame immediately when they
--- load (not on PLAYER_LOGIN), and that needs MF.db and the flat MF.* size
--- values ready first.
-MF.InitDB()
 
 local function BuildGeneralArgs()
   local args = {
@@ -545,28 +544,25 @@ function MF.OpenOptions()
 end
 
 local ef = CreateFrame("Frame", baseName .. "Events")
+ef:RegisterEvent("ADDON_LOADED")
 ef:RegisterEvent("PLAYER_REGEN_ENABLED")
-ef:RegisterEvent("PLAYER_LOGIN")
-ef:SetScript("OnEvent", function(self, event)
-  if event == "PLAYER_REGEN_ENABLED" then
+ef:SetScript("OnEvent", function(self, event, loadedAddon)
+  if event == "ADDON_LOADED" then
+    if loadedAddon ~= addonName then return end
+    self:UnregisterEvent("ADDON_LOADED")
+    MF.InitDB()
+    for _, build in ipairs(initCallbacks) do
+      build()
+    end
+    MF.InitConfigAndOptions()
+  elseif event == "PLAYER_REGEN_ENABLED" then
     if InCombatLockdown() then return end
 
-    for key, data in pairs(pendingPostCombat) do
+    -- Swap first so a callback that queues more work isn't lost mid-iteration.
+    local queued = pendingPostCombat
+    pendingPostCombat = {}
+    for _, data in pairs(queued) do
       data.func(unpack(data.args))
-      pendingPostCombat[key] = nil
     end
-  elseif event == "PLAYER_LOGIN" then
-    -- Rebind MF.db: on this setup, the real MF_DB global ends up a
-    -- different table by PLAYER_LOGIN than it was when MF.InitDB() first
-    -- ran at file-load time (confirmed via identity checks - MF.db.sv and
-    -- _G.MF_DB point at two different tables by this point), so anything
-    -- written through the first MF.db never reaches what actually gets
-    -- saved. Frame construction already ran on whatever the first call
-    -- resolved (unavoidable - those files load before this event fires),
-    -- but everything the user can actually edit lives in the options
-    -- panel, built below, so rebinding here before that happens is enough
-    -- to fix persistence for all of it.
-    MF.InitDB()
-    MF.InitConfigAndOptions()
   end
 end)

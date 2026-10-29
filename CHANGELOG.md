@@ -7,6 +7,10 @@ All notable changes to MidnightFrames are recorded here. Format follows
 ## [Unreleased]
 
 ### Fixed
+- Saved frame sizes and positions now reach the frames after a reload. The
+  profile database and every unit frame were built while the files loaded,
+  before WoW had assigned the saved variables; both now run from this
+  addon's `ADDON_LOADED`, and the second `InitDB` at `PLAYER_LOGIN` is gone.
 - The reload popup no longer references `STATICPOPUP_NUMDIALOGS`, a global
   that no longer exists in 12.1.5.
 - The addon now lists the 12.1.5 interface version (120105) in its `.toc`.

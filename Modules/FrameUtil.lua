@@ -29,9 +29,8 @@ MF.SizeDefinitions = {
   { key = "AuraOffsetY", name = "Aura Icon Offset", desc = "How far the aura icons sit below the frame's top edge.", default = 190, min = 0, max = 400, group = "finetune" },
 }
 
--- Set to the hardcoded defaults above so anything that loads before
--- MF.ApplySizeSettings runs (nothing should, but just in case) still gets a
--- sane value instead of nil.
+-- Set to the hardcoded defaults above so anything that reads them before
+-- MF.ApplySizeSettings runs (at ADDON_LOADED) still gets a sane value.
 for _, def in ipairs(MF.SizeDefinitions) do
   MF[def.key] = def.default
 end
@@ -45,9 +44,8 @@ MF.GroupSize = { party = 4, arena = 3, boss = 5 }
 MF.RaidOffsetX = MF.RosterFrameOffsetX * 1.5
 
 -- Copies the current profile's saved sizes onto the flat MF.* names every
--- other file reads. Must run before Party/Player/Arena/Boss/Raid/Target.lua
--- load, since those call MF.CreateUnitFrame immediately at load time, not
--- on a later event.
+-- other file reads. Must run before the frame files' MF.OnInit callbacks,
+-- which call MF.CreateUnitFrame.
 function MF.ApplySizeSettings()
   local sizes = MF.db and MF.db.profile.sizes
   if not sizes then return end
@@ -69,9 +67,9 @@ for _, key in ipairs({ "player", "target", "pet", "focus", "party", "arena", "bo
   MF.Positions[key] = { x = 0, y = 0 }
 end
 
--- Resolves MF.Positions from the saved profile. Must run before Party/
--- Player/Arena/Boss/Raid/Target.lua load (same constraint as
--- ApplySizeSettings), and again after any drag or slider change.
+-- Resolves MF.Positions from the saved profile. Must run before the frame
+-- files' MF.OnInit callbacks (same constraint as ApplySizeSettings), and
+-- again after any drag or slider change.
 function MF.ApplyPositionSettings()
   local positions = MF.db and MF.db.profile.positions
   if not positions then return end

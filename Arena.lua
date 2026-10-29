@@ -291,6 +291,8 @@ local function SetArenaFrame(index)
 end
 
 
-for i = 1, MF.GroupSize.arena do
-  SetArenaFrame(i)
-end
+MF.OnInit(function()
+  for i = 1, MF.GroupSize.arena do
+    SetArenaFrame(i)
+  end
+end)

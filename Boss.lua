@@ -151,6 +151,8 @@ local function SetBossFrame(index)
   end)
 end
 
-for i = 1, MAX_BOSS_FRAMES do
-  SetBossFrame(i)
-end
+MF.OnInit(function()
+  for i = 1, MAX_BOSS_FRAMES do
+    SetBossFrame(i)
+  end
+end)

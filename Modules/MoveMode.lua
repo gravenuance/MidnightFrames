@@ -1,7 +1,8 @@
 local _, MF = ...
 
--- Loaded last in the .toc, after every frame-construction file, so
--- MF.MovableSingles/MF.MovableGroups are fully populated before this runs.
+-- Loaded last in the .toc. MF.MovableSingles/MF.MovableGroups are filled by
+-- the frame files' MF.OnInit callbacks, so they're only populated once
+-- ADDON_LOADED has run - every use below happens after that.
 
 MF.MoveModeActive = false
 
