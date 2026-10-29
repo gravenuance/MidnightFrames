@@ -11,6 +11,8 @@ All notable changes to MidnightFrames are recorded here. Format follows
   profile database and every unit frame were built while the files loaded,
   before WoW had assigned the saved variables; both now run from this
   addon's `ADDON_LOADED`, and the second `InitDB` at `PLAYER_LOGIN` is gone.
+- Blizzard's non-raid-style `PartyFrame` is hidden too, not just the
+  raid-style `CompactPartyFrame`.
 - Boss frames now appear when a boss is pulled. Visibility was only
   refreshed on zone changes, so the unit watch was never registered; it is
   now registered once at load and only test mode takes it off.

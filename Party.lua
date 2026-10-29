@@ -1,5 +1,8 @@
 local _, MF      = ...
 
+-- PartyFrame is the non-raid-style party frame and the parent of
+-- CompactPartyFrame; hide both so neither style shows.
+MF.HideBlizzardFrame("PartyFrame")
 MF.HideBlizzardFrame("CompactPartyFrame")
 
 local baseName   = "MF_Party"
