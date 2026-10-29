@@ -68,9 +68,8 @@ local UNIT_LABELS = {
   raid   = "Raid",
 }
 
--- no "focus" here - it doesn't track auras (see Focus.lua), so it has no
--- Auras-tab sub-tab; UNIT_LABELS.focus is still used elsewhere (Sizing
--- tab's manually-positioned note)
+-- Units that track auras. Focus and pet are left out (see Focus.lua), so
+-- their options tabs have no Auras section.
 local UNIT_ORDER = { "player", "target", "party", "arena", "boss", "raid" }
 
 -- Every aura category starts enabled on every unit.
