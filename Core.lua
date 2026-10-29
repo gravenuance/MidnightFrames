@@ -238,7 +238,6 @@ StaticPopupDialogs["MF_RELOAD_UI"] = {
   timeout = 0,
   whileDead = true,
   hideOnEscape = true,
-  preferredIndex = STATICPOPUP_NUMDIALOGS,
 }
 
 function MF.PromptReload()
