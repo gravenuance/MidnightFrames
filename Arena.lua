@@ -172,8 +172,6 @@ local function SetArenaFrame(index)
   end
 
   local function HookDR(frame)
-    if not MF.DRFallback then return end
-
     -- Looked up each time: Blizzard creates the arena frame on its own schedule.
     local member = _G[blizzFrame .. "Member" .. index]
     if member then
@@ -208,13 +206,11 @@ local function SetArenaFrame(index)
   arenaFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
   arenaFrame:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
 
-  arenaFrame:RegisterUnitEvent("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", unit)
-
   arenaFrame:RegisterEvent("RAID_TARGET_UPDATE")
 
   MF.RegisterCastEvents(arenaFrame)
 
-  arenaFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
+  arenaFrame:SetScript("OnEvent", function(_, event, arg1)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
       MF.Test.Clear("arena")
       UpdateVisibility()
@@ -259,10 +255,6 @@ local function SetArenaFrame(index)
       MF.UpdateAuras(arenaFrame)
     elseif event == "ARENA_COOLDOWNS_UPDATE" or event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then
       MF.UpdateTrinket(arenaFrame, true)
-    elseif event == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
-      if not MF.DRFallback then
-        MF.TryAndUpdateDRStateFromEvent(arenaFrame, arg2)
-      end
     elseif event == "RAID_TARGET_UPDATE" then
       MF.UpdateRaidMark(arenaFrame)
     elseif MF.IsCastEvent(event) then

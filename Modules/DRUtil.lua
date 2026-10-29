@@ -1,16 +1,7 @@
 local _, MF = ...
 
 local ENEMY_DR_RESET_TIME = MF.DR.ResetTime
-local ENEMY_DR_ORDER = {
-  [2] = "stun",
-  [4] = "incap",
-  [5] = "disorient",
-  [6] = "silence",
-  [7] = "disarm",
-  [0] = "root",
-}
 
-MF.DRFallback = true
 -- 1 trinket slot + 1 per tracked DR category; can be overridden via params.otherSlots
 MF.DRSize = 7
 MF.DRStartIndex = 2
@@ -259,50 +250,6 @@ local function GetAndInterpretField(table, field)
     return result
   end
   return nil
-end
-
-local function IsTracked(category)
-  local result = GetAndInterpretField(ENEMY_DR_ORDER, category)
-  if not MF.IsNil(result) then return result end
-  return false
-end
-
-local function SanitizeBoolean(value, default)
-  if MF.IsSecretSafe(value) then
-    return default
-  end
-  return value
-end
-
-function MF.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
-  if not MF.IsTable(trackerInfo) and not MF.IsUserData(trackerInfo) then
-    return
-  end
-  if not frame or not frame.unit then return end
-  local category = GetAndInterpretField(trackerInfo, "category")
-  local ok = MF.IsNumber(category)
-  if not ok then
-    return
-  end
-  if MF.IsSecretSafe(category) then return end
-  category = IsTracked(category)
-  if type(category) ~= "string" then return end
-  local startTime = GetAndInterpretField(trackerInfo, "startTime")
-  local duration = GetAndInterpretField(trackerInfo, "duration")
-  local isImmune = GetAndInterpretField(trackerInfo, "isImmune")
-  local showCountdown = GetAndInterpretField(trackerInfo, "showCountdown")
-
-  if MF.IsNumber(startTime) and MF.IsNumber(duration)
-      and not MF.IsSecretSafe(startTime) and not MF.IsSecretSafe(duration) then
-    frame.categories[category] = {
-      duration = duration,
-      startTime = startTime,
-      isImmune = SanitizeBoolean(isImmune, false),
-      showCountdown = SanitizeBoolean(showCountdown, true),
-      icon = CATEGORY_ICON[category]
-    }
-  end
-  SetButtons(frame)
 end
 
 -- Reused for every scan: aura instance ID -> DR category of each active effect.
