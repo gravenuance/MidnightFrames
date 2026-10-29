@@ -11,6 +11,12 @@ All notable changes to MidnightFrames are recorded here. Format follows
   profile database and every unit frame were built while the files loaded,
   before WoW had assigned the saved variables; both now run from this
   addon's `ADDON_LOADED`, and the second `InitDB` at `PLAYER_LOGIN` is gone.
+- A duplicate aura (same instance already shown via another filter) is now
+  skipped on its own; before, it ended the scan and hid every aura after it.
+  A secret `icon` is no longer truth-tested (`SetAuraTexture` already
+  type-checks it), and a texture that fails to set skips that aura only.
+- The player power label tests for a missing value with `MF.IsNil`, not a
+  direct comparison that could see a secret value.
 - Aura filters the API rejected now work: `DISPELLABLE` became
   `RAID_PLAYER_DISPELLABLE`, and the single `PLAYER|RAID_IN_COMBAT` entry
   (which lacked `HELPFUL`/`HARMFUL`) split into separate HoTs and DoTs

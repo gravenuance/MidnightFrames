@@ -108,6 +108,7 @@ end
 -- fresh table per call - UNIT_AURA is the hottest event this addon handles
 -- (see ResolveFilters below), firing on up to ~36 visible frames at once.
 local seenInstanceIDs = {}
+local NextUnseenAuraIndex = MF.NextUnseenAuraIndex
 
 -- Hoisted out of GetAndUpdateAuras (was a per-call closure) for the same
 -- reason: avoid allocating on every UNIT_AURA. `shown` threads through as a
@@ -119,32 +120,13 @@ local function AddAurasForFilter(container, unit, filter, maxRemaining, shown)
   if not ok or not auraList or totalAuras == 0 then
     return shown
   end
-  for listIndex = 1, totalAuras do
-    if shown > container.maxAuras then
-      break
-    end
-
+  local listIndex = NextUnseenAuraIndex(auraList, totalAuras, 1, seenInstanceIDs)
+  while listIndex and shown <= container.maxAuras do
     local auraData = auraList[listIndex]
-    if not auraData then
-      break
-    end
+    local btn = container.icons[shown]
 
-    local instanceID = auraData.auraInstanceID
-    if MF.IsNumber(instanceID) and not MF.IsSecretSafe(instanceID) then
-      if seenInstanceIDs[instanceID] then
-        break
-      else
-        seenInstanceIDs[instanceID] = true
-      end
-    end
-
-    if auraData.icon then
-      local btn = container.icons[shown]
-
-      if not SetAuraTexture(btn, auraData) then
-        break
-      end
-
+    -- A texture that can't be set only costs this aura its slot.
+    if SetAuraTexture(btn, auraData) then
       btn.unit = unit
       btn.auraFilter = filter
       btn.auraInstanceID = auraData.auraInstanceID
@@ -155,6 +137,7 @@ local function AddAurasForFilter(container, unit, filter, maxRemaining, shown)
       shown = shown + 1
       btn:Show()
     end
+    listIndex = NextUnseenAuraIndex(auraList, totalAuras, listIndex + 1, seenInstanceIDs)
   end
   return shown
 end
