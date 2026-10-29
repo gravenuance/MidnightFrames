@@ -6,6 +6,11 @@ All notable changes to MidnightFrames are recorded here. Format follows
 
 ## [Unreleased]
 
+### Fixed
+- The reload popup no longer references `STATICPOPUP_NUMDIALOGS`, a global
+  that no longer exists in 12.1.5.
+- The addon now lists the 12.1.5 interface version (120105) in its `.toc`.
+
 ### Added
 - Offline test suite (`lua5.1 tests/run.lua`) for the pure-logic modules,
   run by CI and kept out of the release zip.
