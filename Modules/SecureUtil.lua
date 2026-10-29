@@ -276,12 +276,23 @@ function MF.GetUnitAuras(unit, filter, maxRemaining, sortRule, sortDirection)
   return true, result, #result
 end
 
+-- The two aura wrappers below stay direct calls (per-aura hot path) but still
+-- check the API exists and the ID is a number: both raise on an invalid
+-- aura instance.
 function MF.GetAuraDispelTypeColor(unit, auraInstanceID, curve)
-  return true, C_UnitAuras.GetAuraDispelTypeColor(unit, auraInstanceID, curve)
+  local getColor = C_UnitAuras and C_UnitAuras.GetAuraDispelTypeColor
+  if type(auraInstanceID) ~= "number" or type(getColor) ~= "function" then
+    return false
+  end
+  return true, getColor(unit, auraInstanceID, curve)
 end
 
 function MF.GetAuraDuration(unit, auraInstanceID)
-  return true, C_UnitAuras.GetAuraDuration(unit, auraInstanceID)
+  local getDuration = C_UnitAuras and C_UnitAuras.GetAuraDuration
+  if type(auraInstanceID) ~= "number" or type(getDuration) ~= "function" then
+    return false
+  end
+  return true, getDuration(unit, auraInstanceID)
 end
 
 function MF.SetCooldown(cooldown, start, duration)
@@ -365,19 +376,19 @@ function MF.SetTimeFromStart(durationObject, startTime, duration)
 end
 
 function MF.GetActiveMatchState()
-  return true, C_PvP.GetActiveMatchState()
+  return MF.CallExternalFunction({ namespace = C_PvP, functionName = "GetActiveMatchState" })
 end
 
 function MF.IsMatchComplete()
-  return true, C_PvP.IsMatchComplete()
+  return MF.CallExternalFunction({ namespace = C_PvP, functionName = "IsMatchComplete" })
 end
 
 function MF.IsMatchConsideredArena()
-  return true, C_PvP.IsMatchConsideredArena()
+  return MF.CallExternalFunction({ namespace = C_PvP, functionName = "IsMatchConsideredArena" })
 end
 
 function MF.IsMatchActive()
-  return true, C_PvP.IsMatchActive()
+  return MF.CallExternalFunction({ namespace = C_PvP, functionName = "IsMatchActive" })
 end
 
 function MF.GetArenaOpponentSpec(index)
