@@ -1,5 +1,8 @@
 local _, MF = ...
 
+local UnitExists = UnitExists
+local UnitIsUnit = UnitIsUnit
+
 local arenaUnits = {}
 for i = 1, 5 do
   arenaUnits[i] = "arena" .. i
@@ -20,25 +23,36 @@ for i = 1, 5 do
   bossUnits[i] = "boss" .. i
 end
 
-local function CheckUnits(unit, otherUnit)
-  return MF.IsUnitUnit(unit, otherUnit)
+-- UNIT_TARGET fires for every tracked frame, so this stays call-only: no
+-- wrapper tables, and the unit tokens are built once.
+local function IsSameUnit(unit, otherUnit)
+  return MF.PlainBool(UnitIsUnit(unit, otherUnit))
 end
 
+-- The group/arena/boss unit that `frame`'s unit is targeting, if any.
 local function GetTargetUnit(frame)
-  local targetUnit = frame.unit .. "target"
+  local targetUnit = frame.targetToken
+  if not targetUnit then
+    targetUnit = frame.unit .. "target"
+    frame.targetToken = targetUnit
+  end
+  if not MF.PlainBool(UnitExists(targetUnit)) then
+    return nil
+  end
+
   local tempUnit
   local numGroup = MF.NumGroupMembers
   if numGroup > 5 then
     for index = 1, numGroup do
       tempUnit = raidUnits[index]
-      if CheckUnits(tempUnit, targetUnit) then
+      if IsSameUnit(tempUnit, targetUnit) then
         return tempUnit
       end
     end
   elseif numGroup > 0 then
     for index = 1, numGroup - 1 do
       tempUnit = partyUnits[index]
-      if CheckUnits(tempUnit, targetUnit) then
+      if IsSameUnit(tempUnit, targetUnit) then
         return tempUnit
       end
     end
@@ -48,7 +62,7 @@ local function GetTargetUnit(frame)
     if arenaSize > 0 then
       for index = 1, arenaSize do
         tempUnit = arenaUnits[index]
-        if CheckUnits(tempUnit, targetUnit) then
+        if IsSameUnit(tempUnit, targetUnit) then
           return tempUnit
         end
       end
@@ -57,48 +71,33 @@ local function GetTargetUnit(frame)
   if MF.InInstance() then
     for index = 1, 5 do
       tempUnit = bossUnits[index]
-      if CheckUnits(tempUnit, targetUnit) then
+      if IsSameUnit(tempUnit, targetUnit) then
         return tempUnit
       end
     end
   end
-  return CheckUnits("player", targetUnit) and "player" or nil
-end
-
--- Reuses Move Mode's frame registries (Modules/FrameUtil.lua) instead of
--- rebuilding a "MF_Party1"-style global name and looking it up in _G on
--- every call - this runs on every UNIT_TARGET for every tracked frame.
-local function GetTargetByUnit(unit)
-  local single = MF.MovableSingles[unit]
-  if single then
-    return single
-  end
-
-  local kind, index = unit:match("^(%a+)(%d+)$")
-  if kind and MF.MovableGroups[kind] then
-    return MF.MovableGroups[kind][tonumber(index)]
-  end
-
-  return nil
+  return IsSameUnit("player", targetUnit) and "player" or nil
 end
 
 function MF.UpdateTargetIndicator(frame)
   if not frame or not frame.unit then return end
-  if frame.unit == "player" or MF.IsUnitUnit(frame.unit, "player") then
+  if frame.unit == "player" or IsSameUnit(frame.unit, "player") then
     return
   end
 
   local targetUnit = GetTargetUnit(frame)
-  if not MF.IsString(targetUnit) then
+  if not targetUnit then
     MF.ResetTargetIndicator(frame)
     return
   end
 
+  -- The player can be reached through more than one token (raid5 is the
+  -- player), so any hit on the player lights the player frame.
   local targetFrame
-  if MF.IsUnitUnit(targetUnit, "player") then
-    targetFrame = GetTargetByUnit("player")
+  if IsSameUnit(targetUnit, "player") then
+    targetFrame = MF.FramesByUnit.player
   else
-    targetFrame = GetTargetByUnit(targetUnit)
+    targetFrame = MF.FramesByUnit[targetUnit]
   end
   if not targetFrame then
     MF.ResetTargetIndicator(frame)

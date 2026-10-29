@@ -111,13 +111,17 @@ end
 -- frame names.
 MF.MovableSingles = {}
 MF.MovableGroups = { party = {}, arena = {}, boss = {}, raid = {} }
+-- unit token ("party2", "player") -> its frame, for per-event lookups
+MF.FramesByUnit = {}
 
 function MF.RegisterMovable(key, frame)
   MF.MovableSingles[key] = frame
+  MF.FramesByUnit[frame.unit] = frame
 end
 
 function MF.RegisterMovableGroupMember(key, frame)
   table.insert(MF.MovableGroups[key], frame)
+  MF.FramesByUnit[frame.unit] = frame
 end
 
 -- Repositions every registered member of a roster group relative to its
