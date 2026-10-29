@@ -4,9 +4,6 @@ local baseName = "MF_Boss"
 local MAX_BOSS_FRAMES = MF.GroupSize.boss
 local MAX_AURAS = 4
 
-local blizzContainerName = "BossTargetFrameContainer"
-local blizzFrameBase = "Boss"
-
 local function SetBossFrame(index)
   local unit = "boss" .. index
   local name = baseName .. index
@@ -24,72 +21,38 @@ local function SetBossFrame(index)
   bossFrame:SetFrameLevel(10)
   MF.RegisterMovableGroupMember("boss", bossFrame)
 
-  local HAS_REGISTERED_WATCH = false
-  local function UpdateVisibility()
-    local hasUnit = MF.UnitExists(unit)
+  -- The watch shows the frame whenever the boss unit exists, including on a
+  -- pull, which no event of ours is needed for. Only test mode takes it off.
+  RegisterUnitWatch(bossFrame)
+  local hasWatch = true
 
-    if not MF.InInstance() or not hasUnit or MF.Test.Is("boss") then
-      if HAS_REGISTERED_WATCH and not InCombatLockdown() then
-        UnregisterUnitWatch(bossFrame)
-        HAS_REGISTERED_WATCH = false
-      end
-      if not InCombatLockdown() then
-        if MF.Test.Is("boss") then
-          bossFrame:Show()
-        else
-          bossFrame:Hide()
-        end
-      end
+  local function UpdateVisibility()
+    if InCombatLockdown() then
+      MF.RunAfterCombat(name .. "Visibility", UpdateVisibility)
       return
     end
-
-    if not HAS_REGISTERED_WATCH and not InCombatLockdown() then
+    if MF.Test.Is("boss") then
+      UnregisterUnitWatch(bossFrame)
+      hasWatch = false
+      bossFrame:Show()
+    elseif not hasWatch then
       RegisterUnitWatch(bossFrame)
-      HAS_REGISTERED_WATCH = true
+      hasWatch = true
     end
   end
 
   function bossFrame:UpdateVisibility() UpdateVisibility() end
 
-  local function ForceHide(frame)
-    frame:SetAlpha(0)
-  end
-
-  local function HideBossFrameAndSpellBar(blizzIndex)
-    local frame = _G[blizzFrameBase .. blizzIndex .. "TargetFrame"]
-    if not frame then return end
-    if frame.MF_Hooked then return end
-    local spellBar = frame.spellBar or _G[frame:GetName() .. "SpellBar"] or
-        _G[blizzFrameBase .. blizzIndex .. "TargetFrameSpellBar"]
-    if spellBar then
-      if spellBar.UpdateShownState then
-        hooksecurefunc(spellBar, "UpdateShownState", ForceHide)
-      end
+  local function RefreshAll()
+    if MF.UnitExists(unit) then
+      MF.ApplyClassColor(bossFrame)
+      MF.UpdateHealthBar(bossFrame)
+      MF.UpdateAbsorbBar(bossFrame)
+      MF.UpdateAuras(bossFrame)
+      MF.SetRangeAlpha(bossFrame)
+      MF.UpdateRaidMark(bossFrame)
+      MF.UpdateCastIndicator(bossFrame)
     end
-    if frame.UpdateShownState then
-      hooksecurefunc(frame, "UpdateShownState", ForceHide)
-    end
-    if frame.OnShow then
-      hooksecurefunc(frame, "OnShow", ForceHide)
-    end
-    frame.MF_Hooked = true
-  end
-
-  local function HideBossContainer()
-    local container = _G[blizzContainerName]
-    if not container then return end
-    if container.MF_Hooked then return end
-    if container.SetShown then
-      hooksecurefunc(container, "SetShown", ForceHide)
-    end
-    for i = 1, MAX_BOSS_FRAMES do
-      HideBossFrameAndSpellBar(i)
-    end
-    container.MF_Hooked = true
-  end
-
-  local function SetupBossHooks()
-    HideBossContainer()
   end
 
   bossFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -111,26 +74,17 @@ local function SetBossFrame(index)
 
   MF.RegisterCastEvents(bossFrame)
 
-
-  bossFrame:SetScript("OnEvent", function(self, event)
+  bossFrame:SetScript("OnEvent", function(_, event)
     if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
       MF.Test.Clear("boss")
       UpdateVisibility()
-      SetupBossHooks()
       MF.ResetTargetIndicator(bossFrame)
       -- fill in the frame right away if we reload mid-pull
-      if MF.UnitExists(unit) then
-        MF.ApplyClassColor(bossFrame)
-        MF.UpdateHealthBar(bossFrame)
-        MF.UpdateAbsorbBar(bossFrame)
-        MF.UpdateAuras(bossFrame)
-        MF.SetRangeAlpha(bossFrame)
-        MF.UpdateRaidMark(bossFrame)
-        MF.UpdateCastIndicator(bossFrame)
-      end
-    end
-    if not MF.InInstance() then return end
-    if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
+      RefreshAll()
+    elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" then
+      -- the watch shows the frame; this fills it in
+      RefreshAll()
+    elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
       MF.UpdateHealthBar(bossFrame)
     elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
       MF.UpdateAbsorbBar(bossFrame)
@@ -138,9 +92,6 @@ local function SetBossFrame(index)
       MF.SetRangeAlpha(bossFrame)
     elseif event == "PLAYER_TARGET_CHANGED" then
       MF.UpdateTargetHighlight(bossFrame, MF.Test.Is("boss"))
-    elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" then
-      MF.ApplyClassColor(bossFrame)
-      MF.UpdateRaidMark(bossFrame)
     elseif event == "UNIT_AURA" then
       MF.UpdateAuras(bossFrame)
     elseif event == "RAID_TARGET_UPDATE" then
@@ -152,6 +103,7 @@ local function SetBossFrame(index)
 end
 
 MF.OnInit(function()
+  MF.HideBlizzardFrame("BossTargetFrameContainer")
   for i = 1, MAX_BOSS_FRAMES do
     SetBossFrame(i)
   end
