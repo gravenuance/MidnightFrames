@@ -10,6 +10,7 @@
 
 Modules/Migrations.lua
 Modules/AuraLogic.lua
+Modules/GroupLogic.lua
 Modules/SecureUtil.lua
 Modules/BlizzardUtil.lua
 Modules/DurationUtil.lua

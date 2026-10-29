@@ -1,0 +1,14 @@
+local _, MF = ...
+
+-- MidnightFrames draws at most this many raid frames. Bigger groups fall
+-- back to Blizzard's raid frames (see Raid.lua).
+MF.MaxRaidMembers = 20
+
+-- Whether Blizzard's raid container should be visible instead of ours.
+-- Test mode draws our own raid frames, so Blizzard's stay hidden then.
+function MF.ShouldShowBlizzardRaid(numMembers, raidTestMode)
+  if raidTestMode or type(numMembers) ~= "number" then
+    return false
+  end
+  return numMembers > MF.MaxRaidMembers
+end

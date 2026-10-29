@@ -5,10 +5,15 @@ MF.HideBlizzardFrame("CompactRaidFrameManager")
 
 local baseName      = "MF_Raid"
 
-MF.MaxRaidMembers   = 20
 MF.MustUpdate       = false
 
 local RaidFrames    = {}
+
+-- What CompactRaidFrameContainer registers in its OnLoad; MF.HideBlizzardFrame
+-- drops them, so showing the container again has to put them back.
+local BLIZZARD_RAID_CONTAINER = "CompactRaidFrameContainer"
+local BLIZZARD_RAID_EVENTS = { "PLAYER_ENTERING_WORLD", "GROUP_ROSTER_UPDATE", "UNIT_PET" }
+local blizzardRaidShown = false
 
 local MAX_AURAS     = 3
 
@@ -48,13 +53,41 @@ end
 -- exposed for Move Mode's raid drag handler
 MF.LayoutRaidFrames = LayoutRaidFrames
 
+-- Above MF.MaxRaidMembers our raid frames hide (see UpdateVisibility below)
+-- and Blizzard's container takes over; at or below it, the container hides
+-- again. Switching it changes a protected frame, so combat defers it.
+local function UpdateBlizzardRaid()
+  local wantShown = MF.ShouldShowBlizzardRaid(GetNumGroupMembers(), MF.Test.Is("raid"))
+  if wantShown == blizzardRaidShown then return end
+  if InCombatLockdown() then
+    MF.RunAfterCombat("MF_blizzard_raid", UpdateBlizzardRaid)
+    return
+  end
+
+  blizzardRaidShown = wantShown
+  if wantShown then
+    MF.ShowBlizzardFrame(BLIZZARD_RAID_CONTAINER, BLIZZARD_RAID_EVENTS)
+    -- it missed the roster event that got us here
+    local container = _G[BLIZZARD_RAID_CONTAINER]
+    if container and container.TryUpdate then
+      container:TryUpdate()
+    end
+  else
+    MF.HideBlizzardFrame(BLIZZARD_RAID_CONTAINER)
+  end
+end
+
 -- A roster change that arrives mid-combat sets MF.MustUpdate but can't
 -- reposition secure frames until combat ends, and nothing guarantees another
 -- raid-frame event fires afterward to retry it (a fight can simply end with
 -- no further health/roster events) - so retry directly off combat ending.
+-- The same goes for the watch/hide changes UpdateVisibility skipped in combat.
 local raidCombatWatcher = CreateFrame("Frame")
 raidCombatWatcher:RegisterEvent("PLAYER_REGEN_ENABLED")
 raidCombatWatcher:SetScript("OnEvent", function()
+  for _, raidFrame in ipairs(RaidFrames) do
+    raidFrame:UpdateVisibility()
+  end
   if MF.MustUpdate then
     LayoutRaidFrames()
   end
@@ -103,12 +136,17 @@ local function CreateRaidFrame(index)
   end
 
   local function UpdateVisibility()
+    -- one frame stands in for the whole group; every roster change and every
+    -- test-mode toggle reaches it
+    if unit == "raid1" then
+      UpdateBlizzardRaid()
+    end
     if MF.Test.Is("raid") then
       if InCombatLockdown() then return end
       UnregisterUnitWatch(raidFrame)
       raidFrame.IsDriverRegistered = false
       raidFrame:Show()
-      if raidFrame.unit == "raid1" then
+      if unit == "raid1" then
         LayoutRaidFrames()
       end
     elseif (MF.NumGroupMembers < 6 or MF.NumGroupMembers == 0 or MF.NumGroupMembers > MF.MaxRaidMembers) and not InCombatLockdown() then
@@ -181,7 +219,7 @@ local function CreateRaidFrame(index)
         MF.ResetOrbs(raidFrame)
       end
     end
-    if MF.Test.Is("raid") or (MF.NumGroupMembers < 6 or MF.NumGroupMembers == 0) then return end
+    if MF.Test.Is("raid") or (MF.NumGroupMembers < 6 or MF.NumGroupMembers > MF.MaxRaidMembers) then return end
     if MF.MustUpdate then
       LayoutRaidFrames()
     end

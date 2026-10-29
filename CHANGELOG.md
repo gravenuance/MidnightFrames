@@ -6,6 +6,12 @@ All notable changes to MidnightFrames are recorded here. Format follows
 
 ## [Unreleased]
 
+### Changed
+- In a group of more than 20, MidnightFrames' raid frames stay hidden and
+  Blizzard's raid frames take over; back at 20 or fewer, Blizzard's hide
+  again. The switch waits for combat to end. Raid frames also re-check their
+  visibility when combat ends, since a roster change in combat left them stale.
+
 ### Fixed
 - Saved frame sizes and positions now reach the frames after a reload. The
   profile database and every unit frame were built while the files loaded,
