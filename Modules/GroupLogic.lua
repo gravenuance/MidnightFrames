@@ -12,3 +12,13 @@ function MF.ShouldShowBlizzardRaid(numMembers, raidTestMode)
   end
   return numMembers > MF.MaxRaidMembers
 end
+
+-- How the boss frames are driven: "test" shows them anywhere, "watch" lets the
+-- unit watch show each one while its boss exists (instances only, so world and
+-- quest bosses don't get frames), "hidden" keeps them hidden.
+function MF.BossFrameMode(inInstance, bossTestMode)
+  if bossTestMode then
+    return "test"
+  end
+  return inInstance and "watch" or "hidden"
+end

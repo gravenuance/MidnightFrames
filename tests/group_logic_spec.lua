@@ -27,6 +27,18 @@ t.test("raid test mode keeps Blizzard's raid frames hidden at any size", functio
   t.eq(MF.ShouldShowBlizzardRaid(25, true), false)
 end)
 
+t.test("boss frames follow their unit watch only inside an instance", function()
+  local MF = Logic()
+  t.eq(MF.BossFrameMode(true, false), "watch")
+  t.eq(MF.BossFrameMode(false, false), "hidden")
+end)
+
+t.test("boss test mode shows the frames anywhere", function()
+  local MF = Logic()
+  t.eq(MF.BossFrameMode(false, true), "test")
+  t.eq(MF.BossFrameMode(true, true), "test")
+end)
+
 t.test("a missing member count is treated as not in a group", function()
   local MF = Logic()
   t.eq(MF.ShouldShowBlizzardRaid(nil, false), false)

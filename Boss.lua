@@ -21,23 +21,36 @@ local function SetBossFrame(index)
   bossFrame:SetFrameLevel(10)
   MF.RegisterMovableGroupMember("boss", bossFrame)
 
-  -- The watch shows the frame whenever the boss unit exists, including on a
-  -- pull, which no event of ours is needed for. Only test mode takes it off.
-  RegisterUnitWatch(bossFrame)
-  local hasWatch = true
+  -- Inside an instance the watch shows the frame whenever the boss unit
+  -- exists, including on a pull, which no event of ours is needed for. It is
+  -- taken off for test mode and outside instances. Registered here when
+  -- already inside, so a reload mid-pull needn't wait for combat to end.
+  local hasWatch = MF.InInstance()
+  if hasWatch then
+    RegisterUnitWatch(bossFrame)
+  end
 
   local function UpdateVisibility()
     if InCombatLockdown() then
       MF.RunAfterCombat(name .. "Visibility", UpdateVisibility)
       return
     end
-    if MF.Test.Is("boss") then
+    local mode = MF.BossFrameMode(MF.InInstance(), MF.Test.Is("boss"))
+    if mode == "watch" then
+      if not hasWatch then
+        RegisterUnitWatch(bossFrame)
+        hasWatch = true
+      end
+      return
+    end
+    if hasWatch then
       UnregisterUnitWatch(bossFrame)
       hasWatch = false
+    end
+    if mode == "test" then
       bossFrame:Show()
-    elseif not hasWatch then
-      RegisterUnitWatch(bossFrame)
-      hasWatch = true
+    else
+      bossFrame:Hide()
     end
   end
 
