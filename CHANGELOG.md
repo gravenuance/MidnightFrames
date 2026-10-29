@@ -7,6 +7,17 @@ All notable changes to MidnightFrames are recorded here. Format follows
 ## [Unreleased]
 
 ### Changed
+- Party and raid range checks are coalesced: health, absorb, target and
+  range-check events queue a frame, and each queued frame runs the
+  spell-range loop at most once every 0.2 s, instead of on every
+  `UNIT_HEALTH`.
+- The unit, aura, cooldown and PvP-state helpers in `SecureUtil.lua` call the
+  API directly instead of through `pcall` with per-call argument tables, so
+  `UNIT_AURA`, `UNIT_HEALTH` and `UNIT_TARGET` no longer allocate. An aura
+  scan also stops asking for more filters once every icon slot is filled.
+- `UNIT_TARGET` looks the target frame up through a unit-token table and a
+  cached `<unit>target` token, and skips the 20-unit comparison loop when the
+  unit has no target.
 - In a group of more than 20, MidnightFrames' raid frames stay hidden and
   Blizzard's raid frames take over; back at 20 or fewer, Blizzard's hide
   again. The switch waits for combat to end. Raid frames also re-check their

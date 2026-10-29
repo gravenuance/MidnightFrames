@@ -84,3 +84,9 @@ function MF.SetRangeAlpha(frame)
     frame.healthLiquid:SetAlpha(alpha)
   end
 end
+
+-- Party and raid frames refresh range from events that hit every frame at
+-- once (health, absorbs, target and range-check changes). Queueing coalesces
+-- those bursts so each frame runs the spell-range loop once per window.
+local RANGE_THROTTLE_SECONDS = 0.2
+MF.QueueRangeAlpha = MF.NewUpdateQueue(C_Timer.After, RANGE_THROTTLE_SECONDS, MF.SetRangeAlpha)

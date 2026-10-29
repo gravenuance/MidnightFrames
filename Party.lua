@@ -106,12 +106,12 @@ local function CreatePartyFrame(index)
       MF.UpdateTargetHighlight(partyFrame)
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
       MF.UpdateHealthBar(partyFrame)
-      MF.SetRangeAlpha(partyFrame)
+      MF.QueueRangeAlpha(partyFrame)
     elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
       MF.UpdateAbsorbBar(partyFrame)
-      MF.SetRangeAlpha(partyFrame)
+      MF.QueueRangeAlpha(partyFrame)
     elseif event == "PLAYER_SOFT_ENEMY_CHANGED" or event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "SPELL_RANGE_CHECK_UPDATE" then
-      MF.SetRangeAlpha(partyFrame)
+      MF.QueueRangeAlpha(partyFrame)
     elseif event == "UNIT_NAME_UPDATE" then
       MF.ApplyClassColor(partyFrame)
     elseif event == "UNIT_AURA" then
