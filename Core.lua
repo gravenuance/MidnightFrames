@@ -345,7 +345,7 @@ local function BuildFilterArgs(unitKey)
       name = FilterLabel(filterKey),
       desc = FILTER_DESCS[filterKey],
       order = nextOrder(),
-      width = "half",
+      width = "normal",
       get = function()
         local f = MF.db.profile.filters[unitKey]
         return f and f[filterKey]

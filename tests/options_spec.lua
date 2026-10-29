@@ -158,6 +158,25 @@ t.test("an aura toggle reads and writes the per-unit filter table", function()
   t.eq(MF.db.profile.filters.raid, nil, "other units are untouched")
 end)
 
+t.test("aura toggles are full-size and each row pairs a harmful with its helpful filter", function()
+  local options = BuildOptions()
+  local sorted = {}
+  for key, toggle in pairs(options.args.raid.args.auras.args) do
+    t.eq(toggle.width, "normal", key .. " width")
+    sorted[#sorted + 1] = { key = key, order = toggle.order }
+  end
+  table.sort(sorted, function(a, b) return a.order < b.order end)
+  t.eq(#sorted, 12)
+  -- Two toggles fit per row, so entries 1+2, 3+4, ... share a row.
+  for row = 1, #sorted, 2 do
+    local first = sorted[row].key:gsub("^%u+|", "")
+    local second = sorted[row + 1].key:gsub("^%u+|", "")
+    t.eq(first, second, "row " .. ((row + 1) / 2))
+    t.truthy(sorted[row].key:find("^HARMFUL") ~= sorted[row + 1].key:find("^HARMFUL"),
+      "row " .. ((row + 1) / 2) .. " mixes harmful and helpful")
+  end
+end)
+
 t.test("every filter in priority order has a toggle on every unit that tracks auras", function()
   local options, MF = BuildOptions()
   for _, unit in ipairs({ "player", "target", "party", "arena", "boss", "raid" }) do
