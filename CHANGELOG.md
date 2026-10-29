@@ -63,7 +63,16 @@ All notable changes to MidnightFrames are recorded here. Format follows
   raid-style `CompactPartyFrame`.
 - Boss frames now appear when a boss is pulled. Visibility was only
   refreshed on zone changes, so the unit watch was never registered; it is
-  now registered once at load and only test mode takes it off.
+  now registered inside instances only, so world and quest bosses get no
+  frames, and test mode takes it off.
+- One failing frame builder no longer stops the rest of start-up or the
+  options from registering, and one failing post-combat change no longer
+  drops the others queued that combat; each error is still reported.
+- A malformed saved profile no longer breaks the filter-key migration.
+- Blizzard's raid frames, shown for groups of more than 20, follow
+  Blizzard's own visibility again instead of being pinned visible.
+- The PvP match-state and aura-duration helpers check that the API exists
+  and that the aura ID is a number before calling it.
 - Blizzard's boss frames are hidden through `MF.HideBlizzardFrame` instead of
   being set to alpha 0, so they can no longer be clicked.
 - A duplicate aura (same instance already shown via another filter) is now
