@@ -11,6 +11,16 @@ All notable changes to MidnightFrames are recorded here. Format follows
   profile database and every unit frame were built while the files loaded,
   before WoW had assigned the saved variables; both now run from this
   addon's `ADDON_LOADED`, and the second `InitDB` at `PLAYER_LOGIN` is gone.
+- Arena DR icons no longer flag the first stun as immune. Four tray
+  functions were hooked, so one DR update ran the "already active, so
+  immune" check about four times; only `UpdateOrAddTrayItem` is hooked now
+  and immunity is read from Blizzard's own indicator. A finished tray
+  cooldown clears only its own icon instead of every DR icon on the frame.
+- Party and raid DR icons (from loss-of-control) no longer re-flag running
+  effects as immune or restart their timers on every update. Effects are
+  keyed by `auraInstanceID`, and only a new one inside a running window
+  counts as a DR hit. Loss-of-control types now map onto the DR categories
+  (stun, incap, disorient, silence, disarm, root).
 - Blizzard's non-raid-style `PartyFrame` is hidden too, not just the
   raid-style `CompactPartyFrame`.
 - Boss frames now appear when a boss is pulled. Visibility was only

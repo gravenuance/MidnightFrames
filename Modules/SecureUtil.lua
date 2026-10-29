@@ -576,11 +576,3 @@ function MF.GetActiveLossOfControlDataByUnit(unit, index)
     argumentValidators = { MF.IsString, MF.IsNumber }
   })
 end
-
-function MF.GetLayoutChildren(tray)
-  return MF.CallExternalFunction({
-    namespace = tray,
-    functionName = "GetLayoutChildren",
-    args = { tray }
-  })
-end

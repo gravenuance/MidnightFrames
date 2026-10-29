@@ -179,23 +179,13 @@ local function SetArenaFrame(index)
     if member and member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MF_Hooked then
       local tray = member.SpellDiminishStatusTray
       tray.MF_Hooked = true
-      hooksecurefunc(member.SpellDiminishStatusTray, "TryUpdateOrAddTrayItem", function()
-        MF.TryAndUpdateDRStateFromTray(member.SpellDiminishStatusTray, frame)
+      -- Every DR update funnels through UpdateOrAddTrayItem (the other tray
+      -- functions it calls carry no new state), so one hook sees each once.
+      hooksecurefunc(tray, "UpdateOrAddTrayItem", function(_, state)
+        MF.OnTrayItemUpdated(tray, state, frame)
       end)
-      hooksecurefunc(member.SpellDiminishStatusTray, "UpdateOrAddTrayItem", function()
-        MF.TryAndUpdateDRStateFromTray(member.SpellDiminishStatusTray, frame)
-      end)
-      hooksecurefunc(member.SpellDiminishStatusTray, "RefreshTrayLayout", function()
-        MF.TryAndUpdateDRStateFromTray(member.SpellDiminishStatusTray, frame)
-      end)
-      hooksecurefunc(member.SpellDiminishStatusTray, "AddNewItemToTray", function()
-        MF.TryAndUpdateDRStateFromTray(member.SpellDiminishStatusTray, frame)
-      end)
-      hooksecurefunc(member.SpellDiminishStatusTray, "RemoveCategoryFromOrder", function()
-        MF.ResetDR(frame)
-      end)
-      hooksecurefunc(member.SpellDiminishStatusTray, "OnTrayItemCooldownDone", function()
-        MF.ResetDR(frame)
+      hooksecurefunc(tray, "OnTrayItemCooldownDone", function(_, item)
+        MF.OnTrayItemCooldownDone(item)
       end)
     end
   end

@@ -17,6 +17,7 @@ Modules/ObjectiveUtil.lua
 Modules/ArenaUtil.lua
 Modules/Setup.lua
 Modules/AuraUtil.lua
+Modules/DRLogic.lua
 Modules/DRUtil.lua
 Modules/FrameUtil.lua
 Modules/TargetIndicator.lua

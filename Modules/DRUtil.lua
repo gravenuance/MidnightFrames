@@ -1,6 +1,6 @@
 local _, MF = ...
 
-local ENEMY_DR_RESET_TIME = 16
+local ENEMY_DR_RESET_TIME = MF.DR.ResetTime
 local ENEMY_DR_ORDER = {
   [2] = "stun",
   [4] = "incap",
@@ -35,53 +35,66 @@ local function SetSafeButton(candidate, icon, immunity, startTime)
       candidate.border:SetVertexColor(0, 1, 0, 1)
     end
   end
-  local ok = MF.SetCooldown(candidate.cooldown, startTime, 16)
+  local ok = MF.SetCooldown(candidate.cooldown, startTime, ENEMY_DR_RESET_TIME)
   if ok then
     MF.SetShowCountdownNumbers(candidate.cooldown, true)
   end
   candidate:Show()
 end
 
-local function CheckTrayButton(button, frame)
-  local iconTexture = button.Icon and button.Icon:GetTexture()
-  local cooldown = button.Cooldown
-  if not cooldown.MF_Hooked then
-    cooldown.MF_Hooked = true
-    cooldown:HookScript("OnHide", function() if button.MF_Button then MF.ResetButton(button.MF_Button) end end)
-  end
-  local startTime = GetTime()
-  local candidate
-  if button.MF_Button then
-    candidate = button.MF_Button
-    -- reapplied before the window expired = stacked hit, not a fresh one
-    local wasActive = candidate.lastStartTime and (candidate.lastStartTime + ENEMY_DR_RESET_TIME) > startTime
-    candidate.lastStartTime = startTime
-    SetSafeButton(candidate, iconTexture, wasActive, startTime)
-    return
-  end
-  for i = MF.DRStartIndex, #frame.otherContainer.icons do
-    candidate = frame.otherContainer.icons and frame.otherContainer.icons[i]
-    if candidate and not candidate.categoryTable then
-      candidate.categoryTable = button
-      candidate.lastStartTime = startTime
-      button.MF_Button = candidate
-      SetSafeButton(candidate, iconTexture, false, startTime)
-      return
-    end
-  end
+-- Blizzard's tray shows its immunity indicator from the DR state it was
+-- given, so we mirror that instead of guessing from timestamps. A secret
+-- value counts as not immune.
+local function IsImmunityShown(item)
+  local indicator = item.ImmunityIndicator
+  if not indicator then return false end
+  return MF.SafeBoolResult(true, indicator:IsShown())
 end
 
-function MF.TryAndUpdateDRStateFromTray(tray, frame)
-  if MF.IsNil(tray) or not frame then
+-- The DR button already linked to this tray item, else the first free one.
+local function ClaimButton(frame, item)
+  local linked = item.MF_Button
+  if linked and linked.trayItem == item then
+    return linked
+  end
+  local icons = frame.otherContainer and frame.otherContainer.icons
+  if not icons then return nil end
+  for i = MF.DRStartIndex, #icons do
+    local candidate = icons[i]
+    if candidate and not candidate.categoryTable and not candidate.trayItem then
+      candidate.trayItem = item
+      item.MF_Button = candidate
+      return candidate
+    end
+  end
+  return nil
+end
+
+-- Runs once per Blizzard UpdateOrAddTrayItem (the only tray function that
+-- carries the new DR state), after the tray has updated the item.
+function MF.OnTrayItemUpdated(tray, state, frame)
+  if MF.IsNil(tray) or not frame or not state then
     return
   end
-  local ok, children = MF.GetLayoutChildren(tray)
-  if not ok then return end
-  pcall(function()
-    for _, child in ipairs(children) do
-      if child:GetCategory() then CheckTrayButton(child, frame) end
-    end
-  end)
+  local category = state.category
+  if not MF.IsNumber(category) or MF.IsSecretSafe(category) then
+    return
+  end
+  local item = tray:GetActiveTrayItemForCategory(category)
+  if not item then return end
+
+  local button = ClaimButton(frame, item)
+  if not button then return end
+  local iconTexture = item.Icon and item.Icon:GetTexture()
+  SetSafeButton(button, iconTexture, IsImmunityShown(item), GetTime())
+end
+
+-- Blizzard finished this item's cooldown and released it: clear only its button.
+function MF.OnTrayItemCooldownDone(item)
+  local button = item and item.MF_Button
+  if button and button.trayItem == item then
+    MF.ResetButton(button)
+  end
 end
 
 local function SetButtonIcon(button, icon, showCountdown, isImmune)
@@ -153,14 +166,16 @@ local function SetButtons(frame)
   end
 end
 
+-- Frees a DR button: unlinks it from whatever drove it (a Blizzard tray item
+-- or a category entry) and hides it.
 function MF.ResetButton(button)
-  if button and button.categoryTable then
-    if button.categoryTable.MF_Button then
-      button.categoryTable.MF_Button = nil
-    end
-    button.categoryTable = nil
-    button:Hide()
+  if not button then return end
+  if button.trayItem then
+    button.trayItem.MF_Button = nil
+    button.trayItem = nil
   end
+  button.categoryTable = nil
+  button:Hide()
 end
 
 function MF.ResetDR(frame)
@@ -208,7 +223,7 @@ function MF.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
   end
   if MF.IsSecretSafe(category) then return end
   category = IsTracked(category)
-  if not MF.IsString(category) then return end
+  if type(category) ~= "string" then return end
   local startTime = GetAndInterpretField(trackerInfo, "startTime")
   local duration = GetAndInterpretField(trackerInfo, "duration")
   local isImmune = GetAndInterpretField(trackerInfo, "isImmune")
@@ -227,45 +242,28 @@ function MF.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
   SetButtons(frame)
 end
 
-local function SetDRInfoFromLOC(frame, trackerInfo)
+-- Returns true when the effect started or hit a DR category on this frame.
+local function SetDRInfoFromLOC(frame, trackerInfo, now)
   if not MF.IsTable(trackerInfo) and not MF.IsUserData(trackerInfo) then
-    return
+    return false
   end
   local displayType = GetAndInterpretField(trackerInfo, "displayType")
   if not MF.IsNumber(displayType) or displayType ~= 2 then
-    return
+    return false
   end
-  local category = GetAndInterpretField(trackerInfo, "locType")
-  if MF.IsString(category) and MF.IsSecretSafe(category) then
-    return
-  end
-  local ok = MF.IsString(category)
-  if not ok then
-    return
+  -- locType and auraInstanceID are NeverSecret in the API documentation.
+  local category = MF.DR.CategoryForLocType(GetAndInterpretField(trackerInfo, "locType"))
+  if type(category) ~= "string" then
+    return false
   end
 
-  local startTime = GetTime()
-  local duration = ENEMY_DR_RESET_TIME
-  local iconTexture = GetAndInterpretField(trackerInfo, "iconTexture")
-
-  local categoriesEntry = frame.categories[category]
-  if MF.IsTable(categoriesEntry) or MF.IsUserData(categoriesEntry) then
-    if categoriesEntry.startTime and categoriesEntry.duration then
-      local existingExpiration = categoriesEntry.startTime + categoriesEntry.duration
-      if existingExpiration > startTime then
-        frame.categories[category].isImmune = true
-      end
-    end
-  else
-    frame.categories[category] = {
-      icon = iconTexture,
-      isImmune = false,
-      showCountdown = true,
-    }
+  local instanceID = GetAndInterpretField(trackerInfo, "auraInstanceID")
+  local status, entry = MF.DR.RegisterLossOfControl(frame.categories, category, instanceID, now)
+  if status == "started" or status == "hit" then
+    entry.icon = CATEGORY_ICON[category]
+    return true
   end
-  frame.categories[category].duration = duration
-  frame.categories[category].startTime = startTime
-  SetButtons(frame)
+  return false
 end
 
 function MF.TryAndUpdateDRStateFromLOC(frame)
@@ -275,11 +273,16 @@ function MF.TryAndUpdateDRStateFromLOC(frame)
     return
   end
   if MF.IsNumber(count) and count > 0 then
+    local now = GetTime()
+    local changed = false
     for index = 1, count do
       local ok2, trackerInfo = MF.GetActiveLossOfControlDataByUnit(frame.unit, index)
-      if ok2 then
-        SetDRInfoFromLOC(frame, trackerInfo)
+      if ok2 and SetDRInfoFromLOC(frame, trackerInfo, now) then
+        changed = true
       end
+    end
+    if changed then
+      SetButtons(frame)
     end
   end
 end
@@ -287,6 +290,10 @@ end
 function MF.HideButton(button)
   if button then
     button:Hide()
+    if button.trayItem then
+      button.trayItem.MF_Button = nil
+      button.trayItem = nil
+    end
     if button.categoryTable then
       button.categoryTable.startTime = nil
       button.categoryTable.duration = nil
