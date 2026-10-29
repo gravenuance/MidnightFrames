@@ -22,7 +22,7 @@ I plan to keep maintaining this as long as I play. I'm too used to it now to go 
 * Mouseover and target highlights with a soft glow.
 * Filtered buff display, so only relevant buffs show up.
 * PvP trinket tracking on party and arena frames, plus DR tracking on arena.
-* Raid frames, dedicated boss frames, and a pet frame.
+* Raid frames for groups of up to 20 (larger raids fall back to Blizzard's raid frames), dedicated boss frames, and a pet frame.
 * Raid target markers (skull, cross, etc.) shown on every frame.
 * A compact cast indicator icon instead of a full castbar, with interrupt-state color and a cooldown sweep.
 * Player frame shows current power as a percentage.
