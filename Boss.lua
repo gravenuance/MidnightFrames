@@ -25,9 +25,10 @@ local function SetBossFrame(index)
   -- exists, including on a pull, which no event of ours is needed for. It is
   -- taken off for test mode and outside instances. Registered here when
   -- already inside, so a reload mid-pull needn't wait for combat to end.
-  local hasWatch = MF.InInstance()
-  if hasWatch then
+  local hasWatch = false
+  if MF.InInstance() and not InCombatLockdown() then
     RegisterUnitWatch(bossFrame)
+    hasWatch = true
   end
 
   local function UpdateVisibility()
