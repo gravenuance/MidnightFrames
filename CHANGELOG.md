@@ -17,6 +17,8 @@ All notable changes to MidnightFrames are recorded here. Format follows
   profile database and every unit frame were built while the files loaded,
   before WoW had assigned the saved variables; both now run from this
   addon's `ADDON_LOADED`, and the second `InitDB` at `PLAYER_LOGIN` is gone.
+- "Reset all positions" and profile switches made in combat are applied when
+  combat ends instead of being silently dropped.
 - The ally-target highlight is cleared when a frame's unit switches to a
   target that has no MidnightFrames frame (for example a boss), instead of
   staying lit on the previous one.

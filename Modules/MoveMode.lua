@@ -176,10 +176,12 @@ end)
 -- Repositions every registered frame from the current MF.Positions/saved
 -- profile - used by "Reset All Positions" and on profile switch, since
 -- position changes (unlike sizes) don't need a UI reload to take effect.
--- No-ops in combat, same as every other reposition path here - these are
--- secure unit buttons.
+-- These are secure unit buttons, so in combat it waits for combat to end.
 function MF.RepositionAllFrames()
-  if InCombatLockdown() then return end
+  if InCombatLockdown() then
+    MF.RunAfterCombat("MF_reposition_all", MF.RepositionAllFrames)
+    return
+  end
   local function reposition(frame, x, y)
     if not frame then return end
     frame:ClearAllPoints()
