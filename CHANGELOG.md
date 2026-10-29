@@ -48,14 +48,17 @@ All notable changes to MidnightFrames are recorded here. Format follows
   empty frame until it changes.
 - Arena DR icons no longer flag the first stun as immune. Four tray
   functions were hooked, so one DR update ran the "already active, so
-  immune" check about four times; only `UpdateOrAddTrayItem` is hooked now
-  and immunity is read from Blizzard's own indicator. A finished tray
-  cooldown clears only its own icon instead of every DR icon on the frame.
+  immune" check about four times; now each tray item's own update is
+  mirrored, copying its icon, immunity indicator and timer, so the secret DR
+  payload of a restricted arena is never read. A finished tray cooldown
+  clears only its own icon, and the tray hiding clears them all.
 - Party and raid DR icons (from loss-of-control) no longer re-flag running
   effects as immune or restart their timers on every update. Effects are
   keyed by `auraInstanceID`, and only a new one inside a running window
-  counts as a DR hit. Loss-of-control types now map onto the DR categories
-  (stun, incap, disorient, silence, disarm, root).
+  counts as a DR hit. The window lasts 20 s (patch 12.1.0) from the end of
+  the last effect, not from its start. Loss-of-control types now map onto
+  the DR categories (stun, incap, disorient, silence, disarm, root); types
+  whose spells span several categories are not tracked.
 - Blizzard's non-raid-style `PartyFrame` is hidden too, not just the
   raid-style `CompactPartyFrame`.
 - Boss frames now appear when a boss is pulled. Visibility was only
