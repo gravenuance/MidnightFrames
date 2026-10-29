@@ -6,6 +6,10 @@ All notable changes to MidnightFrames are recorded here. Format follows
 
 ## [Unreleased]
 
+### Added
+- Offline test suite (`lua5.1 tests/run.lua`) for the pure-logic modules,
+  run by CI and kept out of the release zip.
+
 ## [1.1.1] - 2026-09-12
 
 ### Fixed

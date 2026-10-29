@@ -12,6 +12,9 @@
 
 - Run `luacheck .` (config in `.luacheckrc`). CI runs the same check on every
   push and PR; a red run blocks merge.
+- Run `lua5.1 tests/run.lua` (offline, no client needed). Put logic that
+  doesn't call the WoW API in a `Modules/*Logic.lua` file so a spec in
+  `tests/` can cover it. CI runs the same command.
 - Load the addon in-game and exercise the changed frames — `luacheck` catches
   syntax and undefined-global errors, not WoW API behaviour.
 

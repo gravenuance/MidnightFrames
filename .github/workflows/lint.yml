@@ -21,3 +21,6 @@ jobs:
 
       - name: Run luacheck
         run: luacheck .
+
+      - name: Run tests
+        run: lua5.1 tests/run.lua
