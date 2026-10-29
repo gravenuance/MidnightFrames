@@ -523,8 +523,9 @@ ef:SetScript("OnEvent", function(self, event, loadedAddon)
     if loadedAddon ~= addonName then return end
     self:UnregisterEvent("ADDON_LOADED")
     MF.InitDB()
+    -- A failing build is reported but must not skip the others or the options.
     for _, build in ipairs(initCallbacks) do
-      build()
+      xpcall(build, geterrorhandler())
     end
     MF.InitConfigAndOptions()
   elseif event == "PLAYER_REGEN_ENABLED" then
@@ -534,7 +535,8 @@ ef:SetScript("OnEvent", function(self, event, loadedAddon)
     local queued = pendingPostCombat
     pendingPostCombat = {}
     for _, data in pairs(queued) do
-      data.func(unpack(data.args))
+      -- A failing entry is reported but must not drop the rest of the queue.
+      xpcall(function() data.func(unpack(data.args)) end, geterrorhandler())
     end
   end
 end)
