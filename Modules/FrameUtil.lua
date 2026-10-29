@@ -2,31 +2,36 @@ local _, MF = ...
 
 -- Every user-adjustable layout number, in one place: the hardcoded value
 -- here is both the fallback default and the slider default in the options
--- pane. `group` sorts each into one of the Sizing tab's three sections
--- (see Core.lua's BuildSizingArgs) - "size", "position", or "finetune".
+-- pane. `group` sorts each into a section of its options tab (see Core.lua's
+-- AddSizeSections) - "size", "position" or "finetune". `tabs` lists the
+-- options tabs (unit types) that show the slider; a setting shared by several
+-- frame types appears on each of their tabs and is the same value on all.
 -- Order within this list controls slider order within its section.
 --
 -- roster = party/arena/boss frames, primary = player/target. Display
 -- names avoid "roster" in the UI itself (not a term the game uses) even
 -- though it's kept internally.
+local GROUP_TABS = { "party", "arena", "boss" }
+local PRIMARY_TABS = { "player", "target" }
+
 MF.SizeDefinitions = {
-  { key = "RosterFrameSpacing", name = "Party/Arena/Boss Spacing", desc = "Gap between adjacent party/arena/boss frames.", default = 55, min = 0, max = 200, group = "position" },
-  { key = "RosterFrameOffsetX", name = "Party/Arena/Boss Distance from Center", desc = "Distance from screen center to the first party/arena/boss frame.", default = 280, min = 0, max = 600, group = "position" },
-  { key = "PrimaryFrameOffsetX", name = "Player/Target Distance from Center", desc = "Distance from screen center to the player/target frames.", default = 225, min = 0, max = 600, group = "position" },
-  { key = "PetSpace", name = "Pet Frame Gap", desc = "Gap between the player frame and the pet frame.", default = 5, min = 0, max = 50, group = "position" },
-  { key = "FocusSpace", name = "Focus Frame Gap", desc = "Gap between the target frame and the focus frame.", default = 5, min = 0, max = 50, group = "position" },
-  { key = "SizeX", name = "Frame Width", desc = "Width shared by every non-raid, non-pet frame.", default = 50, min = 20, max = 150, group = "size" },
-  { key = "PrimaryFrameHeight", name = "Player/Target Height", desc = "Height of the player and target frames.", default = 220, min = 50, max = 400, group = "size" },
-  { key = "GroupFrameHeight", name = "Party/Arena/Boss Height", desc = "Height of the party/arena/boss frames.", default = 210, min = 50, max = 400, group = "size" },
-  { key = "PetX", name = "Pet Frame Width", desc = "Width of the pet frame.", default = 20, min = 10, max = 100, group = "size" },
-  { key = "PetY", name = "Pet Frame Height", desc = "Height of the pet frame.", default = 80, min = 20, max = 200, group = "size" },
-  { key = "FocusX", name = "Focus Frame Width", desc = "Width of the focus frame.", default = 20, min = 10, max = 100, group = "size" },
-  { key = "FocusY", name = "Focus Frame Height", desc = "Height of the focus frame.", default = 80, min = 20, max = 200, group = "size" },
-  { key = "RaidSizeX", name = "Raid Frame Width", desc = "Width of each raid frame.", default = 150, min = 50, max = 400, group = "size" },
-  { key = "RaidSizeY", name = "Raid Frame Height", desc = "Height of each raid frame.", default = 35, min = 15, max = 100, group = "size" },
-  { key = "FillInset", name = "Health/Absorb Bar Inset", desc = "How far the health/absorb fill sits inside the frame edge.", default = 4, min = 0, max = 15, group = "finetune" },
-  { key = "HighlightInset", name = "Highlight Inset", desc = "How far the ally-target highlight border sits inside the frame edge.", default = 2, min = 0, max = 15, group = "finetune" },
-  { key = "AuraOffsetY", name = "Aura Icon Offset", desc = "How far the aura icons sit below the frame's top edge.", default = 190, min = 0, max = 400, group = "finetune" },
+  { key = "RosterFrameSpacing", name = "Spacing", desc = "Gap between frames. Shared by party, arena and boss.", default = 55, min = 0, max = 200, group = "position", tabs = GROUP_TABS },
+  { key = "RosterFrameOffsetX", name = "Distance from center", desc = "Shared by party, arena and boss frames.", default = 280, min = 0, max = 600, group = "position", tabs = GROUP_TABS },
+  { key = "PrimaryFrameOffsetX", name = "Distance from center", desc = "Shared by player and target frames.", default = 225, min = 0, max = 600, group = "position", tabs = PRIMARY_TABS },
+  { key = "PetSpace", name = "Gap", desc = "Space between the player and pet frames.", default = 5, min = 0, max = 50, group = "position", tabs = { "pet" } },
+  { key = "FocusSpace", name = "Gap", desc = "Space between the target and focus frames.", default = 5, min = 0, max = 50, group = "position", tabs = { "focus" } },
+  { key = "SizeX", name = "Width", desc = "Shared by player, target, party, arena and boss.", default = 50, min = 20, max = 150, group = "size", tabs = { "player", "target", "party", "arena", "boss" } },
+  { key = "PrimaryFrameHeight", name = "Height", desc = "Shared by player and target frames.", default = 220, min = 50, max = 400, group = "size", tabs = PRIMARY_TABS },
+  { key = "GroupFrameHeight", name = "Height", desc = "Shared by party, arena and boss frames.", default = 210, min = 50, max = 400, group = "size", tabs = GROUP_TABS },
+  { key = "PetX", name = "Width", desc = "Width of the pet frame.", default = 20, min = 10, max = 100, group = "size", tabs = { "pet" } },
+  { key = "PetY", name = "Height", desc = "Height of the pet frame.", default = 80, min = 20, max = 200, group = "size", tabs = { "pet" } },
+  { key = "FocusX", name = "Width", desc = "Width of the focus frame.", default = 20, min = 10, max = 100, group = "size", tabs = { "focus" } },
+  { key = "FocusY", name = "Height", desc = "Height of the focus frame.", default = 80, min = 20, max = 200, group = "size", tabs = { "focus" } },
+  { key = "RaidSizeX", name = "Width", desc = "Width of each raid frame.", default = 150, min = 50, max = 400, group = "size", tabs = { "raid" } },
+  { key = "RaidSizeY", name = "Height", desc = "Height of each raid frame.", default = 35, min = 15, max = 100, group = "size", tabs = { "raid" } },
+  { key = "FillInset", name = "Health bar inset", desc = "Distance of the health and absorb bars from the frame edge.", default = 4, min = 0, max = 15, group = "finetune", tabs = { "general" } },
+  { key = "HighlightInset", name = "Highlight inset", desc = "Distance of the ally-target highlight from the frame edge.", default = 2, min = 0, max = 15, group = "finetune", tabs = { "general" } },
+  { key = "AuraOffsetY", name = "Aura icon offset", desc = "How far aura icons sit below the frame's top edge.", default = 190, min = 0, max = 400, group = "finetune", tabs = { "general" } },
 }
 
 -- Set to the hardcoded defaults above so anything that reads them before

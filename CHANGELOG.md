@@ -7,6 +7,13 @@ All notable changes to MidnightFrames are recorded here. Format follows
 ## [Unreleased]
 
 ### Changed
+- Options window reorganised as a tree: General, one entry per frame type
+  (player, pet, target, focus, party, arena, boss, raid) and Profiles. Each
+  frame type groups its test mode, size, position and aura toggles in boxed
+  sections, aura toggles line up in harmful/helpful pairs, sliders use short
+  names with tooltips of at most twelve words, and the window opens larger.
+  "Reset to Defaults" moved to General as "Reset all sizes". Every option
+  key and saved-variable path is unchanged, so profiles carry over.
 - Party and raid range checks are coalesced: health, absorb, target and
   range-check events queue a frame, and each queued frame runs the
   spell-range loop at most once every 0.2 s, instead of on every

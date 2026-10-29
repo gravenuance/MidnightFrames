@@ -225,118 +225,128 @@ function MF.OnProfileChanged()
   AceConfigRegistry:NotifyChange("MF")
 end
 
-local function BuildGeneralArgs()
-  local args = {
-    testingHeader = { type = "header", name = "Testing", order = 2 },
-  }
-
-  local order = 3
-  for _, kind in ipairs(MF.Test.Kinds) do
-    local label = UNIT_LABELS[kind] or kind
-    args[kind .. "Test"] = {
-      type = "execute",
-      name = function()
-        return (MF.Test.Is(kind) and "Disable " or "Enable ") .. label .. " Test Mode"
-      end,
-      order = order,
-      func = function() MF.Test.Toggle(kind) end,
-    }
-    order = order + 1
-  end
-
-  args.layoutHeader = { type = "header", name = "Layout", order = order }
-  order = order + 1
-
-  args.moveMode = {
-    type = "execute",
-    name = function() return MF.MoveModeActive and "Exit Move Mode" or "Enter Move Mode" end,
-    order = order,
-    func = function() MF.ToggleMoveMode() end,
-  }
-  order = order + 1
-
-  args.resetPositions = {
-    type = "execute",
-    name = "Reset All Positions",
-    order = order,
-    confirm = true,
-    confirmText = "Reset every frame/group back to its slider-driven default position?",
-    func = function()
-      for _, key in ipairs({ "player", "target", "pet", "focus", "party", "arena", "boss", "raid" }) do
-        MF.db.profile.positions[key].manual = false
-      end
-      MF.ApplyPositionSettings()
-      if MF.RepositionAllFrames then
-        MF.RepositionAllFrames()
-      end
-      AceConfigRegistry:NotifyChange("MF")
-    end,
-  }
-
-  return args
+local TEST_KINDS = {}
+for _, kind in ipairs(MF.Test.Kinds) do
+  TEST_KINDS[kind] = true
 end
 
-local SIZING_GROUPS = {
-  { key = "size", header = "Frame Sizes" },
-  { key = "position", header = "Position & Spacing" },
-  { key = "finetune", header = "Fine-Tuning" },
+-- Tooltips only where the label alone doesn't say what the filter shows.
+local FILTER_DESCS = {
+  ["HARMFUL|RAID_PLAYER_DISPELLABLE"] = "Debuffs you can dispel.",
+  ["HELPFUL|RAID_PLAYER_DISPELLABLE"] = "Buffs you can dispel.",
+  ["HELPFUL|PLAYER|RAID_IN_COMBAT"] = "Your own heals over time.",
+  ["HARMFUL|PLAYER|RAID_IN_COMBAT"] = "Your own damage over time.",
 }
 
-local function BuildSizingArgs()
-  local args = {}
+-- Options window styling, defined once. The accent is the default health-bar
+-- teal; harmful/helpful tints keep the two aura directions apart at a glance
+-- (the words stay in the label, so colour is never the only cue).
+local COLOR_ACCENT  = "|cff40e0d1"
+local COLOR_HARMFUL = "|cffff7070"
+local COLOR_HELPFUL = "|cff70ff70"
 
-  local order = 2
-  for _, groupInfo in ipairs(SIZING_GROUPS) do
-    args[groupInfo.key .. "Header"] = { type = "header", name = groupInfo.header, order = order }
-    order = order + 1
+local function Colored(color, text)
+  return color .. text .. "|r"
+end
 
-    for _, def in ipairs(MF.SizeDefinitions) do
-      if def.group == groupInfo.key then
-        args[def.key] = {
-          type = "range",
-          name = def.name,
-          desc = def.desc,
-          min = def.min,
-          max = def.max,
-          step = 1,
-          order = order,
-          get = function() return MF.db.profile.sizes[def.key] end,
-          set = function(_, val)
-            MF.db.profile.sizes[def.key] = val
-            OnSizesMayHaveChanged()
-          end,
-        }
-        order = order + 1
-      end
+-- Tree entries, in display order. Every frame type has its own entry; the
+-- icons are stock game textures.
+local TAB_ORDER = { "player", "pet", "target", "focus", "party", "arena", "boss", "raid" }
+local TAB_ICONS = {
+  general  = "Interface\\Icons\\INV_Misc_Gear_01",
+  player   = "Interface\\Icons\\Spell_Holy_PowerWordShield",
+  pet      = "Interface\\Icons\\Ability_Hunter_BeastCall",
+  target   = "Interface\\Icons\\Ability_Hunter_SniperShot",
+  focus    = "Interface\\Icons\\Ability_Hunter_MarkedForDeath",
+  party    = "Interface\\Icons\\Spell_Holy_PrayerOfHealing",
+  arena    = "Interface\\Icons\\Achievement_Arena_2v2_1",
+  boss     = "Interface\\Icons\\INV_Misc_Head_Dragon_01",
+  raid     = "Interface\\Icons\\INV_Misc_GroupLooking",
+  profiles = "Interface\\Icons\\INV_Misc_Note_01",
+}
+
+local SIZE_SECTIONS = {
+  { key = "size", title = "Size" },
+  { key = "position", title = "Position" },
+  { key = "finetune", title = "Fine-tuning" },
+}
+
+local function NewCounter()
+  local value = 0
+  return function()
+    value = value + 1
+    return value
+  end
+end
+
+local function SectionName(title)
+  return Colored(COLOR_ACCENT, title)
+end
+
+local function ShowsTab(def, tabKey)
+  for _, tab in ipairs(def.tabs) do
+    if tab == tabKey then return true end
+  end
+  return false
+end
+
+-- One range per size definition shown on `tabKey` in the given section.
+local function BuildSizeRanges(tabKey, sectionKey, nextOrder)
+  local ranges = {}
+  for _, def in ipairs(MF.SizeDefinitions) do
+    if def.group == sectionKey and ShowsTab(def, tabKey) then
+      ranges[def.key] = {
+        type = "range",
+        name = def.name,
+        desc = def.desc,
+        min = def.min,
+        max = def.max,
+        step = 1,
+        order = nextOrder(),
+        width = "full",
+        get = function() return MF.db.profile.sizes[def.key] end,
+        set = function(_, val)
+          MF.db.profile.sizes[def.key] = val
+          OnSizesMayHaveChanged()
+        end,
+      }
     end
   end
+  return ranges
+end
 
-  args.resetSizes = {
+local function HasEntries(tbl)
+  return next(tbl) ~= nil
+end
+
+local function BuildTestToggle(kind)
+  return {
     type = "execute",
-    name = "Reset to Defaults",
-    order = order,
-    confirm = true,
-    confirmText = "Reset all sizing options to their defaults?",
-    func = function()
-      for _, def in ipairs(MF.SizeDefinitions) do
-        MF.db.profile.sizes[def.key] = def.default
-      end
-      OnSizesMayHaveChanged()
-      AceConfigRegistry:NotifyChange("MF")
+    name = function()
+      return (MF.Test.Is(kind) and "Disable " or "Enable ") .. (UNIT_LABELS[kind] or kind) .. " Test Mode"
     end,
+    desc = "Show placeholder frames while adjusting the layout.",
+    width = "double",
+    order = 1,
+    func = function() MF.Test.Toggle(kind) end,
   }
+end
 
-  return args
+local function FilterLabel(filterKey)
+  local color = filterKey:find("^HARMFUL") and COLOR_HARMFUL or COLOR_HELPFUL
+  return Colored(color, FILTER_LABELS[filterKey] or filterKey)
 end
 
 local function BuildFilterArgs(unitKey)
   local args = {}
-  local order = 2
+  local nextOrder = NewCounter()
   for _, filterKey in ipairs(FILTER_DISPLAY_ORDER) do
     args[filterKey] = {
       type = "toggle",
-      name = FILTER_LABELS[filterKey] or filterKey,
-      order = order,
+      name = FilterLabel(filterKey),
+      desc = FILTER_DESCS[filterKey],
+      order = nextOrder(),
+      width = "half",
       get = function()
         local f = MF.db.profile.filters[unitKey]
         return f and f[filterKey]
@@ -347,51 +357,139 @@ local function BuildFilterArgs(unitKey)
         MF.InvalidateFilterCache(unitKey)
       end,
     }
-    order = order + 1
+  end
+  return args
+end
+
+-- Test mode, then Size / Position / Auras for whichever of those the frame
+-- type has. Sections are inline groups so related controls stay boxed.
+local function BuildUnitArgs(tabKey)
+  local args = {}
+  local nextOrder = NewCounter()
+
+  if TEST_KINDS[tabKey] then
+    args.test = {
+      type = "group",
+      inline = true,
+      name = SectionName("Test Mode"),
+      order = nextOrder(),
+      args = { [tabKey .. "Test"] = BuildTestToggle(tabKey) },
+    }
+  end
+
+  for _, section in ipairs(SIZE_SECTIONS) do
+    local ranges = BuildSizeRanges(tabKey, section.key, NewCounter())
+    if HasEntries(ranges) then
+      args[section.key] = {
+        type = "group",
+        inline = true,
+        name = SectionName(section.title),
+        order = nextOrder(),
+        args = ranges,
+      }
+    end
+  end
+
+  if DEFAULT_FILTERS[tabKey] then
+    args.auras = {
+      type = "group",
+      inline = true,
+      name = SectionName("Auras"),
+      order = nextOrder(),
+      args = BuildFilterArgs(tabKey),
+    }
+  end
+
+  return args
+end
+
+local function ResetAllPositions()
+  for _, key in ipairs({ "player", "target", "pet", "focus", "party", "arena", "boss", "raid" }) do
+    MF.db.profile.positions[key].manual = false
+  end
+  MF.ApplyPositionSettings()
+  if MF.RepositionAllFrames then
+    MF.RepositionAllFrames()
+  end
+  AceConfigRegistry:NotifyChange("MF")
+end
+
+local function ResetAllSizes()
+  for _, def in ipairs(MF.SizeDefinitions) do
+    MF.db.profile.sizes[def.key] = def.default
+  end
+  OnSizesMayHaveChanged()
+  AceConfigRegistry:NotifyChange("MF")
+end
+
+local function BuildGeneralArgs()
+  local nextOrder = NewCounter()
+  local args = {
+    layoutHeader = { type = "header", name = SectionName("Layout"), order = nextOrder() },
+    moveMode = {
+      type = "execute",
+      name = function() return MF.MoveModeActive and "Exit Move Mode" or "Enter Move Mode" end,
+      desc = "Drag frames where you want them.",
+      order = nextOrder(),
+      func = function() MF.ToggleMoveMode() end,
+    },
+    resetPositions = {
+      type = "execute",
+      name = "Reset all positions",
+      desc = "Put every frame back at its default position.",
+      order = nextOrder(),
+      confirm = true,
+      confirmText = "Reset every frame to its default position?",
+      func = ResetAllPositions,
+    },
+    resetSizes = {
+      type = "execute",
+      name = "Reset all sizes",
+      desc = "Restore every size and spacing to its default.",
+      order = nextOrder(),
+      confirm = true,
+      confirmText = "Reset all sizes and spacing to their defaults?",
+      func = ResetAllSizes,
+    },
+    finetuneHeader = { type = "header", name = SectionName("Fine-tuning"), order = nextOrder() },
+  }
+  for key, range in pairs(BuildSizeRanges("general", "finetune", nextOrder)) do
+    args[key] = range
   end
   return args
 end
 
 local function BuildOptionsTable()
-  local auraArgs = {}
-  local order = 1
-  for _, unitKey in ipairs(UNIT_ORDER) do
-    auraArgs[unitKey] = {
-      type = "group",
-      name = UNIT_LABELS[unitKey] or unitKey,
-      order = order,
-      args = BuildFilterArgs(unitKey),
-    }
-    order = order + 1
-  end
-
   local args = {
     general = {
       type = "group",
       name = "General",
+      icon = TAB_ICONS.general,
       order = 1,
       args = BuildGeneralArgs(),
     },
-    sizing = {
-      type = "group",
-      name = "Sizing",
-      order = 2,
-      args = BuildSizingArgs(),
-    },
-    auras = {
-      type = "group",
-      name = "Auras",
-      order = 3,
-      childGroups = "tab",
-      args = auraArgs,
-    },
-    profiles = AceDBOptions:GetOptionsTable(MF.db),
   }
-  args.profiles.order = 4
+
+  local order = 1
+  for _, tabKey in ipairs(TAB_ORDER) do
+    order = order + 1
+    args[tabKey] = {
+      type = "group",
+      name = UNIT_LABELS[tabKey] or tabKey,
+      icon = TAB_ICONS[tabKey],
+      order = order,
+      args = BuildUnitArgs(tabKey),
+    }
+  end
+
+  args.profiles = AceDBOptions:GetOptionsTable(MF.db)
+  args.profiles.order = order + 1
+  args.profiles.icon = TAB_ICONS.profiles
 
   return {
     type = "group",
     name = "MidnightFrames",
+    childGroups = "tree",
     args = args,
   }
 end
@@ -403,7 +501,7 @@ function MF.InitConfigAndOptions()
   -- it just points at /mf, which opens the real (standalone, resizable,
   -- not squeezed into Blizzard's settings frame) window below.
   AceConfigDialog:AddToBlizOptions("MF", "MidnightFrames")
-  AceConfigDialog:SetDefaultSize("MF", 520, 520)
+  AceConfigDialog:SetDefaultSize("MF", 680, 560)
 end
 
 -- The Blizzard-Settings-embedded panel above is kept for discoverability,
