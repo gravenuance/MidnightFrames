@@ -57,7 +57,7 @@ MF.LayoutRaidFrames = LayoutRaidFrames
 -- and Blizzard's container takes over; at or below it, the container hides
 -- again. Switching it changes a protected frame, so combat defers it.
 local function UpdateBlizzardRaid()
-  local wantShown = MF.ShouldShowBlizzardRaid(GetNumGroupMembers(), MF.Test.Is("raid"))
+  local wantShown = MF.ShouldShowBlizzardRaid(GetNumGroupMembers() or 0,MF.Test.Is("raid"))
   if wantShown == blizzardRaidShown then return end
   if InCombatLockdown() then
     MF.RunAfterCombat("MF_blizzard_raid", UpdateBlizzardRaid)
