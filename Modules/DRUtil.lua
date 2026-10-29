@@ -24,36 +24,61 @@ local CATEGORY_ICON = {
   root = "Interface\\Icons\\Spell_Nature_StrangleVines",
 }
 
-local function SetSafeButton(candidate, icon, immunity, startTime)
-  if candidate.icon and icon then
-    candidate.icon:SetTexture(icon)
-  end
-  if candidate.border then
-    if immunity then
-      candidate.border:SetVertexColor(1, 0, 0, 1)
-    else
-      candidate.border:SetVertexColor(0, 1, 0, 1)
+-- Our links to Blizzard's tray objects live here, never in their tables.
+local buttonForTrayItem = setmetatable({}, { __mode = "k" })
+local hookedTrayItems = setmetatable({}, { __mode = "k" })
+local hookedTrays = setmetatable({}, { __mode = "k" })
+
+local immuneColor, normalColor
+
+local function UnlinkTrayItem(button)
+  local item = button.trayItem
+  if item then
+    if buttonForTrayItem[item] == button then
+      buttonForTrayItem[item] = nil
     end
+    button.trayItem = nil
   end
-  local ok = MF.SetCooldown(candidate.cooldown, startTime, ENEMY_DR_RESET_TIME)
-  if ok then
-    MF.SetShowCountdownNumbers(candidate.cooldown, true)
-  end
-  candidate:Show()
 end
 
--- Blizzard's tray shows its immunity indicator from the DR state it was
--- given, so we mirror that instead of guessing from timestamps. A secret
--- value counts as not immune.
-local function IsImmunityShown(item)
-  local indicator = item.ImmunityIndicator
-  if not indicator then return false end
-  return MF.SafeBoolResult(true, indicator:IsShown())
+-- The immunity flag can be secret in a restricted arena; only
+-- SetVertexColorFromBoolean may consume it then.
+local function SetImmunityBorder(border, immune)
+  if not MF.IsSecretSafe(immune) then
+    if immune == true then
+      border:SetVertexColor(1, 0, 0, 1)
+    else
+      border:SetVertexColor(0, 1, 0, 1)
+    end
+    return
+  end
+  if not border.SetVertexColorFromBoolean or not CreateColor then
+    border:SetVertexColor(0, 1, 0, 1)
+    return
+  end
+  immuneColor = immuneColor or CreateColor(1, 0, 0, 1)
+  normalColor = normalColor or CreateColor(0, 1, 0, 1)
+  border:SetVertexColorFromBoolean(immune, immuneColor, normalColor)
+end
+
+-- SetCooldown rejects secrets from addon code, so a secret tray timer is
+-- replaced by a full window from now.
+local function ReadTrayTimer(item)
+  local cooldown = item.Cooldown
+  if cooldown and cooldown.GetCooldownTimes then
+    local startMs, durationMs = cooldown:GetCooldownTimes()
+    if MF.IsNumber(startMs) and MF.IsNumber(durationMs)
+        and not MF.IsSecretSafe(startMs) and not MF.IsSecretSafe(durationMs)
+        and durationMs > 0 then
+      return startMs / 1000, durationMs / 1000
+    end
+  end
+  return GetTime(), ENEMY_DR_RESET_TIME
 end
 
 -- The DR button already linked to this tray item, else the first free one.
 local function ClaimButton(frame, item)
-  local linked = item.MF_Button
+  local linked = buttonForTrayItem[item]
   if linked and linked.trayItem == item then
     return linked
   end
@@ -63,38 +88,79 @@ local function ClaimButton(frame, item)
     local candidate = icons[i]
     if candidate and not candidate.categoryTable and not candidate.trayItem then
       candidate.trayItem = item
-      item.MF_Button = candidate
+      buttonForTrayItem[item] = candidate
       return candidate
     end
   end
   return nil
 end
 
--- Runs once per Blizzard UpdateOrAddTrayItem (the only tray function that
--- carries the new DR state), after the tray has updated the item.
-function MF.OnTrayItemUpdated(tray, state, frame)
-  if MF.IsNil(tray) or not frame or not state then
-    return
-  end
-  local category = state.category
-  if not MF.IsNumber(category) or MF.IsSecretSafe(category) then
-    return
-  end
-  local item = tray:GetActiveTrayItemForCategory(category)
-  if not item then return end
-
+-- Mirrors one tray item after Blizzard gave it a new DR state. Icon and
+-- immunity are copied from the item's widgets, which accept secret values,
+-- so the secret state payload itself is never read.
+local function SyncTrayItem(item, frame)
   local button = ClaimButton(frame, item)
   if not button then return end
-  local iconTexture = item.Icon and item.Icon:GetTexture()
-  SetSafeButton(button, iconTexture, IsImmunityShown(item), GetTime())
+  if button.icon and item.Icon then
+    button.icon:SetTexture(item.Icon:GetTexture())
+  end
+  if button.border then
+    local indicator = item.ImmunityIndicator
+    SetImmunityBorder(button.border, indicator and indicator:IsShown())
+  end
+  local startTime, duration = ReadTrayTimer(item)
+  if MF.SetCooldown(button.cooldown, startTime, duration) then
+    MF.SetShowCountdownNumbers(button.cooldown, true)
+  end
+  button:Show()
+end
+
+-- Tray items are pooled children of the tray; each is hooked once. An item
+-- hooked here for the first time already ran UpdateState (Blizzard acquires
+-- and updates it before UpdateOrAddTrayItem returns), so it is synced now.
+-- Edit Mode previews never get a DR state and are skipped.
+local function HookTrayItems(frame, ...)
+  for index = 1, select("#", ...) do
+    local item = select(index, ...)
+    if not hookedTrayItems[item] and item.UpdateState and item.ImmunityIndicator then
+      hookedTrayItems[item] = true
+      hooksecurefunc(item, "UpdateState", function(self) SyncTrayItem(self, frame) end)
+      if item:IsShown() and not item.isEditModePreview then
+        SyncTrayItem(item, frame)
+      end
+    end
+  end
 end
 
 -- Blizzard finished this item's cooldown and released it: clear only its button.
 function MF.OnTrayItemCooldownDone(item)
-  local button = item and item.MF_Button
+  local button = item and buttonForTrayItem[item]
   if button and button.trayItem == item then
     MF.ResetButton(button)
   end
+end
+
+-- Mirrors a Blizzard SpellDiminishStatusTray onto `frame`'s DR buttons.
+-- Safe to call repeatedly; each tray is hooked once.
+function MF.HookDRTray(tray, frame)
+  if not tray or not frame or hookedTrays[tray] then return end
+  if not tray.UpdateOrAddTrayItem or not tray.OnTrayItemCooldownDone
+      or not tray.RemoveAllTrayItems or not tray.GetChildren then
+    return
+  end
+  hookedTrays[tray] = true
+
+  hooksecurefunc(tray, "UpdateOrAddTrayItem", function(self)
+    HookTrayItems(frame, self:GetChildren())
+  end)
+  hooksecurefunc(tray, "OnTrayItemCooldownDone", function(_, item)
+    MF.OnTrayItemCooldownDone(item)
+  end)
+  -- the tray hiding releases every item without OnTrayItemCooldownDone
+  hooksecurefunc(tray, "RemoveAllTrayItems", function()
+    MF.ResetDR(frame)
+  end)
+  HookTrayItems(frame, tray:GetChildren())
 end
 
 local function SetButtonIcon(button, icon, showCountdown, isImmune)
@@ -128,8 +194,8 @@ local function SetButtons(frame)
     local duration      = categoryTable.duration
     local isImmune      = categoryTable.isImmune
     local showCountdown = categoryTable.showCountdown
-    local icon          = categoryTable.icon
-    local button        = categoryTable.button
+    local icon          = categoryTable.icon or CATEGORY_ICON[category]
+    local button       = categoryTable.button
 
     if not MF.IsNumber(startTime) and not MF.IsNumber(duration) then
       if button then
@@ -170,10 +236,7 @@ end
 -- or a category entry) and hides it.
 function MF.ResetButton(button)
   if not button then return end
-  if button.trayItem then
-    button.trayItem.MF_Button = nil
-    button.trayItem = nil
-  end
+  UnlinkTrayItem(button)
   button.categoryTable = nil
   button:Hide()
 end
@@ -242,58 +305,48 @@ function MF.TryAndUpdateDRStateFromEvent(frame, trackerInfo)
   SetButtons(frame)
 end
 
--- Returns true when the effect started or hit a DR category on this frame.
-local function SetDRInfoFromLOC(frame, trackerInfo, now)
+-- Reused for every scan: aura instance ID -> DR category of each active effect.
+local activeLossOfControl = {}
+
+local function CollectLossOfControl(trackerInfo)
   if not MF.IsTable(trackerInfo) and not MF.IsUserData(trackerInfo) then
-    return false
+    return
   end
   local displayType = GetAndInterpretField(trackerInfo, "displayType")
-  if not MF.IsNumber(displayType) or displayType ~= 2 then
-    return false
+  if not MF.IsNumber(displayType) or MF.IsSecretSafe(displayType) or displayType ~= 2 then
+    return
   end
   -- locType and auraInstanceID are NeverSecret in the API documentation.
   local category = MF.DR.CategoryForLocType(GetAndInterpretField(trackerInfo, "locType"))
-  if type(category) ~= "string" then
-    return false
-  end
-
   local instanceID = GetAndInterpretField(trackerInfo, "auraInstanceID")
-  local status, entry = MF.DR.RegisterLossOfControl(frame.categories, category, instanceID, now)
-  if status == "started" or status == "hit" then
-    entry.icon = CATEGORY_ICON[category]
-    return true
+  if type(category) == "string" and type(instanceID) == "number" then
+    activeLossOfControl[instanceID] = category
   end
-  return false
 end
 
+-- Scans even when nothing is active: an effect ending starts its DR window.
 function MF.TryAndUpdateDRStateFromLOC(frame)
   if not frame or not frame.unit then return end
   local ok, count = MF.GetActiveLossOfControlDataCountByUnit(frame.unit)
-  if not ok then
+  if not ok or not MF.IsNumber(count) or MF.IsSecretSafe(count) then
     return
   end
-  if MF.IsNumber(count) and count > 0 then
-    local now = GetTime()
-    local changed = false
-    for index = 1, count do
-      local ok2, trackerInfo = MF.GetActiveLossOfControlDataByUnit(frame.unit, index)
-      if ok2 and SetDRInfoFromLOC(frame, trackerInfo, now) then
-        changed = true
-      end
+  wipe(activeLossOfControl)
+  for index = 1, count do
+    local ok2, trackerInfo = MF.GetActiveLossOfControlDataByUnit(frame.unit, index)
+    if ok2 then
+      CollectLossOfControl(trackerInfo)
     end
-    if changed then
-      SetButtons(frame)
-    end
+  end
+  if MF.DR.UpdateLossOfControl(frame.categories, activeLossOfControl, GetTime()) then
+    SetButtons(frame)
   end
 end
 
 function MF.HideButton(button)
   if button then
     button:Hide()
-    if button.trayItem then
-      button.trayItem.MF_Button = nil
-      button.trayItem = nil
-    end
+    UnlinkTrayItem(button)
     if button.categoryTable then
       button.categoryTable.startTime = nil
       button.categoryTable.duration = nil

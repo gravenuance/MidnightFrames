@@ -56,7 +56,6 @@ end
 
 local function SetArenaFrame(index)
   local unit = "arena" .. index
-  local unitFrame = _G[blizzFrame .. "Member" .. index]
   local name = baseName .. index
   local ax, ay = MF.GetRosterMemberPoint("arena", index)
   local arenaFrame = MF.CreateUnitFrame({
@@ -175,18 +174,10 @@ local function SetArenaFrame(index)
   local function HookDR(frame)
     if not MF.DRFallback then return end
 
-    local member = unitFrame
-    if member and member.SpellDiminishStatusTray and not member.SpellDiminishStatusTray.MF_Hooked then
-      local tray = member.SpellDiminishStatusTray
-      tray.MF_Hooked = true
-      -- Every DR update funnels through UpdateOrAddTrayItem (the other tray
-      -- functions it calls carry no new state), so one hook sees each once.
-      hooksecurefunc(tray, "UpdateOrAddTrayItem", function(_, state)
-        MF.OnTrayItemUpdated(tray, state, frame)
-      end)
-      hooksecurefunc(tray, "OnTrayItemCooldownDone", function(_, item)
-        MF.OnTrayItemCooldownDone(item)
-      end)
+    -- Looked up each time: Blizzard creates the arena frame on its own schedule.
+    local member = _G[blizzFrame .. "Member" .. index]
+    if member then
+      MF.HookDRTray(member.SpellDiminishStatusTray, frame)
     end
   end
 
