@@ -375,20 +375,26 @@ function MF.SetTimeFromStart(durationObject, startTime, duration)
   })
 end
 
+-- Built once: MF.IsInArena runs these on every arena frame event.
+local GET_ACTIVE_MATCH_STATE = { namespace = C_PvP, functionName = "GetActiveMatchState" }
+local IS_MATCH_COMPLETE = { namespace = C_PvP, functionName = "IsMatchComplete" }
+local IS_MATCH_CONSIDERED_ARENA = { namespace = C_PvP, functionName = "IsMatchConsideredArena" }
+local IS_MATCH_ACTIVE = { namespace = C_PvP, functionName = "IsMatchActive" }
+
 function MF.GetActiveMatchState()
-  return MF.CallExternalFunction({ namespace = C_PvP, functionName = "GetActiveMatchState" })
+  return MF.CallExternalFunction(GET_ACTIVE_MATCH_STATE)
 end
 
 function MF.IsMatchComplete()
-  return MF.CallExternalFunction({ namespace = C_PvP, functionName = "IsMatchComplete" })
+  return MF.CallExternalFunction(IS_MATCH_COMPLETE)
 end
 
 function MF.IsMatchConsideredArena()
-  return MF.CallExternalFunction({ namespace = C_PvP, functionName = "IsMatchConsideredArena" })
+  return MF.CallExternalFunction(IS_MATCH_CONSIDERED_ARENA)
 end
 
 function MF.IsMatchActive()
-  return MF.CallExternalFunction({ namespace = C_PvP, functionName = "IsMatchActive" })
+  return MF.CallExternalFunction(IS_MATCH_ACTIVE)
 end
 
 function MF.GetArenaOpponentSpec(index)
