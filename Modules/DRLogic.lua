@@ -33,12 +33,16 @@ function MF.DR.CategoryForLocType(locType)
   return LOC_TYPE_CATEGORY[locType]
 end
 
--- A button hiding clears the entry's timer (MF.HideButton), so it may be bare.
+-- A button hiding clears the entry's timer (MF.HideButton), so it may be
+-- bare; an effect still active keeps it running all the same.
 local function IsRunning(entry, now)
-  if not entry or not entry.instances or not entry.startTime or not entry.duration then
+  if not entry or not entry.instances then
     return false
   end
-  return entry.hasActive or entry.startTime + entry.duration > now
+  if entry.hasActive then
+    return true
+  end
+  return entry.startTime ~= nil and entry.duration ~= nil and entry.startTime + entry.duration > now
 end
 
 local function RestartWindow(entry, now)

@@ -145,6 +145,20 @@ t.test("an entry cleared by its button while its effect is active gets its timer
   t.eq(categories.stun.duration, 20)
 end)
 
+t.test("a hit cleared by its button while its effect is active stays immune", function()
+  -- stun A 100..104, stun B from 110 (hit); B's button hides at 112 (frame hidden)
+  local dr = DR()
+  local categories = {}
+  dr.UpdateLossOfControl(categories, { [501] = "stun" }, 100)
+  dr.UpdateLossOfControl(categories, {}, 104)
+  dr.UpdateLossOfControl(categories, { [502] = "stun" }, 110)
+  categories.stun.startTime = nil
+  categories.stun.duration = nil
+  dr.UpdateLossOfControl(categories, { [502] = "stun" }, 113)
+  t.eq(categories.stun.isImmune, true)
+  t.eq(categories.stun.startTime, 113)
+end)
+
 t.test("an entry cleared by its button stays cleared while nothing is active", function()
   local dr = DR()
   local categories = {}
