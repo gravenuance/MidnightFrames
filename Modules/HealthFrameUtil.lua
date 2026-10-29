@@ -6,7 +6,7 @@ local healthCurve
 -- Health can be a secret value for other units, so we drive the bar off a
 -- curve instead of reading the raw number.
 local function GetHealthCurve()
-  if not MF.IsNil(healthCurve) then
+  if healthCurve then
     return healthCurve
   end
 
@@ -159,7 +159,7 @@ function MF.UpdateHealthBar(frame)
   end
 
   local ok, percent = MF.UnitHealthPercent(frame.unit, curve)
-  if not ok then
+  if not ok or MF.IsNil(percent) then
     SetHealthValue(frame, 0)
     return
   end

@@ -6,17 +6,15 @@ local C_PvP = _G.C_PvP
 local C_Spell = _G.C_Spell
 local C_LossOfControl = _G.C_LossOfControl
 
--- checks if a value is "secret" (WoW blocks reading/comparing these) before we use it
+-- True when `value` is "secret" (WoW blocks reading/comparing these), so
+-- callers can check before using it. issecretvalue never throws, and is read
+-- at call time so a client without it (or a test) still works.
 function MF.IsSecretSafe(value)
-  if not issecretvalue then
+  local isSecret = _G.issecretvalue
+  if not isSecret then
     return false
   end
-
-  local ok, result = pcall(issecretvalue, value)
-  if not ok then
-    return false
-  end
-  return result == true
+  return isSecret(value) == true
 end
 local IsSecretSafe = MF.IsSecretSafe
 
@@ -31,6 +29,37 @@ function MF.SafeBoolResult(ok, value)
   end
   return value == true
 end
+
+-- A boolean API result as a plain true/false: secret and non-boolean
+-- results count as false.
+function MF.PlainBool(value)
+  if IsSecretSafe(value) then
+    return false
+  end
+  return value == true
+end
+local PlainBool = MF.PlainBool
+
+-- The unit and aura wrappers below call the API directly (no pcall, no
+-- argument tables): they run on every UNIT_HEALTH/UNIT_AURA/UNIT_TARGET for
+-- every visible frame. Callers pass unit tokens we built ourselves.
+local UnitExists = _G.UnitExists
+local UnitIsDeadOrGhost = _G.UnitIsDeadOrGhost
+local UnitIsConnected = _G.UnitIsConnected
+local UnitIsPlayer = _G.UnitIsPlayer
+local UnitIsUnit = _G.UnitIsUnit
+local UnitReaction = _G.UnitReaction
+local UnitCanAttack = _G.UnitCanAttack
+local UnitClass = _G.UnitClass
+local UnitHealthMax = _G.UnitHealthMax
+local UnitGetTotalAbsorbs = _G.UnitGetTotalAbsorbs
+local UnitCastingInfo = _G.UnitCastingInfo
+local UnitChannelInfo = _G.UnitChannelInfo
+local UnitGroupRolesAssigned = _G.UnitGroupRolesAssigned
+local UnitInParty = _G.UnitInParty
+local UnitHealthPercent = _G.UnitHealthPercent
+local UnitPowerPercent = _G.UnitPowerPercent
+local GetRaidTargetIndex = _G.GetRaidTargetIndex
 
 function MF.IsNil(value)
   if IsSecretSafe(value) then
@@ -143,81 +172,53 @@ function MF.UnitExists(unit)
     print("Warning: Attempted to check existence of a secret unit. This is not allowed for security reasons.")
     return false
   end
-
-  local ok, result = MF.CallExternalFunction({
-    functionName = "UnitExists",
-    args = { unit },
-    argumentValidators = { MF.IsString },
-  })
-  return MF.SafeBoolResult(ok, result)
+  if type(unit) ~= "string" then
+    return false
+  end
+  return PlainBool(UnitExists(unit))
 end
 
 function MF.UnitIsDeadOrGhost(unit)
-  local ok, result = MF.CallExternalFunction(
-    {
-      functionName = "UnitIsDeadOrGhost",
-      args = { unit },
-      argumentValidators = { MF.IsString }
-    }
-  )
-  return MF.SafeBoolResult(ok, result)
+  if type(unit) ~= "string" then
+    return false
+  end
+  return PlainBool(UnitIsDeadOrGhost(unit))
 end
 
 function MF.UnitIsConnected(unit)
-  local ok, result = MF.CallExternalFunction(
-    {
-      functionName = "UnitIsConnected",
-      args = { unit },
-      argumentValidators = { MF.IsString }
-    }
-  )
-  return MF.SafeBoolResult(ok, result)
+  if type(unit) ~= "string" then
+    return false
+  end
+  return PlainBool(UnitIsConnected(unit))
 end
 
 function MF.UnitIsPlayer(unit)
-  local ok, result = MF.CallExternalFunction(
-    {
-      functionName = "UnitIsPlayer",
-      args = { unit },
-      argumentValidators = { MF.IsString }
-    }
-  )
-  return MF.SafeBoolResult(ok, result)
+  if type(unit) ~= "string" then
+    return false
+  end
+  return PlainBool(UnitIsPlayer(unit))
 end
 
 function MF.UnitReaction(unit)
-  local ok, result = MF.CallExternalFunction(
-    {
-      functionName = "UnitReaction",
-      args = { "player", unit },
-      argumentValidators = { MF.IsString, MF.IsString }
-    }
-  )
-  return ok, result
+  if type(unit) ~= "string" then
+    return false
+  end
+  return true, UnitReaction("player", unit)
 end
 
+-- True when `unit` is the player's current target.
 function MF.UnitIsUnit(unit)
-  local ok, result = MF.CallExternalFunction(
-    {
-      functionName = "UnitIsUnit",
-      args = { "target", unit },
-      argumentValidators = { MF.IsString, MF.IsString }
-    }
-  )
-  return MF.SafeBoolResult(ok, result)
+  if type(unit) ~= "string" then
+    return false
+  end
+  return PlainBool(UnitIsUnit("target", unit))
 end
 
 function MF.UnitCanAttack(unit)
-  local ok, result = MF.CallExternalFunction(
-    {
-      functionName = "UnitCanAttack",
-      args = { "player", unit },
-      argumentValidators = { MF.IsString, MF.IsString }
-    }
-  )
-  if not ok then
-    return false, result
+  if type(unit) ~= "string" then
+    return false, "unit must be a string"
   end
+  local result = UnitCanAttack("player", unit)
   if IsSecretSafe(result) then
     return false, "UnitCanAttack returned a secret value"
   end
@@ -225,15 +226,12 @@ function MF.UnitCanAttack(unit)
   return true, (result == true)
 end
 
+-- returns ok, then UnitClass's own results (localized name, class file, class ID)
 function MF.UnitClass(unit)
-  local ok, r1, r2, r3 = MF.CallExternalFunction(
-    {
-      functionName = "UnitClass",
-      args = { unit },
-      argumentValidators = { MF.IsString }
-    }
-  )
-  return ok, r1, r2, r3
+  if type(unit) ~= "string" then
+    return false
+  end
+  return true, UnitClass(unit)
 end
 
 function MF.GetField(obj, key)
@@ -249,109 +247,74 @@ function MF.IsUnitUnit(unit, otherUnit)
     print("Warning: Attempted to compare a secret unit. This is not allowed for security reasons.")
     return false
   end
-
-  local ok, result = MF.CallExternalFunction({
-    functionName = "UnitIsUnit",
-    args = { unit, otherUnit },
-    argumentValidators = { MF.IsString, MF.IsString }
-  })
-
-  return MF.SafeBoolResult(ok, result)
+  if type(unit) ~= "string" or type(otherUnit) ~= "string" then
+    return false
+  end
+  return PlainBool(UnitIsUnit(unit, otherUnit))
 end
 
 function MF.UnitHealthMax(unit)
-  local ok, result = MF.CallExternalFunction(
-    {
-      functionName = "UnitHealthMax",
-      args = { unit },
-      argumentValidators = { MF.IsString }
-    }
-  )
-  return ok, result
+  if type(unit) ~= "string" then
+    return false
+  end
+  return true, UnitHealthMax(unit)
 end
 
 function MF.UnitGetTotalAbsorbs(unit)
-  local ok, result = MF.CallExternalFunction(
-    {
-      functionName = "UnitGetTotalAbsorbs",
-      args = { unit },
-      argumentValidators = { MF.IsString }
-    }
-  )
-  return ok, result
+  if type(unit) ~= "string" then
+    return false
+  end
+  return true, UnitGetTotalAbsorbs(unit)
 end
-
-local GET_UNIT_AURAS_VALIDATORS = { MF.IsString, MF.IsString, MF.IsNumber, MF.IsNumber, MF.IsNumber }
-local DISPEL_COLOR_VALIDATORS = { MF.IsString, MF.IsNumber, MF.IsUserData }
-local AURA_DURATION_VALIDATORS = { MF.IsString, MF.IsNumber }
 
 -- aura data can come back secret when restricted (combat/PvP), so check that first
 function MF.GetUnitAuras(unit, filter, maxRemaining, sortRule, sortDirection)
-  local ok, result = MF.CallExternalFunction({
-    namespace = C_UnitAuras,
-    functionName = "GetUnitAuras",
-    args = { unit, filter, maxRemaining, sortRule, sortDirection },
-    argumentValidators = GET_UNIT_AURAS_VALIDATORS
-  })
-  if not ok or not MF.IsTable(result) or MF.IsSecretSafe(result) then
+  local result = C_UnitAuras.GetUnitAuras(unit, filter, maxRemaining, sortRule, sortDirection)
+  if IsSecretSafe(result) or type(result) ~= "table" then
     return false
   end
   return true, result, #result
 end
 
 function MF.GetAuraDispelTypeColor(unit, auraInstanceID, curve)
-  return MF.CallExternalFunction({
-    namespace = C_UnitAuras,
-    functionName = "GetAuraDispelTypeColor",
-    args = { unit, auraInstanceID, curve },
-    argumentValidators = DISPEL_COLOR_VALIDATORS
-  })
+  return true, C_UnitAuras.GetAuraDispelTypeColor(unit, auraInstanceID, curve)
 end
 
 function MF.GetAuraDuration(unit, auraInstanceID)
-  return MF.CallExternalFunction({
-    namespace = C_UnitAuras,
-    functionName = "GetAuraDuration",
-    args = { unit, auraInstanceID },
-    argumentValidators = AURA_DURATION_VALIDATORS
-  })
+  return true, C_UnitAuras.GetAuraDuration(unit, auraInstanceID)
 end
 
 function MF.SetCooldown(cooldown, start, duration)
-  return MF.CallExternalFunction({
-    namespace = cooldown,
-    functionName = "SetCooldown",
-    args = { cooldown, start, duration },
-    argumentValidators = { MF.IsTable, MF.IsNumber, MF.IsNumber }
-  })
+  if type(cooldown) ~= "table" or type(start) ~= "number" or type(duration) ~= "number" then
+    return false
+  end
+  cooldown:SetCooldown(start, duration)
+  return true
 end
 
 function MF.SetShowCountdownNumbers(cooldown, show)
-  return MF.CallExternalFunction({
-    namespace = cooldown,
-    functionName = "SetShowCountdownNumbers",
-    args = { cooldown, show },
-    argumentValidators = { MF.IsTable, MF.IsBoolean }
-  })
+  if type(cooldown) ~= "table" or type(show) ~= "boolean" then
+    return false
+  end
+  cooldown:SetShowCountdownNumbers(show)
+  return true
 end
 
 -- forceShowDrawEdge is optional - keep the 2-arg and 3-arg calls separate,
 -- since "omitted" and "explicitly nil" aren't always the same to this API
 function MF.SetCooldownFromDurationObject(cooldown, durationObject, forceShowDrawEdge)
-  if forceShowDrawEdge == nil then
-    return MF.CallExternalFunction({
-      namespace = cooldown,
-      functionName = "SetCooldownFromDurationObject",
-      args = { cooldown, durationObject },
-      argumentValidators = { MF.IsTable, MF.IsUserData }
-    })
+  if type(cooldown) ~= "table" or type(durationObject) ~= "userdata" then
+    return false
   end
-  return MF.CallExternalFunction({
-    namespace = cooldown,
-    functionName = "SetCooldownFromDurationObject",
-    args = { cooldown, durationObject, forceShowDrawEdge },
-    argumentValidators = { MF.IsTable, MF.IsUserData, MF.IsBoolean }
-  })
+  if forceShowDrawEdge == nil then
+    cooldown:SetCooldownFromDurationObject(durationObject)
+    return true
+  end
+  if type(forceShowDrawEdge) ~= "boolean" then
+    return false
+  end
+  cooldown:SetCooldownFromDurationObject(durationObject, forceShowDrawEdge)
+  return true
 end
 
 function MF.CreateCurve()
@@ -402,19 +365,19 @@ function MF.SetTimeFromStart(durationObject, startTime, duration)
 end
 
 function MF.GetActiveMatchState()
-  return MF.CallExternalFunction({ namespace = C_PvP, functionName = "GetActiveMatchState" })
+  return true, C_PvP.GetActiveMatchState()
 end
 
 function MF.IsMatchComplete()
-  return MF.CallExternalFunction({ namespace = C_PvP, functionName = "IsMatchComplete" })
+  return true, C_PvP.IsMatchComplete()
 end
 
 function MF.IsMatchConsideredArena()
-  return MF.CallExternalFunction({ namespace = C_PvP, functionName = "IsMatchConsideredArena" })
+  return true, C_PvP.IsMatchConsideredArena()
 end
 
 function MF.IsMatchActive()
-  return MF.CallExternalFunction({ namespace = C_PvP, functionName = "IsMatchActive" })
+  return true, C_PvP.IsMatchActive()
 end
 
 function MF.GetArenaOpponentSpec(index)
@@ -493,70 +456,61 @@ function MF.SpellHasRange(id)
 end
 
 function MF.IsSpellInRange(id, unit)
-  return MF.CallExternalFunction({
-    namespace = C_Spell,
-    functionName = "IsSpellInRange",
-    args = { id, unit },
-    argumentValidators = { MF.IsNumber, MF.IsString }
-  })
+  if type(id) ~= "number" or type(unit) ~= "string" then
+    return false
+  end
+  return true, C_Spell.IsSpellInRange(id, unit)
 end
 
 function MF.GetRaidTargetIndex(unit)
-  return MF.CallExternalFunction({
-    functionName = "GetRaidTargetIndex",
-    args = { unit },
-    argumentValidators = { MF.IsString }
-  })
+  if type(unit) ~= "string" then
+    return false
+  end
+  return true, GetRaidTargetIndex(unit)
 end
 
--- returns: name, text, texture, startTimeMS, endTimeMS, isTradeSkill, castID, notInterruptible, spellID
+-- returns ok, then: name, text, texture, startTimeMS, endTimeMS, isTradeSkill, castID, notInterruptible, spellID
 function MF.UnitCastingInfo(unit)
-  return MF.CallExternalFunction({
-    functionName = "UnitCastingInfo",
-    args = { unit },
-    argumentValidators = { MF.IsString }
-  })
+  if type(unit) ~= "string" then
+    return false
+  end
+  return true, UnitCastingInfo(unit)
 end
 
 -- same as UnitCastingInfo but no castID
 function MF.UnitChannelInfo(unit)
-  return MF.CallExternalFunction({
-    functionName = "UnitChannelInfo",
-    args = { unit },
-    argumentValidators = { MF.IsString }
-  })
+  if type(unit) ~= "string" then
+    return false
+  end
+  return true, UnitChannelInfo(unit)
 end
 
 function MF.UnitGroupRolesAssigned(unit)
-  return MF.CallExternalFunction({
-    functionName = "UnitGroupRolesAssigned",
-    args = { unit },
-    argumentValidators = { MF.IsString }
-  })
+  if type(unit) ~= "string" then
+    return false
+  end
+  return true, UnitGroupRolesAssigned(unit)
 end
 
 function MF.UnitInParty(unit)
-  return MF.CallExternalFunction({
-    functionName = "UnitInParty",
-    args = { unit },
-    argumentValidators = { MF.IsString }
-  })
+  if type(unit) ~= "string" then
+    return false
+  end
+  return true, UnitInParty(unit)
 end
 
 function MF.UnitHealthPercent(unit, curve)
-  return MF.CallExternalFunction({
-    functionName = "UnitHealthPercent",
-    args = { unit, false, curve },
-    argumentValidators = { MF.IsString, MF.IsBoolean, MF.IsUserData }
-  })
+  if type(unit) ~= "string" or type(curve) ~= "userdata" then
+    return false
+  end
+  return true, UnitHealthPercent(unit, false, curve)
 end
 
 function MF.UnitPowerPercent(unit, curve)
-  return MF.CallExternalFunction({
-    functionName = "UnitPowerPercent",
-    args = { unit, nil, true, curve },
-    argumentValidators = { MF.IsString, MF.IsNil, MF.IsBoolean, MF.IsUserData }
-  })
+  if type(unit) ~= "string" or type(curve) ~= "userdata" then
+    return false
+  end
+  return true, UnitPowerPercent(unit, nil, true, curve)
 end
 
 function MF.GetActiveLossOfControlDataCountByUnit(unit)

@@ -28,7 +28,7 @@ dispel[DispelType.Enrage]       = CreateColor(243 / 255, 95 / 255, 245 / 255, 1)
 local dispelTypeCurve
 
 local function GetDispelTypeCurve()
-  if not MF.IsNil(dispelTypeCurve) then
+  if dispelTypeCurve then
     return dispelTypeCurve
   end
 
@@ -61,7 +61,7 @@ local function ApplyAuraDispelBorderColor(btn, unit, auraData)
     return
   end
   local ok, dispelTypeColor = MF.GetAuraDispelTypeColor(unit, auraData.auraInstanceID, curve)
-  if ok then
+  if ok and not MF.IsNil(dispelTypeColor) then
     border:SetVertexColor(dispelTypeColor:GetRGBA())
   end
 end
@@ -96,7 +96,8 @@ local function SetAuraTexture(btn, auraData)
   end
 
   local tex = auraData.icon
-  if not MF.IsNumber(tex) and not MF.IsString(tex) then
+  local texType = type(tex)
+  if texType ~= "number" and texType ~= "string" then
     return false
   end
 
@@ -109,13 +110,19 @@ end
 -- (see ResolveFilters below), firing on up to ~36 visible frames at once.
 local seenInstanceIDs = {}
 local NextUnseenAuraIndex = MF.NextUnseenAuraIndex
+local BIG_DEFENSIVE_FIRST = Enum.UnitAuraSortRule.BigDefensive
+local SORT_REVERSE = Enum.UnitAuraSortDirection.Reverse
 
 -- Hoisted out of GetAndUpdateAuras (was a per-call closure) for the same
 -- reason: avoid allocating on every UNIT_AURA. `shown` threads through as a
 -- return value instead of an upvalue.
 local function AddAurasForFilter(container, unit, filter, maxRemaining, shown)
+  -- every icon slot is taken: the remaining filters can't add anything
+  if shown > container.maxAuras then
+    return shown
+  end
   local ok, auraList, totalAuras = MF.GetUnitAuras(
-    unit, filter, maxRemaining, Enum.UnitAuraSortRule.BigDefensive, Enum.UnitAuraSortDirection.Reverse
+    unit, filter, maxRemaining, BIG_DEFENSIVE_FIRST, SORT_REVERSE
   )
   if not ok or not auraList or totalAuras == 0 then
     return shown
