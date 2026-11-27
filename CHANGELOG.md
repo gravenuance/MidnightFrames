@@ -6,6 +6,12 @@ All notable changes to MidnightFrames are recorded here. Format follows
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-27
+
+### Added
+- Each release ships a SHA-256 checksum (`.zip.sha256`) and GitHub build provenance for its zip,
+  which is now byte-identical when rebuilt from the same tag.
+
 ## [1.2.0] - 2026-10-29
 
 ### Changed
